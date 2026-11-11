@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest a change to solve a concrete user problem.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues first. See [CONTRIBUTING.md](https://github.com/relai-ai/agent-eval-loop/blob/main/CONTRIBUTING.md) for the design and contribution guide.
+        Use synthetic examples and omit credentials, private source code, production traces, and personal data.
+  - type: textarea
+    id: need
+    attributes:
+      label: What problem would this solve?
+      description: Describe who encounters it, the task they are trying to complete, and any current workaround.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Give a concrete example of the behavior you want and how you would tell it worked.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Possible approach and alternatives (optional)
+      description: Mention affected skills or integrations, alternatives, and compatibility or maintenance tradeoffs. A full design is not required.
