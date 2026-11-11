@@ -68,7 +68,7 @@ You can start at any skill without completing the full workflow.
 
 ## Installation
 
-Install all six skills with the [skills CLI](https://github.com/vercel-labs/skills) (requires Node.js/npm):
+Install all seven skills with the [skills CLI](https://github.com/vercel-labs/skills) (requires Node.js/npm):
 
 ```bash
 npx skills add relai-ai/agent-eval-loop --skill '*'
@@ -77,7 +77,7 @@ npx skills add relai-ai/agent-eval-loop --skill '*'
 Choose your coding agent when prompted. That is the whole setup: RELAI is a set of skills your
 coding agent reads, with no CLI, server or account of its own.
 
-Installs into the current project; add `-g` for all projects. Install all six skills together
+Installs into the current project; add `-g` for all projects. Install all seven skills together
 so their cross-references stay available.
 Skills-only installs include the bundled templates and checkers; for the optional scripts in
 [`examples/`](examples/), use a native plugin install or keep a full clone.
@@ -113,7 +113,7 @@ gemini skills install https://github.com/relai-ai/agent-eval-loop.git --path ski
 
 Add `--scope workspace` for the current project only.
 
-**Manual installation** — clone once, then copy all six skill folders into your agent's skills
+**Manual installation** — clone once, then copy all seven skill folders into your agent's skills
 directory. For agents that read `.agents/skills/`, run from your project:
 
 ```bash
@@ -143,6 +143,7 @@ To update a manual install, run `git -C ~/agent-eval-loop pull` and copy the ski
 | --- | --- | --- |
 | **`start`** | Routes the request, initializes useful records when justified and shows relevant progress. | Where to begin when the goal is unclear. |
 | **`discover`** | Builds the **EvalsWiki** from code, documentation and traces: requirements, ranked risks and open questions. | Which risks matter; answers to open questions. |
+| **`trace-review`** | Builds or adapts a project-owned app for full traces, keyboard navigation, search, filters and persistent feedback. | Review verdicts and expected behavior. |
 | **`eval`** | Builds evals from traces, generates them from the wiki's risks or brings in an existing benchmark. Evals use Harbor tasks or suitable project-native equivalents, graded by code checks and LLM judges, then reviewed and frozen. | Which evals to build; whether the graders score the way you would. |
 | **`improve`** | Runs the agent against the evals and compares scoped changes against the recorded baseline for an agreed behavioral, cost or latency objective. | The objective, what may change and the budget. |
 | **`loop`** | Repeats discover → eval → improve when new traces, answers or tests arrive. | The goal, scope, budget and limits; then real ambiguity or safety calls. |
@@ -167,6 +168,19 @@ The optional triage example groups leads into three lanes:
 - **Weak signals:** small slips that did not fail a run, informing harder or compound eval proposals.
 
 Durable findings update EvalsWiki when they help future work. The wiki is not a transcript archive or a checklist of artifacts.
+
+### Review traces in an app
+
+```text
+Use RELAI's trace-review skill to build a review app for ./traces
+with hotkeys, filters and feedback on individual steps
+```
+
+The coding agent reuses your project's stack and trace tooling, then builds and verifies an
+app you own. Browse complete interactions, search and filter runs, leave feedback, and resume
+where you stopped. Traces stay read-only and data stays local by default. The app includes its
+own run instructions and inspectable feedback storage; no eval setup or model access is required.
+Source-linked feedback can later inform discovery, eval proposals or judge calibration.
 
 ### Bring your own benchmark
 
@@ -292,6 +306,7 @@ relai/
 ├── skills/
 │   ├── start/         # the relai/ template and checkers
 │   ├── discover/      # requirements, risks, open questions, trace triage
+│   ├── trace-review/  # project-owned trace review apps and human feedback
 │   ├── eval/          # harness, test design, hardening, mocks, benchmarks, running and scoring
 │   ├── improve/       # regression checks, agent-chosen experiments, cost and latency
 │   ├── loop/          # contract, new evidence, iterations and experiment rounds
