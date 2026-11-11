@@ -1,0 +1,11 @@
+# Development environment for the plugin's own tests; no Python package is built.
+[project]
+name = "agent-eval-loop"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false
