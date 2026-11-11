@@ -177,11 +177,13 @@ early failure can expose another problem later in the workflow.
 
 ### 29. Maintain knowledge that helps future development
 
-Actively maintain durable knowledge and local state when they will help future development,
-evaluation or improvement. Capture consequential requirements, decisions, supported risks,
-corrections and reusable lessons. Initialize supporting artifacts when justified, respect user
-opt-outs, and revise or remove superseded information. Match maintenance effort to expected
-future value rather than treating artifact creation as a completion checklist.
+Actively curate useful project knowledge, local state and reusable assets by default. Incorporate
+reusable understanding, consequential requirements, decisions, supported risks, corrections and
+lessons into maintained records rather than leaving them only in conversation or temporary output.
+Inspect existing state first; update, consolidate and correct it, initializing appropriate records
+when absent. Preserve evidence, uncertainty and applicability, and revise or remove superseded
+conclusions. Respect explicit read-only requests, persistence opt-outs and protected-data boundaries.
+Match maintenance effort to future value rather than creating artifacts without useful content.
 
 ### 30. Make unsuccessful work informative
 
