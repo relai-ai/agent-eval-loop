@@ -80,7 +80,7 @@ coding agent reads, with no CLI, server or account of its own.
 Installs into the current project; add `-g` for all projects. Install all seven skills together
 so their cross-references stay available.
 Skills-only installs include the bundled templates and checkers; for the optional scripts in
-[`examples/`](examples/), use a native plugin install or keep a full clone.
+[`examples/`](examples/) and the optional [hooks](hooks/), use a native plugin install or keep a full clone.
 
 <details>
 <summary><b>Native plugins, Gemini CLI and manual installation</b></summary>
@@ -98,6 +98,8 @@ claude plugin install relai@agent-eval-loop
 codex plugin marketplace add relai-ai/agent-eval-loop
 codex plugin add relai@agent-eval-loop
 ```
+
+Codex asks you to review and trust the plugin's optional hooks (`/hooks`) before they run.
 
 **Antigravity:**
 
@@ -312,6 +314,7 @@ relai/
 │   ├── loop/          # contract, new evidence, iterations and experiment rounds
 │   └── coding-evals/  # agent-neutral tasks for coding agents: sources, checks and comparison
 ├── examples/          # example launcher, judge, triager and native-runner scripts
+├── hooks/             # optional Claude Code and Codex hooks: guard frozen tests, run checkers after edits
 ├── tests/             # tests for the checkers and examples
 ├── DESIGN.md          # the design and the reasons behind it
 └── README.md
