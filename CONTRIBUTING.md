@@ -9,6 +9,10 @@ See [MAINTAINERS.md](MAINTAINERS.md) for the maintainers and review ownership.
 
 ## Find a useful starting point
 
+Ask usage questions in [Q&A](https://github.com/relai-ai/agent-eval-loop/discussions/categories/q-a)
+and share examples in [Show and tell](https://github.com/relai-ai/agent-eval-loop/discussions/categories/show-and-tell).
+Keep shared material synthetic or redacted, just as you would for an issue.
+
 Search existing issues and pull requests before opening a new one. For a substantial change,
 open an issue describing the problem, proposed behavior, and tradeoffs before investing in an
 implementation. Small corrections can go straight to a pull request.

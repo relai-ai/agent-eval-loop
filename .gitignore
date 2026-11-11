@@ -3,3 +3,8 @@ __pycache__/
 .DS_Store
 .venv/
 .pytest_cache/
+
+# Local credentials; sanitized example files can be committed.
+.env
+.env.*
+!.env.example
