@@ -18,6 +18,14 @@ are recorded. Reuse or extend a working viewer when it meets the need. Keep unfa
 accessible in a raw view; expose unsupported records and parse failures rather than dropping them.
 Missing data is not an empty successful run.
 
+Use the project's established design system and component/CSS framework when available.
+Otherwise recommend a cohesive design system and suitable stack, explaining the fit; honor
+the user's choice and ask only when the decision materially affects ownership or dependencies.
+For a new web app, consider TypeScript for maintainability without requiring a rewrite or a
+particular framework. Aim for a polished review workspace: clear visual hierarchy, readable
+trace typography, consistent spacing and states, accessible contrast, and a layout that keeps
+navigation, evidence and feedback easy to scan. Verify the rendered UI, not just functionality.
+
 Choose app and feedback locations that fit the project. Keep source traces read-only and store
 reviews separately. Prefer existing trace and step IDs; otherwise derive stable references from
 source identity and a source locator, not a filtered list position. Record source revision or
