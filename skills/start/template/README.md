@@ -186,6 +186,12 @@ RELAI is something the user steers, not a black box.
   your recommendation first. Pause only work that depends on the answer.
   Never ask the user to edit a file to answer. Append every answer to `decisions.md`, and every
   consequential choice you made yourself as an assumption.
+- **Clear questions.** State the decision and why it matters in the user's terms; explain
+  unfamiliar terms through their practical effect. Separate findings and proposed defaults from
+  choices needing an answer. Give concrete options, their consequences and a recommendation when
+  supported; make clear what the answer approves and what can wait. Each prompt should make sense
+  on its own. Batch related choices at a checkpoint, but give independently answerable choices
+  separate prompts or labeled rows rather than compressing them into one sentence.
 - **When the user is asked.** Questions wait for a natural moment; only a blocking item
   interrupts a step.
 
@@ -193,15 +199,15 @@ RELAI is something the user steers, not a black box.
   | --- | --- |
   | End of `discover` | The risk table, open questions, and feedback on the runs just read |
   | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, and on first use the harness setup questions |
-  | `eval` scenario approval and grader preview | One question each: the scenario table (with the build's cost) and the grader preview across all new tests |
+  | `eval` scenario approval and grader preview | Approval of the scenario table (with the build's cost) and of the grader preview, in manageable subsets |
   | End of an `eval` run whose judges scored real trials for the first time, or after a rubric change | That run's judge checks, while the run is fresh, and the pass mark if it is unset |
   | Start of a `coding-evals` scope | Only what is still open after showing what was found (the agent, its sign-in, public repositories, drafted standards) |
-  | `coding-evals` task-list approval and check preview | One question each: the task table (with the build's cost) and the check preview across all new tasks |
+  | `coding-evals` task-list approval and check preview | Approval of the task table (with the build's cost) and of the check preview, in manageable subsets |
   | End of the first `coding-evals` comparison that scored real trials | Its judge checks, and the pass mark if it is unset |
   | Each `loop` iteration's digest | Everything pending; a blocking item is asked at once, and only it pauses the loop |
   | Whenever the user asks | Everything pending |
 
-  Use the question default as a starting point, sizing the sitting by actual decision effort.
+  Size the sitting by actual decision effort, not the number of prompts.
   A table with many independent judgments is not automatically one small question. Group related
   decisions or recommend a useful top batch, with explicit bulk recommendations where appropriate.
   Prioritize blocking items, likely failures, judge checks, then open questions and the rest.
