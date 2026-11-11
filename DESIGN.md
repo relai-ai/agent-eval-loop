@@ -37,7 +37,7 @@ without the plugin. Methods for the coding agent live in the skills.
 | `eval` | Harness (first time), then frozen, reviewed tests that can fail and pass fairly; honest runs that show where the agent stands | Scenarios and grader preview |
 | `improve` | Direct fixes with bounded evidence, regression checks, or measured improvement against an agreed objective | Improvement agreement, unless existing instructions cover it |
 | `loop` | discover → eval → improve as new evidence arrives, with agent-chosen experiments per iteration | One agreement covers delegated decisions; measurement changes are controlled |
-| `coding-evals` | Agent-neutral tasks from real sessions, pull requests and history, healthy (solvable, can fail) and frozen; comparisons of coding agents and setups | Scope, task list and check preview |
+| `coding-evals` | Agent-neutral tasks from real sessions, pull requests and history, validated and frozen; comparisons of coding agents and setups | Uncovered scope/task/budget choices, then check preview; approvals may be delegated |
 
 These skills are independent entrypoints, not mandatory stages. Existing instructions can supply
 or delegate approval; method references do not expand authorization. Examples are optional project

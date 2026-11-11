@@ -6,10 +6,11 @@ nothing the agent can see gives the answer away, and it scores every coding agen
 Judge on evidence you can quote.
 
 Read: `relai/README.md` and `relai/docs/files.md`; the task directory (`task.toml`,
-`instruction.md`, `README.md`, `environment/Dockerfile`, `solution/`, everything under `tests/`);
-its latest oracle and nop runs; the wiki pages it covers; and its source (the session, pull
-request or commit named in `origin`), if you can reach it. Do not read the author's notes or
-reasoning.
+`instruction.md`, `environment/Dockerfile`, `solution/`, everything under `tests/`); its README's
+provenance and raw validation evidence; its latest oracle and nop runs; the wiki pages it covers;
+and its source (the session, pull request or commit named in `origin`), if you can reach it.
+Skip the author's design rationale, proposed verdicts and other reasoning, including in the
+task record; form your own conclusions from the requirements and artifacts.
 
 Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 
@@ -23,10 +24,13 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    online, the README records whether the network and server-side web tools were restricted, as
    the user chose.
 3. **Any correct fix passes.** The hidden tests check behavior through public interfaces, not
-   names or structure the real fix happened to choose. Name a second correct fix and say whether it
-   passes. The scope globs leave room for it.
-4. **It can fail, and it can pass.** Health is ok for the task as it is now: the reference fix
-   passes every outcome check, the untouched code fails the primary check.
+   names or structure the real fix happened to choose. Inspect the executable alternative's
+   evidence against the request: does it challenge a shared assumption, and do the scope globs
+   allow it? Check fixture time, ordering and initialization for accidental constraints.
+4. **Validated environment and controls.** Inspect the [validation evidence](task-format.md#validation)
+   for the final task: documented commands ran in a fresh environment as the agent user, with
+   baseline failures explained; the reference fix passes every outcome check and untouched code
+   fails the primary check. Verifier health is not evidence for omitted agent commands.
 5. **Honest suite.** Tests that already fail at the start commit are deselected and listed in the
    README; the suite passes with the reference fix; it does not depend on the network. The suite and
    hidden-test commands call the test runner directly, or through a script inside the protected
