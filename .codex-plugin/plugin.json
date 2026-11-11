@@ -6,6 +6,7 @@
     "name": "RELAI"
   },
   "skills": "./skills/",
+  "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "RELAI",
     "shortDescription": "Eval-driven improvement for AI agents.",
