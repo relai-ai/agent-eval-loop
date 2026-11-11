@@ -30,6 +30,16 @@ python3 -m unittest discover -s tests
 Python 3.11 or newer is required. The bundled checkers and example scripts use the standard
 library; there is no package build or backend to start.
 
+GitHub Actions runs the suite, including manifest version consistency and referenced-file
+checks, on every pull request and push to `main`, using Python 3.11 and 3.14 on Linux. CI
+installs `pytest` and `uv`; container tests detect an available compatible engine. The logs
+show each test outcome, and the job summary lists every skipped test with its reason.
+Skipped tests do not establish integration coverage. To use the same runner locally:
+
+```sh
+python3 .github/scripts/run_tests.py
+```
+
 Some tests have additional prerequisites and skip when those are absent:
 
 - Coding-verifier integration tests use `pytest`, installed in your development environment.
