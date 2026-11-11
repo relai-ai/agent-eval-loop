@@ -42,3 +42,10 @@ State the scope, checks used, traces processed, traces inspected in full, sample
 process and truncation or other omissions. Link findings to the relevant source passages. A
 coverage table is useful when it makes this clearer; do not label unexamined traces clean or
 claim that a heuristic absence of flags proves correct behavior.
+
+When reported findings or counts depend on nontrivial analysis code, retain a rerunnable check
+under the shared maintenance policy. Reuse or improve existing project assets rather than leave
+competing copies. Record its inputs, invocation and limits, distinguishing mechanical results
+from leads requiring contextual judgment. Prefer project-native locations; otherwise
+`relai/work/discover/<ingest-id>/` can hold local analysis. One-off inspection commands need not
+become scripts, and this handoff does not require a generic audit suite.

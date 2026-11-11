@@ -99,6 +99,14 @@ speculative filler. Explain material updates in the normal report without repeat
 approval requests. Setup serves that future value; it is not a prerequisite to answering the
 immediate question. Do not put protected assessment contents into optimizer-visible knowledge.
 
+Actively maintain reusable project-local assets when they will make future analysis or development
+easier. Inspect and reuse existing scripts, adapters, queries or other suitable assets; improve or
+consolidate them when the current work reveals a concrete need, preserving user modifications.
+Leave useful nontrivial work runnable and understandable in the project's language and conventions.
+Match maintenance effort to expected reuse and ownership cost, within authorized scope; respect
+read-only requests and opt-outs. Asset creation is not a completion checklist or a reason to build
+generic infrastructure without a concrete need.
+
 ## Layout
 
 | Path | What it holds | Committed |

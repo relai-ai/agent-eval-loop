@@ -21,7 +21,8 @@ verdicts distinct from recorded behavior.
 Goal: answer the user's question about intended behavior, supported risks and uncertainty, and
 leave knowledge that will help future development, evaluation or improvement.
 
-Actively maintain EvalsWiki and useful local state when the findings have that future value.
+Actively maintain EvalsWiki, useful local state and reusable project-local assets when they have
+that future value, following the [shared maintenance policy](../start/template/README.md#maintain-useful-knowledge).
 Update existing knowledge rather than duplicate it; initialize needed records through the
 [start skill](../start/SKILL.md) when justified. Respect read-only requests and wiki opt-outs.
 Routine authorized maintenance needs no repeated approval, and setup is not an independent
