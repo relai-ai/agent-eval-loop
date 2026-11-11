@@ -80,14 +80,14 @@ Skills-only installs include the bundled templates and checkers; for the optiona
 
 ```bash
 claude plugin marketplace add relai-ai/agent-eval-loop
-claude plugin install relai@relai-local
+claude plugin install relai@agent-eval-loop
 ```
 
 **Codex** — from a shell:
 
 ```bash
 codex plugin marketplace add relai-ai/agent-eval-loop
-codex plugin add relai@relai-local
+codex plugin add relai@agent-eval-loop
 ```
 
 **Antigravity:**

@@ -1,7 +1,7 @@
 {
-  "name": "relai-local",
+  "name": "agent-eval-loop",
   "interface": {
-    "displayName": "RELAI (local)"
+    "displayName": "agent-eval-loop"
   },
   "plugins": [
     {
