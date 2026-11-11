@@ -120,19 +120,6 @@ To update a manual install, run `git -C ~/agent-eval-loop pull` and copy the ski
 
 </details>
 
-## See one complete example
-
-> **Before publishing:** Add one real example from the current OSS product showing:
->
-> 1. the source requirement, trace or coding session;
-> 2. the EvalsWiki entry created by `discover`;
-> 3. one generated eval and its grader;
-> 4. the recorded baseline;
-> 5. the output of one `improve` or `coding-evals` run.
->
-> Use actual repository files and results. Do not use illustrative or fabricated output.
-> The repository currently includes helper scripts and test fixtures, but no linked source → wiki → eval/grader → baseline → improvement run with recorded results.
-
 ## Why RELAI
 
 - **Evals are the hard part. RELAI builds them.** Evals come from traces, or are generated from what the agent must do and where it can break, including risks that never appeared as failed runs. You review them; you do not write them.
