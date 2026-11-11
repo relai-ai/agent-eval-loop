@@ -22,10 +22,11 @@ files, skills, hooks, MCP configuration) live under `relai/setups/<id>/`, laid o
   CONTRIBUTING, README, pull request templates, lint and CI configuration, and recent review
   comments, each with its source.
 
-## Ask what is still open, at once, recommendation first
+## Ask what is still open at the scope checkpoint
 
-Show what you found as a short list to confirm (the agent, its version and authentication, which
-repositories are public, the drafted standards), then ask only what remains open:
+Show what you found as a short list (the agent, its version and authentication, which
+repositories are public, the drafted standards), then ask only what remains open, following
+"Working with the user" in `relai/README.md`:
 
 1. **What to compare.** Recommend: the agent as the team uses it now, against the change they are
    considering (a model, a version, an instruction-file edit, a skill or hook) or a bare setup.
@@ -44,6 +45,21 @@ repositories are public, the drafted standards), then ask only what remains open
 Corrections to the drafted standards count as answers. With a subscription, say that runs count
 against the plan's usage limits and that the user should check the plan allows automated runs;
 it is information, not a question. The pass mark is asked after the first comparison.
+
+For example, when models and sign-in methods remain open for a two-agent comparison:
+
+> I'll give Codex and Claude the same repository instructions so the comparison is fair.
+> Task code will stay in this private repo, and both agents will have internet access.
+>
+> **Which model should each agent use?** Name one for Codex and one for Claude, or choose
+> “decide before running.”
+>
+> **How should each agent sign in for evaluation runs?** Existing subscription accounts
+> (using each plan's allowance), API keys (incurring API charges), or decide before running.
+> You can choose differently for each agent. I can build the tests while these choices remain open.
+
+This illustrates presentation, not fixed defaults: use the discovered facts and agreed scope.
+Keep installed versions in the setup summary unless they affect the choice.
 
 ## Record
 
