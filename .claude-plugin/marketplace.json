@@ -1,6 +1,6 @@
 {
-  "name": "relai-local",
-  "description": "Local marketplace for developing the RELAI plugin",
+  "name": "agent-eval-loop",
+  "description": "Marketplace for the RELAI plugin",
   "owner": {
     "name": "RELAI"
   },

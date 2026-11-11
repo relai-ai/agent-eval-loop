@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <a href="#quickstart"><img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-2e7d57"></a>
-  <a href="#quickstart"><img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-2e7d57"></a>
+  <a href="#installation"><img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-2e7d57"></a>
+  <a href="#installation"><img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-2e7d57"></a>
   <img alt="Agent Skills" src="https://img.shields.io/badge/Agent%20Skills-compatible-2e7d57">
   <img alt="Harbor tasks" src="https://img.shields.io/badge/evals-Harbor%20tasks-555">
 </p>
@@ -26,185 +26,13 @@
 
 ## Two ways to use it
 
-- **🤖 Agent applications and business workflows.** The agents you build and ship, whatever
-  framework they use. RELAI builds evals from your traces, or generates them from the agent's code,
-  docs and risks, then improves prompts, tools, workflow, memory or model, keeping a change only
-  when the evals show it helped and the guardrails held.
-- **🏭 Coding agents and software factories.** The coding agents your team uses: Claude Code, Codex,
-  OpenHands or your own setup of one. RELAI turns your coding sessions, pull requests and git history
-  into tasks any coding agent can run, then shows whether a new model, CLAUDE.md, skill or agent
-  actually helps on *your* code.
+### 🤖 Agent applications and business workflows
 
-## Quickstart
+The agents you build and ship, whatever framework they use. RELAI builds evals from your traces,
+or generates them from the agent's code, docs and risks, then improves prompts, tools, workflow,
+memory or model, keeping a change only when the evals show it helped and the guardrails held.
 
-### 1. Install the plugin
-
-Pick your coding agent below. Claude Code, Codex and Antigravity install RELAI as a native
-plugin, and Gemini CLI installs its skills directly. Other agents load its six skills
-(`start`, `discover`, `eval`, `improve`, `loop`, `coding-evals`) from their skills folder. Copy
-each skill's whole folder: skills use the files bundled next to their `SKILL.md`.
-
-<details>
-<summary><b>Claude Code</b></summary>
-
-In Claude Code:
-
-```text
-/plugin marketplace add relai-ai/agent-eval-loop
-/plugin install relai@relai-local
-```
-
-Or from a shell:
-
-```bash
-claude plugin marketplace add relai-ai/agent-eval-loop
-claude plugin install relai@relai-local
-```
-
-For local development, load a checkout directly:
-
-```bash
-claude --plugin-dir /path/to/agent-eval-loop
-```
-
-</details>
-
-<details>
-<summary><b>Codex</b></summary>
-
-Install as a native Codex plugin:
-
-```bash
-codex plugin marketplace add relai-ai/agent-eval-loop
-codex plugin add relai@relai-local
-```
-
-For local development, add your checkout as the marketplace instead:
-
-```bash
-codex plugin marketplace add /path/to/agent-eval-loop
-codex plugin add relai@relai-local
-```
-
-</details>
-
-<details>
-<summary><b>Cursor</b></summary>
-
-```bash
-git clone https://github.com/relai-ai/agent-eval-loop.git ~/agent-eval-loop
-mkdir -p ~/.cursor/skills && cp -R ~/agent-eval-loop/skills/* ~/.cursor/skills/
-```
-
-For one project only, copy into `.cursor/skills/` in that project. Reload Cursor afterwards.
-
-</details>
-
-<details>
-<summary><b>Antigravity</b></summary>
-
-Install as a native Antigravity plugin:
-
-```bash
-agy plugin install https://github.com/relai-ai/agent-eval-loop.git
-```
-
-Or from a local clone:
-
-```bash
-git clone https://github.com/relai-ai/agent-eval-loop.git
-agy plugin install ./agent-eval-loop
-```
-
-Run `agy plugin list` to check that it is active.
-
-</details>
-
-<details>
-<summary><b>Gemini CLI</b></summary>
-
-Install the skills from the repository:
-
-```bash
-gemini skills install https://github.com/relai-ai/agent-eval-loop.git --path skills
-```
-
-Or from a local clone:
-
-```bash
-git clone https://github.com/relai-ai/agent-eval-loop.git
-gemini skills install ./agent-eval-loop/skills/
-```
-
-Add `--scope workspace` to install for the current project only.
-
-</details>
-
-<details>
-<summary><b>Windsurf</b></summary>
-
-```bash
-git clone https://github.com/relai-ai/agent-eval-loop.git ~/agent-eval-loop
-mkdir -p ~/.codeium/windsurf/skills && cp -R ~/agent-eval-loop/skills/* ~/.codeium/windsurf/skills/
-```
-
-For one project only, copy into `.windsurf/skills/` in that project.
-
-</details>
-
-<details>
-<summary><b>OpenCode</b></summary>
-
-```bash
-git clone https://github.com/relai-ai/agent-eval-loop.git ~/agent-eval-loop
-mkdir -p ~/.config/opencode/skills && cp -R ~/agent-eval-loop/skills/* ~/.config/opencode/skills/
-```
-
-For one project only, copy into `.opencode/skills/` in that project.
-
-</details>
-
-<details>
-<summary><b>GitHub Copilot</b> (CLI, cloud agent and IDE agent mode)</summary>
-
-```bash
-git clone https://github.com/relai-ai/agent-eval-loop.git ~/agent-eval-loop
-mkdir -p ~/.copilot/skills && cp -R ~/agent-eval-loop/skills/* ~/.copilot/skills/
-```
-
-For one project, or for the cloud agent, copy into `.github/skills/` in that repository. In
-Copilot CLI, run `/skills reload` to pick them up without restarting.
-
-</details>
-
-<details>
-<summary><b>Kiro</b> (IDE and CLI)</summary>
-
-```bash
-git clone https://github.com/relai-ai/agent-eval-loop.git ~/agent-eval-loop
-mkdir -p ~/.kiro/skills && cp -R ~/agent-eval-loop/skills/* ~/.kiro/skills/
-```
-
-For one project only, copy into `.kiro/skills/` in that project.
-
-</details>
-
-<details>
-<summary><b>Other coding agents</b></summary>
-
-Any agent that supports [Agent Skills](https://agentskills.io) can load RELAI: copy the folders
-under `skills/` into that agent's skills directory. Many agents also read `~/.agents/skills/` or a
-project's `.agents/skills/`.
-
-</details>
-
-To update a copied install, run `git -C ~/agent-eval-loop pull` and copy the skills again. Skills folder
-locations were checked against each agent's documentation in November 2026; if one has moved,
-your agent's docs list the current location.
-
-### 2. Choose where to start
-
-For an agent application or business workflow, open its repository and ask:
+Open your agent's repository and ask:
 
 ```text
 Use RELAI's discover skill to map this agent's behavior and where it can fail
@@ -217,31 +45,80 @@ Use RELAI's loop skill to improve this agent from ./traces;
 optimize task success and cost
 ```
 
-For a software factory, open an eval project and ask:
+### 🏭 Coding agents and software factories
+
+The coding agents your team uses: Claude Code, Codex, OpenHands or your own setup of one.
+RELAI turns your coding sessions, pull requests and git history into tasks any coding agent
+can run, then shows whether a new model, CLAUDE.md, skill or agent actually helps on *your* code.
+
+Open an eval project and ask:
 
 ```text
 Use RELAI's coding-evals skill to mine ../api for tasks from the last six months,
 then compare our coding agents
 ```
 
-### 3. Follow the request
-
-RELAI checks the prerequisites needed for the task, names missing credentials and reuses existing runners and tests. It uses your project's credential mechanism or `relai/.env`; coding agents never read credential values, while executable helpers use them for authentication and redaction.
-
 You can start at any skill without completing the full workflow.
 
-## See one complete example
+## Installation
 
-> **Before publishing:** Add one real example from the current OSS product showing:
->
-> 1. the source requirement, trace or coding session;
-> 2. the EvalsWiki entry created by `discover`;
-> 3. one generated eval and its grader;
-> 4. the recorded baseline;
-> 5. the output of one `improve` or `coding-evals` run.
->
-> Use actual repository files and results. Do not use illustrative or fabricated output.
-> The repository currently includes helper scripts and test fixtures, but no linked source → wiki → eval/grader → baseline → improvement run with recorded results.
+Install all six skills with the [skills CLI](https://github.com/vercel-labs/skills) (requires Node.js/npm):
+
+```bash
+npx skills add relai-ai/agent-eval-loop --skill '*'
+```
+
+Choose your coding agent when prompted. Installs into the current project; add `-g` for all
+projects. Install all six skills together so their cross-references stay available.
+Skills-only installs include the bundled templates and checkers; for the optional scripts in
+[`examples/`](examples/), use a native plugin install or keep a full clone.
+
+<details>
+<summary><b>Native plugins, Gemini CLI and manual installation</b></summary>
+
+**Claude Code** — from a shell:
+
+```bash
+claude plugin marketplace add relai-ai/agent-eval-loop
+claude plugin install relai@agent-eval-loop
+```
+
+**Codex** — from a shell:
+
+```bash
+codex plugin marketplace add relai-ai/agent-eval-loop
+codex plugin add relai@agent-eval-loop
+```
+
+**Antigravity:**
+
+```bash
+agy plugin install https://github.com/relai-ai/agent-eval-loop.git
+```
+
+**Gemini CLI:**
+
+```bash
+gemini skills install https://github.com/relai-ai/agent-eval-loop.git --path skills
+```
+
+Add `--scope workspace` for the current project only.
+
+**Manual installation** — clone once, then copy all six skill folders into your agent's skills
+directory. For agents that read `.agents/skills/`, run from your project:
+
+```bash
+git clone https://github.com/relai-ai/agent-eval-loop.git ~/agent-eval-loop
+mkdir -p .agents/skills
+cp -R ~/agent-eval-loop/skills/* .agents/skills/
+```
+
+Other project directories: `.cursor/skills/` (Cursor), `.windsurf/skills/` (Windsurf),
+`.opencode/skills/` (OpenCode), `.github/skills/` (GitHub Copilot), `.kiro/skills/` (Kiro).
+Copy each skill's whole folder, including the files next to `SKILL.md`, then reload your agent.
+To update a manual install, run `git -C ~/agent-eval-loop pull` and copy the skills again.
+
+</details>
 
 ## Why RELAI
 
@@ -263,6 +140,8 @@ You can start at any skill without completing the full workflow.
 | **`coding-evals`** | Mines coding sessions, pull requests and git history for tasks any coding agent can run, then compares agents and setups on them. | Which agents and repositories; which tasks to build; whether the checks score the way you would. |
 
 When RELAI-managed state is useful, `relai/STATUS.md` shows the current request, relevant progress, what is waiting on you and the recommended next step.
+
+RELAI checks the prerequisites needed for the task, names missing credentials and reuses existing runners and tests. It uses your project's credential mechanism or `relai/.env`; coding agents never read credential values, while executable helpers use them for authentication and redaction.
 
 ## Agent applications and business workflows
 
