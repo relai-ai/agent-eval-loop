@@ -1,0 +1,113 @@
+# The agent-neutral task format
+
+Write each task from the contract in `relai/docs/files.md` (*An agent-neutral coding task*). The
+plugin ships only the [verifier](../verifier/): `coding_checks.py` and `test.sh`, copied into each
+task's `tests/`, used as they are unless adapted under [checks](checks.md) (*Adapting the
+verifier*).
+
+```
+relai/tests/<id>/
+├── task.toml            # [agent].timeout_sec, [verifier].timeout_sec, [metadata.relai] with agent_neutral = true and [metadata.relai.coding]
+├── instruction.md       # the developer's request (redacted)
+├── README.md            # source, behavior, evaluators, known failures, contamination, network, agent instruction files at the start, health
+├── environment/
+│   ├── Dockerfile       # authorized base image, toolchain, the repository at the start commit, the leak guard
+│   └── repo.bundle      # the start commit and its ancestors only
+├── solution/solve.sh    # applies the reference fix; Harbor's oracle agent runs it
+└── tests/               # reaches the container only after the agent is done
+    ├── test.sh, coding_checks.py   # the plugin's verifier (or a recorded, tested adaptation)
+    ├── verify.py        # one call per code evaluator (the library's docstring shows one)
+    ├── params.json      # commands, globs, the start commit and the protected manifest
+    ├── protected/       # the start commit's protected files
+    ├── hidden/          # hidden test files
+    └── judges/          # copies of the shared judge evaluators' rubrics
+```
+
+## Steps
+
+1. **Commits.** The start and fix commits ([sources](sources.md)) and the fix date; whether the
+   source is public comes from scope.
+2. **Workspace history.** Bundle the start commit's history alone: fetch the start commit into an
+   empty bare repository as `refs/heads/main`, then bundle that explicit ref. Clone with
+   `git clone -b main <bundle> /app` rather than relying on the bare repository's default HEAD.
+   Resolve source and bundle paths from the stated build context; never change the source
+   repository. A large public repository can be fetched in the Dockerfile instead.
+3. **Dockerfile.** An authorized base image pinned by tag or digest (public for the bundled hosted
+   recipe; local/private infrastructure is allowed by the shared contract). Digest pinning is
+   optional when a tag meets the reproducibility requirement. Use the toolchain the start
+   commit pins, `git`, `curl`, `bash` (agents install with them) and `python3` 3.8+ (the
+   verifier). The repository at `/app` as the working directory, dependencies installed from its
+   lockfile, and the leak guard `RUN ! git -C /app cat-file -e <fix commit>`. Never install a
+   later release of the project itself.
+4. **Request.** `instruction.md`: the developer's words, redacted, with no file names, diagnosis
+   or approach they did not give.
+5. **Reference fix.** `git diff <start> <fix>` over the source files, without the test files that
+   become hidden tests, applied by `solution/solve.sh`.
+6. **Hidden tests.** The fix's added or changed tests in `tests/hidden/`, mapped in
+   `params.json` `hidden_tests.files`, with a command that runs only them. Rewrite assertions on
+   names the fix happened to introduce so they check behavior through a public interface. With no
+   tests in the fix, write some.
+7. **Suite.** `suite.command` runs the repository's tests, deselecting those that already fail at
+   the start (list them in the README). Add `build.command` when the project has a build or type
+   check. Commands call the test runner directly, not a script the agent can edit unless that
+   script is protected.
+8. **Globs and the snapshot.** `protected`: the existing tests and CI files; hidden test paths
+   fall inside. `scope.allowed`: where any correct fix may go, generously. Then run
+   `coding_checks.py protect` (its docstring).
+9. **Evaluators.** The standard set and the project's shared evaluators ([checks](checks.md)),
+   plus the lesson's checks; declare each in `task.toml` under the id `verify.py` or the judge
+   uses.
+10. **Check.** `python3 relai/bin/check_task.py relai/tests/<id>`.
+11. **Health.** Run Harbor's `oracle` and `nop` agents on the task, then `summarize.py`: the
+    oracle must score every outcome check at full marks and nop must fail the primary one. A
+    check the oracle fails has wrong params, usually a scope glob, `ignore_changes` or a suite test
+    already failing at the start.
+12. **Preview the checks, review, freeze.**
+
+## Trusted commands and offline preparation
+
+Test commands must use trusted tooling rather than workspace substitutes. For a standard-library
+Python suite, one starting recipe is:
+
+```sh
+python3 -I -S -B -c 'import unittest, sys; sys.path.append("/app"); unittest.main(module=None)' discover -s tests
+```
+
+This loads the runner before exposing project imports, keeps standard-library paths ahead of
+`/app`, and disables bytecode explicitly (`-I` ignores environment flags). Adapt for the real
+layout/toolchain and verify that tests genuinely execute, including a failing control. This does
+not protect against an agent modifying the interpreter or the entire toolchain; keep the existing
+scope/integrity checks and protect other command-steering inputs relevant to the repository.
+
+When the execution engine is unavailable, useful preparation can still proceed in disposable
+copies: clone the bundle with its explicit branch, check that the fix is absent, apply the
+reference solution in one copy, leave a no-fix control in another, and exercise the original
+verifier's local hooks (`RELAI_WORKSPACE`, `RELAI_LOGS`, `RELAI_PARAMS`). Use absolute paths for
+those hooks and separate logs per control. Run `verify.py` with trusted verifier imports and
+`-I -S -B`; **never run `tests/test.sh` on the host**, because its cleanup assumes a task container.
+Check a second legitimate solution where it tests a meaningful constraint. Local preparation does
+not establish image build, dependency access, containment or Harbor health: leave those pending.
+
+After the last artifact-changing check, rerun `check_task.py` on the delivered task and inspect
+its contents. Keep generated caches and temporary probes out of it. Do not present a static check
+from before later edits or test-generated files as validation of the final artifact.
+
+## The network and web tools
+
+The network is open by default, as in real use. A task whose fix can be found online (a public
+repository, a published release of the project that contains the fix) can be gamed by fetching
+it: offer to restrict such tasks, record the user's choice in the task's README, and say in the
+report which tasks ran open. To restrict, set `[agent] network_mode = "no-network"`, or
+`"allowlist"` with `allowed_hosts` for a dependency mirror; Harbor lets an installed agent reach
+its model host (the [Harbor notes](../../eval/references/harbor-notes.md)). Server-side web tools
+run at the model provider, past any network limit; restricting the network also switches them off
+(the Harbor notes). On an open network every compared agent uses the same web-tool setting. On an open network, still read the trajectories of surprising
+passes for a fetched fix.
+
+## One request per task
+
+The bundled Harbor coding-task path supplies one instruction and no follow-up. Stopping before
+a risky change can serve as a limited proxy, but does not establish that the agent asks well,
+understands approval and finishes afterward. State that limit in the task and claims. When the
+full interaction matters, use a suitable existing interactive runner or propose the missing
+capability within scope; do not imply that a one-shot proxy measures the whole interaction.

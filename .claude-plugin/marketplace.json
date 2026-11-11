@@ -1,0 +1,15 @@
+{
+  "name": "relai-local",
+  "description": "Local marketplace for developing the RELAI plugin",
+  "owner": {
+    "name": "RELAI"
+  },
+  "plugins": [
+    {
+      "name": "relai",
+      "source": "./",
+      "description": "Eval-driven improvement for AI agents.",
+      "version": "0.1.0"
+    }
+  ]
+}

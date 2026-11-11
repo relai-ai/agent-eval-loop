@@ -1,0 +1,28 @@
+{
+  "name": "relai",
+  "version": "0.1.0",
+  "description": "Eval-driven improvement for AI agents. Build evals first, then improve your agent against them: evals from your traces, code and risks for agent applications, and from sessions, pull requests and git history for coding agents.",
+  "author": {
+    "name": "RELAI"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "RELAI",
+    "shortDescription": "Eval-driven improvement for AI agents.",
+    "longDescription": "RELAI turns traces into requirements, risks and evaluations, and measures improvements against agreed behavioral, cost or latency objectives. Six skills: start, discover, eval, improve, loop, coding-evals (agent-neutral evals for the coding agents a team uses, from its sessions, pull requests and git history). Supports Harbor and native runners, optional held-out tests, and bounded direct fixes.",
+    "developerName": "RELAI",
+    "category": "Productivity",
+    "capabilities": [
+      "Improvement loop",
+      "Trace analysis",
+      "Agent testing",
+      "Regression-gated optimization",
+      "Coding agent evals"
+    ],
+    "defaultPrompt": [
+      "Use RELAI's start skill to see where this agent stands and what to do next.",
+      "Use RELAI's loop skill to improve this agent from its traces.",
+      "Use RELAI's coding-evals skill to turn a pull request or coding session into a reusable coding-agent evaluation."
+    ]
+  }
+}

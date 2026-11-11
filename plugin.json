@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "relai",
+  "version": "0.1.0",
+  "description": "Eval-driven improvement for AI agents. Build evals first, then improve your agent against them: evals from your traces, code and risks for agent applications, and from sessions, pull requests and git history for coding agents.",
+  "author": {
+    "name": "RELAI",
+    "url": "https://relai.ai"
+  },
+  "homepage": "https://relai.ai",
+  "repository": "https://github.com/relai-ai/agent-eval-loop",
+  "keywords": [
+    "ai-agents",
+    "evaluation",
+    "coding-agents"
+  ]
+}
