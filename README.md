@@ -1,25 +1,31 @@
-<h1 align="center">agent-eval-loop</h1>
-
-<p align="center">
-  <b>Eval-driven improvement for AI agents:</b> build evals first, then improve your agent against them.
-</p>
-
-<p align="center">
-  A plugin for Claude Code, Codex and other coding agents, by RELAI (<i>Reliable AI</i>). No CLI, server or account.
-</p>
-
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/workflow-dark.svg">
-    <img alt="RELAI workflow: discover maps the behavior, eval builds the evals, improve makes measured changes, and loop learns, tests, fixes and repeats" src="assets/workflow-light.svg" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
+    <img alt="agent-eval-loop by RELAI. Build evals first, then improve your agent against them. The loop: discover maps the behavior, eval builds the evals, improve makes measured changes, then repeat." src="assets/hero-light.svg" width="100%">
   </picture>
 </p>
 
 <p align="center">
-  <a href="#installation"><img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-2e7d57"></a>
-  <a href="#installation"><img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-2e7d57"></a>
-  <img alt="Agent Skills" src="https://img.shields.io/badge/Agent%20Skills-compatible-2e7d57">
-  <img alt="Harbor tasks" src="https://img.shields.io/badge/evals-Harbor%20tasks-555">
+  <b>Eval-driven improvement for AI agents.</b><br>
+  A plugin for Claude Code, Codex and other coding agents, by RELAI (<i>Reliable AI</i>).
+</p>
+
+<p align="center">
+  <a href="#installation"><img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757?style=flat-square&labelColor=1b2430&logo=claude&logoColor=white"></a>
+  <a href="#installation"><img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-4a74e0?style=flat-square&labelColor=1b2430"></a>
+  <a href="#installation"><img alt="Agent Skills compatible" src="https://img.shields.io/badge/Agent%20Skills-compatible-2e9d6e?style=flat-square&labelColor=1b2430"></a>
+  <a href="https://github.com/harbor-framework/harbor"><img alt="Evals are Harbor tasks" src="https://img.shields.io/badge/evals-Harbor%20tasks-d98a1f?style=flat-square&labelColor=1b2430"></a>
+  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-de5d4f?style=flat-square&labelColor=1b2430"></a>
+  <a href="https://github.com/relai-ai/agent-eval-loop/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/community-discussions-8b6fd6?style=flat-square&labelColor=1b2430&logo=github&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="#installation"><b>Install</b></a> ·
+  <a href="#two-ways-to-use-it">Use cases</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#why-relai">Why RELAI</a> ·
+  <a href="#faq">FAQ</a> ·
+  <a href="DESIGN.md">Design</a>
 </p>
 
 ---
@@ -68,8 +74,11 @@ Install all six skills with the [skills CLI](https://github.com/vercel-labs/skil
 npx skills add relai-ai/agent-eval-loop --skill '*'
 ```
 
-Choose your coding agent when prompted. Installs into the current project; add `-g` for all
-projects. Install all six skills together so their cross-references stay available.
+Choose your coding agent when prompted. That is the whole setup: RELAI is a set of skills your
+coding agent reads, with no CLI, server or account of its own.
+
+Installs into the current project; add `-g` for all projects. Install all six skills together
+so their cross-references stay available.
 Skills-only installs include the bundled templates and checkers; for the optional scripts in
 [`examples/`](examples/), use a native plugin install or keep a full clone.
 
