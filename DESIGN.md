@@ -5,7 +5,7 @@ This document records the current architecture and its rationale. The
 
 **Eval-driven improvement for AI agents.** Build evals first, then improve the agent against them.
 
-RELAI is a plugin-only framework: six skills, a small set of shared checkers, and example scripts
+RELAI is a plugin-only framework: seven skills, a small set of shared checkers, and example scripts
 (a launcher, a judge, a trace triager, a native runner) that stay in the plugin until an
 integration chooses one, with no CLI and no backend. The user's coding agent builds and runs
 everything specific to the user's agent; the plugin fixes what results must look like and what
@@ -32,6 +32,7 @@ without the plugin. Methods for the coding agent live in the skills.
 | --- | --- | --- |
 | `start` | The request is routed, or needed managed state and a useful board exist | none (orientation) |
 | `discover` | Requirements, ranked falsifiable risks and open questions, every trace-derived claim cited | Risks reviewed, consequential open questions answered or deferred |
+| `trace-review` | A project-owned app for full traces, keyboard navigation, filters and persistent source-linked feedback | External data movement or broader hosting when not already authorized |
 | `eval` | Harness (first time), then frozen, reviewed tests that can fail and pass fairly; honest runs that show where the agent stands | Scenarios and grader preview |
 | `improve` | Direct fixes with bounded evidence, regression checks, or measured improvement against an agreed objective | Improvement agreement, unless existing instructions cover it |
 | `loop` | discover → eval → improve as new evidence arrives, with agent-chosen experiments per iteration | One agreement covers delegated decisions; measurement changes are controlled |
@@ -50,6 +51,7 @@ shaped these choices:
 | Choice | Evidence |
 | --- | --- |
 | A `loop` skill composes the others under one contract and a locked verification kernel, asking only about ambiguity, conflicts, safety or policy | The value is a system that keeps improving with little human time; repeating covered approvals would interrupt a long run |
+| A standalone `trace-review` skill builds or adapts a project-owned viewer, leaving the UI stack and trace adapters to the coding agent | Human review needs a working app independently of discovery or eval setup; feedback retains source references without becoming an automatic requirement or score change |
 | Few skills, with specialized work (benchmarks, mocks, shared evaluators) as references inside them | Users could not tell which of many skills to use or in what order |
 | `start` routes from the request and existing infrastructure, with useful next actions | Without prior RELAI knowledge the user would not know the order |
 | Useful knowledge and state in project-owned records, with `relai/` as the default | Users need inspectable context for future development; artifacts are maintained for that value, not as prerequisites to every answer |
