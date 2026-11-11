@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a reproducible problem with a skill, checker, verifier, or integration.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For suspected vulnerabilities, follow [SECURITY.md](https://github.com/relai-ai/agent-eval-loop/blob/main/SECURITY.md) instead of posting here.
+        Use synthetic data or short redacted excerpts. Do not upload credentials, raw production traces, private source code, or personal data.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include steps, a plain-language skill request or checker command, and synthetic inputs where possible. If it is intermittent, include the number of attempts and outcomes.
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Plugin version or commit
+      description: Include the installation method and any local modifications. Say if the revision is unknown.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Relevant environment
+      description: Include the coding agent and version, OS, Python, runner, container engine, or model/provider when relevant. For copied project files, include their source revision if known. Omit credentials and private endpoints.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence (optional)
+      description: Include short error excerpts, checker output, or a synthetic example. Separate observed facts from suspected causes, and mention any checks you could not run.

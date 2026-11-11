@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/relai-ai/agent-eval-loop/blob/main/SECURITY.md
+    about: Follow the private reporting instructions; do not post vulnerability details in an issue.

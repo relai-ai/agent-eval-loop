@@ -297,7 +297,11 @@ Once set up, the repository gets a `relai/` folder. Its contract is in `relai/RE
 
 ## Contributing
 
-Issues and pull requests are welcome. Run the checker tests with:
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
+validation, and review guidance, and follow our [code of conduct](CODE_OF_CONDUCT.md).
+Report suspected vulnerabilities privately using [SECURITY.md](SECURITY.md).
+
+Run the checker tests with:
 
 ```text
 python3 -m unittest discover -s tests
