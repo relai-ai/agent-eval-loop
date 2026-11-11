@@ -13,6 +13,11 @@ project for coding agents (`[coding_evals]` in `relai.toml`), the agent under te
 agent: its traces are coding sessions, and the team's instructions for coding agents ground
 requirements.
 
+For a request to build or adapt an interactive trace viewer, use the
+[trace-review skill](../trace-review/SKILL.md). Analysis alone stays here; a review app is not
+a prerequisite. Reuse source-linked human feedback from an existing app as evidence, keeping
+verdicts distinct from recorded behavior.
+
 Goal: answer the user's question about intended behavior, supported risks and uncertainty, and
 leave knowledge that will help future development, evaluation or improvement.
 

@@ -9,12 +9,13 @@
   "interface": {
     "displayName": "RELAI",
     "shortDescription": "Eval-driven improvement for AI agents.",
-    "longDescription": "RELAI turns traces into requirements, risks and evaluations, and measures improvements against agreed behavioral, cost or latency objectives. Six skills: start, discover, eval, improve, loop, coding-evals (agent-neutral evals for the coding agents a team uses, from its sessions, pull requests and git history). Supports Harbor and native runners, optional held-out tests, and bounded direct fixes.",
+    "longDescription": "RELAI turns traces into requirements, risks and evaluations, and measures improvements against agreed behavioral, cost or latency objectives. Seven skills: start, discover, trace-review (project-owned trace review apps with persistent feedback), eval, improve, loop, coding-evals (agent-neutral evals for the coding agents a team uses, from its sessions, pull requests and git history). Supports Harbor and native runners, optional held-out tests, and bounded direct fixes.",
     "developerName": "RELAI",
     "category": "Productivity",
     "capabilities": [
       "Improvement loop",
       "Trace analysis",
+      "Trace review apps",
       "Agent testing",
       "Regression-gated optimization",
       "Coding agent evals"
