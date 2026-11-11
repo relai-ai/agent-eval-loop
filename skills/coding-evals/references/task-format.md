@@ -58,11 +58,32 @@ relai/tests/<id>/
    plus the lesson's checks; declare each in `task.toml` under the id `verify.py` or the judge
    uses.
 10. **Check.** `python3 relai/bin/check_task.py relai/tests/<id>`.
-11. **Health.** Run Harbor's `oracle` and `nop` agents on the task, then `summarize.py`: the
-    oracle must score every outcome check at full marks and nop must fail the primary one. A
-    check the oracle fails has wrong params, usually a scope glob, `ignore_changes` or a suite test
-    already failing at the start.
+11. **Validate.** Establish environment readiness, evaluator validity and oracle/nop health
+    as below; record the evidence in the task record.
 12. **Preview the checks, review, freeze.**
+
+## Validation
+
+Oracle/nop health alone does not establish that the agent can work normally or that every
+legitimate solution passes. Before freezing, collect evidence for all three:
+
+- **Agent environment.** In a fresh instance of the final task environment, before verifier
+  restoration or hidden-test installation, run the repository's documented test/build commands
+  as the agent's execution user, with its permissions and runtime settings. Start without caches
+  or artifacts left by health runs. Record commands, user, outcomes, known baseline failures and
+  intentional differences from verifier commands. Failures due to the starting bug are expected;
+  setup must allow normal verification, including required cache and output writes. Check with
+  the reference fix when needed to distinguish baseline behavior from an environment defect.
+- **Evaluator validity.** Identify an assumption the tests share with the reference fix and
+  demonstrate that a requirement-consistent alternative passes, using another solution or a
+  targeted executable probe. Cite why the request permits it and record the observed result;
+  merely different code or a hypothetical pass is insufficient. Control incidental time,
+  randomness and initialization state in fixtures. Where ordering matters, ensure timestamps and
+  insertion order express the intended scenario; do not impose an order the request leaves open.
+- **Health controls.** Run Harbor's `oracle` and `nop` agents on the final task, then
+  `summarize.py`: the reference fix must score every outcome check at full marks and untouched
+  code must fail the primary check. Investigate unexpected scores rather than assuming the
+  reference fix or evaluator is right. These controls call no model.
 
 ## Trusted commands and offline preparation
 
@@ -85,7 +106,7 @@ reference solution in one copy, leave a no-fix control in another, and exercise 
 verifier's local hooks (`RELAI_WORKSPACE`, `RELAI_LOGS`, `RELAI_PARAMS`). Use absolute paths for
 those hooks and separate logs per control. Run `verify.py` with trusted verifier imports and
 `-I -S -B`; **never run `tests/test.sh` on the host**, because its cleanup assumes a task container.
-Check a second legitimate solution where it tests a meaningful constraint. Local preparation does
+Exercise the evaluator-validity probe above where possible. Local preparation does
 not establish image build, dependency access, containment or Harbor health: leave those pending.
 
 After the last artifact-changing check, rerun `check_task.py` on the delivered task and inspect
