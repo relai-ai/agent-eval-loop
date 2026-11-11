@@ -21,14 +21,33 @@ observed; a complete implementation proposal is optional.
 ## Set up a local checkout
 
 Fork the repository if you do not have write access, clone your fork, and create a branch for
-your change. From the repository root, run:
+your change. Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then run
+from the repository root:
 
 ```sh
-python3 -m unittest discover -s tests
+uv sync --locked --python 3.12
+uv run --locked python -m unittest discover -s tests
 ```
 
-Python 3.11 or newer is required. The bundled checkers and example scripts use the standard
-library; there is no package build or backend to start.
+The development environment lives in `.venv/`. `pyproject.toml` declares the test dependencies
+and `uv.lock` records their resolved versions; commit both when changing dependencies. Use
+`uv lock --upgrade-package pytest` to deliberately update pytest and its required dependencies,
+review the lockfile diff, and rerun the tests. No shell activation is needed with `uv run`.
+
+Python 3.11 or newer is supported by the bundled checkers and examples, which use the standard
+library. The uv project is for plugin development only; no Python package is built or installed,
+and plugin users do not need this development environment. For a standard-library-only run,
+`python3 -m unittest discover -s tests` still works, with prerequisite-dependent skips.
+
+GitHub Actions runs the suite, including manifest version consistency and referenced-file
+checks, on every pull request and push to `main`, using Python 3.12 on Linux. CI installs uv
+and syncs the locked development dependencies; container tests detect an available compatible
+engine. The logs show each test outcome, and the job summary lists every skipped test with its reason.
+Skipped tests do not establish integration coverage. To use the same runner locally:
+
+```sh
+uv run --locked python .github/scripts/run_tests.py
+```
 
 Some tests have additional prerequisites and skip when those are absent:
 

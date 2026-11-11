@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import tomllib
 import unittest
 from urllib.parse import unquote, urlsplit
 
@@ -23,6 +24,7 @@ class PluginTest(unittest.TestCase):
         versions["marketplace"] = market["plugins"][0]["version"]
         header = re.match(r"<!-- relai (\S+) -->", (TEMPLATE / "README.md").read_text())
         versions["template README"] = header and header.group(1)
+        versions["pyproject"] = tomllib.loads((PLUGIN / "pyproject.toml").read_text())["project"]["version"]
         self.assertEqual(len(set(versions.values())), 1, versions)
 
     def test_referenced_files_exist(self):
