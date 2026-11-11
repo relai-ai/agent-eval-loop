@@ -300,6 +300,7 @@ Once set up, the repository gets a `relai/` folder. Its contract is in `relai/RE
 Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
 validation, and review guidance, and follow our [code of conduct](CODE_OF_CONDUCT.md).
 Report suspected vulnerabilities privately using [SECURITY.md](SECURITY.md).
+Ask questions and share examples in [Discussions](https://github.com/relai-ai/agent-eval-loop/discussions).
 
 Run the checker tests with:
 
