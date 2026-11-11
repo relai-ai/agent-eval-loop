@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <a href="#quickstart"><img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-2e7d57"></a>
-  <a href="#quickstart"><img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-2e7d57"></a>
+  <a href="#installation"><img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-2e7d57"></a>
+  <a href="#installation"><img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-2e7d57"></a>
   <img alt="Agent Skills" src="https://img.shields.io/badge/Agent%20Skills-compatible-2e7d57">
   <img alt="Harbor tasks" src="https://img.shields.io/badge/evals-Harbor%20tasks-555">
 </p>
@@ -26,18 +26,41 @@
 
 ## Two ways to use it
 
-- **🤖 Agent applications and business workflows.** The agents you build and ship, whatever
-  framework they use. RELAI builds evals from your traces, or generates them from the agent's code,
-  docs and risks, then improves prompts, tools, workflow, memory or model, keeping a change only
-  when the evals show it helped and the guardrails held.
-- **🏭 Coding agents and software factories.** The coding agents your team uses: Claude Code, Codex,
-  OpenHands or your own setup of one. RELAI turns your coding sessions, pull requests and git history
-  into tasks any coding agent can run, then shows whether a new model, CLAUDE.md, skill or agent
-  actually helps on *your* code.
+### 🤖 Agent applications and business workflows
 
-## Quickstart
+The agents you build and ship, whatever framework they use. RELAI builds evals from your traces,
+or generates them from the agent's code, docs and risks, then improves prompts, tools, workflow,
+memory or model, keeping a change only when the evals show it helped and the guardrails held.
 
-### 1. Install the plugin
+Open your agent's repository and ask:
+
+```text
+Use RELAI's discover skill to map this agent's behavior and where it can fail
+```
+
+Or start from production traces:
+
+```text
+Use RELAI's loop skill to improve this agent from ./traces;
+optimize task success and cost
+```
+
+### 🏭 Coding agents and software factories
+
+The coding agents your team uses: Claude Code, Codex, OpenHands or your own setup of one.
+RELAI turns your coding sessions, pull requests and git history into tasks any coding agent
+can run, then shows whether a new model, CLAUDE.md, skill or agent actually helps on *your* code.
+
+Open an eval project and ask:
+
+```text
+Use RELAI's coding-evals skill to mine ../api for tasks from the last six months,
+then compare our coding agents
+```
+
+You can start at any skill without completing the full workflow.
+
+## Installation
 
 Install all six skills with the [skills CLI](https://github.com/vercel-labs/skills) (requires Node.js/npm):
 
@@ -97,34 +120,6 @@ To update a manual install, run `git -C ~/agent-eval-loop pull` and copy the ski
 
 </details>
 
-### 2. Choose where to start
-
-For an agent application or business workflow, open its repository and ask:
-
-```text
-Use RELAI's discover skill to map this agent's behavior and where it can fail
-```
-
-Or start from production traces:
-
-```text
-Use RELAI's loop skill to improve this agent from ./traces;
-optimize task success and cost
-```
-
-For a software factory, open an eval project and ask:
-
-```text
-Use RELAI's coding-evals skill to mine ../api for tasks from the last six months,
-then compare our coding agents
-```
-
-### 3. Follow the request
-
-RELAI checks the prerequisites needed for the task, names missing credentials and reuses existing runners and tests. It uses your project's credential mechanism or `relai/.env`; coding agents never read credential values, while executable helpers use them for authentication and redaction.
-
-You can start at any skill without completing the full workflow.
-
 ## See one complete example
 
 > **Before publishing:** Add one real example from the current OSS product showing:
@@ -158,6 +153,8 @@ You can start at any skill without completing the full workflow.
 | **`coding-evals`** | Mines coding sessions, pull requests and git history for tasks any coding agent can run, then compares agents and setups on them. | Which agents and repositories; which tasks to build; whether the checks score the way you would. |
 
 When RELAI-managed state is useful, `relai/STATUS.md` shows the current request, relevant progress, what is waiting on you and the recommended next step.
+
+RELAI checks the prerequisites needed for the task, names missing credentials and reuses existing runners and tests. It uses your project's credential mechanism or `relai/.env`; coding agents never read credential values, while executable helpers use them for authentication and redaction.
 
 ## Agent applications and business workflows
 
