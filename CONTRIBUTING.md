@@ -40,7 +40,7 @@ and plugin users do not need this development environment. For a standard-librar
 `python3 -m unittest discover -s tests` still works, with prerequisite-dependent skips.
 
 GitHub Actions runs the suite, including manifest version consistency and referenced-file
-checks, on every pull request and push to `main`, using Python 3.12 on Linux. CI installs uv
+checks, on every pull request and manual dispatch, using Python 3.12 on Linux. CI installs uv
 and syncs the locked development dependencies; container tests detect an available compatible
 engine. The logs show each test outcome, and the job summary lists every skipped test with its reason.
 Skipped tests do not establish integration coverage. To use the same runner locally:
