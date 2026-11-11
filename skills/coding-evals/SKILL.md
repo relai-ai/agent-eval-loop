@@ -118,8 +118,8 @@ offline, an ambiguous request). In chat, show one compact table in the order you
 building (real failures and corrections first, then kinds of work the set lacks): the task, its
 source, the request in one line, and what failing looks like. Below it, say that building and the
 health runs call no model, and give the cost (or plan usage) and time of one trial per version
-compared; a yes approves that as this build's budget. Ask one question: build them all, build
-only the first few, or change the list.
+compared; a yes approves that as this build's budget. Ask which tasks to build: all, only the first
+few, or change the list.
 
 ## Preview the checks
 
@@ -132,9 +132,10 @@ with the full artifact and pending decisions accessible. For the subset being ap
 every judge's rubric summary and
 every score that differs from what its case should get (an oracle check below full marks, a nop
 that passes the primary check); summarize the rest per task in one line, such as "4 code checks
-scored as expected". Ask one question across the current subset: would you score any of these
-differently, or is anything you care about not checked? Iterate until the answer is no, then
-review and freeze only that approved subset; remaining tasks stay pending.
+scored as expected". Ask whether the current subset needs scoring changes or is missing anything
+the user cares about; separate independent choices as the shared guidance describes. Iterate
+until the answer is no, then review and freeze only that approved subset; remaining tasks stay
+pending.
 
 ## After the first comparison
 
