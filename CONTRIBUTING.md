@@ -5,6 +5,7 @@ examples, and tests of how the skills guide a coding agent all help.
 
 Read our [code of conduct](CODE_OF_CONDUCT.md). Report suspected vulnerabilities privately
 using [SECURITY.md](SECURITY.md), rather than an issue or pull request.
+See [MAINTAINERS.md](MAINTAINERS.md) for the maintainers and review ownership.
 
 ## Find a useful starting point
 
