@@ -111,7 +111,7 @@ test's full design to `relai/work/eval/<date>-scenarios.md` ([test-design](refer
 behavior, its source, the scenario in one line naming the real data and the trigger that makes
 it hard, what failing looks like, and its opposite-direction partner, if any. Below it, give the
 cost and time of one trial per test plus judging, in total; a yes approves that as this build's
-budget, and you ask again only before exceeding it. Ask one question: build them all, build only
+budget, and you ask again only before exceeding it. Ask which tests to build: all, only
 the first few, or change the list.
 
 ## Preview the graders before freezing
@@ -128,10 +128,10 @@ its case should get (a failing case not scored low,
 a passing one below full marks, a missing required deliverable above the minimum). An empty
 reply may pass a pure prohibition; preview an actual violation to show that check can fail.
 Summarize the rest per test in
-one line, such as "4 code checks scored as expected". Ask one question across the current subset: would
-you score any of these differently, or is anything you care about not measured? Iterate until
-the answer is no, then review and freeze. When the agreement delegates this decision, the
-fresh test review stands in for the user. Build/freeze only the subset whose required decisions
+one line, such as "4 code checks scored as expected". Ask whether the current subset needs scoring
+changes or is missing anything the user cares about; separate independent choices as the shared
+guidance describes. Iterate until the answer is no, then review and freeze. When the agreement
+delegates this decision, the fresh test review stands in for the user. Build/freeze only the subset whose required decisions
 are resolved; do not treat partial review as approval of the remaining tests.
 
 ## Approach

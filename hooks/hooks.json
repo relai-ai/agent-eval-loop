@@ -1,0 +1,29 @@
+{
+  "description": "RELAI: ask before editing a frozen test; run the project's checkers after edits under relai/. Silent outside RELAI projects.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/relai_hook.py\" guard-frozen",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/relai_hook.py\" check-edit",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

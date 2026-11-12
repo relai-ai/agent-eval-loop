@@ -21,6 +21,7 @@ must stay true, and asks the user wherever a choice is theirs.
 | `skills/<skill>/SKILL.md` | Each skill's routing, prerequisites, completion criteria and essential constraints |
 | `skills/<skill>/references/` | Suggested methods and review briefs, linked relative to their caller and loaded only when needed |
 | `examples/` | Example scripts, copied into a project only when an integration chooses one |
+| `hooks/` | Optional hooks for plugin hosts that support them: `hooks.json` (Claude Code) and `codex-hooks.json` (Codex, named in its manifest). Before an edit to a frozen test, Claude Code asks the user; Codex hooks cannot ask, so there the agent is warned. After an edit, the project's own `relai/bin/` checkers run on the edited test or wiki page. The hooks hold no rule of their own, do nothing outside a RELAI project and fail open |
 | `skills/coding-evals/verifier/` | The coding-task verifier (`coding_checks.py`, `test.sh`), copied into each task's `tests/`; used as it is by default, adapted only when its guarantees are kept and its tests pass |
 
 Contracts the user's repository depends on live in the template, so `relai/` stays usable
@@ -36,7 +37,7 @@ without the plugin. Methods for the coding agent live in the skills.
 | `eval` | Harness (first time), then frozen, reviewed tests that can fail and pass fairly; honest runs that show where the agent stands | Scenarios and grader preview |
 | `improve` | Direct fixes with bounded evidence, regression checks, or measured improvement against an agreed objective | Improvement agreement, unless existing instructions cover it |
 | `loop` | discover → eval → improve as new evidence arrives, with agent-chosen experiments per iteration | One agreement covers delegated decisions; measurement changes are controlled |
-| `coding-evals` | Agent-neutral tasks from real sessions, pull requests and history, healthy (solvable, can fail) and frozen; comparisons of coding agents and setups | Scope, task list and check preview |
+| `coding-evals` | Agent-neutral tasks from real sessions, pull requests and history, validated and frozen; comparisons of coding agents and setups | Uncovered scope/task/budget choices, then check preview; approvals may be delegated |
 
 These skills are independent entrypoints, not mandatory stages. Existing instructions can supply
 or delegate approval; method references do not expand authorization. Examples are optional project
@@ -76,6 +77,7 @@ shaped these choices:
 | Standards drafted from the team's files; the judges are shared evaluators; no task template, only the verifier | Asking open-ended questions about "good" ignored what the repository already says. A copied task template would be a maintained surface holding nothing a capable agent cannot write from the contract |
 | The verifier trusts only what arrives with `tests/`, in a shared library adapted only with its guarantees kept and its tests rerun | In two rounds of review, an added `conftest.py`, pytest options in `pyproject.toml`, a symlinked `tests/`, a stale `.pyc`, a rewritten start marker, a hostile git config, a planted `reward.json` and a leftover process each defeated an earlier draft |
 | The verifier library checks only exact facts and knows no ecosystem; each task names its protected and restored files; what the agent did is judged by `safe-process` | Built-in file lists and command regexes for every ecosystem misfire on specific repositories, and parsing tool names favored the agents whose naming was anticipated |
+| Hooks only surface existing guarantees: an edit to a frozen test asks first rather than being refused, and checker failures after an edit come back to the agent as context | Controlled repairs of frozen tests are legitimate; the guarantees must hold on hosts without hooks, so the rules stay in the template and the checkers |
 | A hang or broken test run caused by the agent's change scores 0 | Errors are left out of averages, so counting the agent's own breakage as an error raised its solved rate |
 
 ## The loop

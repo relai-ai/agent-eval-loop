@@ -34,6 +34,11 @@ Score the judges, then `summarize.py` each run and compare against the baseline 
   fairness.
 - **Failure patterns**: which checks failed together. Read a few trajectories from each large
   group and quote where the agent went wrong.
+- **Measurement defects**: distinguish pre-existing environment or fixture failures from
+  breakage introduced by the agent. Preserve original runs and scores, identify affected checks
+  and claims, and follow the freeze rule for repairs and comparable reruns. Do not count affected
+  evidence as an agent failure or silently drop it from reported coverage; limit process
+  judgments to what the trajectory supports ([safe process](checks.md#safe-process-shared-evaluator)).
 - **Contamination**: report separately the tasks whose fix was public before a model's training
   cutoff.
 - Cost (or plan usage) per solved task and time per trial go beside the scores. State units and
@@ -95,8 +100,8 @@ unchanged.
 
 ## Maintenance
 
-- Recheck health (oracle and nop, free) when a base image or dependency source may have moved; a
-  task broken by an outside change is repaired or retired under the freeze rule.
+- Recheck affected [validation](task-format.md#validation) when a base image or dependency source
+  may have moved; a task broken by an outside change is repaired or retired under the freeze rule.
 - Add fresh tasks from recent work: newer fixes are less likely to be in training data.
 - Retire tasks that no longer separate anything only with the user's approval.
 - When an agent or model version changes, rerun at the new version; never mix versions under

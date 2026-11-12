@@ -47,7 +47,9 @@ setup files as its scope ([comparing](references/comparing.md)).
   - Each task is under `relai/tests/<id>/` in the agent-neutral format, with a `README.md` stating
     source, behavior, evaluators, known failures and contamination; `check_task.py` passes.
   - **Healthy:** an oracle run (the reference fix) scored every outcome check at full marks and a
-    nop run (the untouched code) failed the primary check. Neither calls a model.
+    nop run (the untouched code) failed the primary check; the agent's working environment and
+    evaluator validity were also checked ([validation](references/task-format.md#validation)).
+    These checks call no model.
   - **Checks previewed:** the user, or the delegated reviewer, approved the preview below.
   - A fresh review ([review-coding-task](references/review-coding-task.md)) approved each task;
     `freeze.py` ran.
@@ -73,12 +75,14 @@ setup files as its scope ([comparing](references/comparing.md)).
   the developer's words and no diagnosis, file name or fix they did not give. Dependencies install
   at the versions the start commit pins.
 - **A correct fix passes, whatever it looks like.** Hidden tests check behavior through public
-  interfaces. Before freezing, name a second correct fix and check that it would pass.
+  interfaces. Before freezing, challenge assumptions shared with the reference fix using an
+  executable, requirement-consistent alternative ([validation](references/task-format.md#validation)).
 - **The verifier trusts only what arrives with `tests/`.** Start from the plugin's
   [verifier](verifier/) (`test.sh` and `coding_checks.py`); adapt it only when its extension
   points cannot meet the need, keeping its guarantees and rerunning its tests
   ([checks](references/checks.md), *Adapting the verifier*). An agent's change that makes a
-  command hang or unable to run scores 0. Read the trajectories of surprising passes.
+  command hang or unable to run scores 0; task defects follow the controlled repair process,
+  not attribution to the agent. Read the trajectories of surprising passes.
 - **Real work first.** Sessions, pull requests and history before injected bugs; injected bugs
   and public anchors are reported apart from the rest.
 - **Provenance and privacy.** Each task records its origin, commits, fix date and whether the
@@ -95,46 +99,43 @@ setup files as its scope ([comparing](references/comparing.md)).
 
 ## Ask the user
 
-The user is asked at three points in a build: once at scope, at task-list approval and at the
-check preview; and after the first comparison that scores real trials. Skip any question the
-request, `relai/decisions.md`, the wiki or an agreement already answers, and present what you
-found first ([scope](references/scope.md)) as something to confirm, not to answer. Name each
-credential to add to `relai/.env` as an instruction, not a question, and continue the work that
-does not need it.
+Carry forward scope, budget and approvals from the request, `relai/decisions.md`, the wiki or an
+agreement. Combine unresolved scope and task selection in one checkpoint when the evidence is
+ready; ask about check previews once validation is ready, unless already covered or delegated.
+Approval of a task list alone does not approve unseen scoring. Present discovered facts first
+([scope](references/scope.md)); ask only about uncovered choices or material changes. After the
+first comparison, show the real-trial judge checks. Name credentials to add to `relai/.env` as
+instructions and continue work that does not need them.
 
 Beyond those points, ask only when it blocks the work: when a session has no clear outcome (as
 feedback in `relai/feedback.md`), when an instruction cannot be written without giving the fix
 away (whether to drop the task), and before a task leaves this repository or is built from a
 repository outside the scope.
 
-## Approve the task list
+## One task record, two decisions
 
-Unless an agreement already covers it, wait for a yes before building. Write each proposed
-task's full design to `relai/work/coding-evals/<date>-tasks.md`: its source with a link or path;
-the developer's request; the kind of work and area; what the hidden tests will check; checks
-beyond the standard set and the lesson behind them; the start and fix commits and fix date; the
-network setting; and what could make it invalid (a flaky suite, a workspace that cannot build
-offline, an ambiguous request). In chat, show one compact table in the order you recommend
-building (real failures and corrections first, then kinds of work the set lacks): the task, its
-source, the request in one line, and what failing looks like. Below it, say that building and the
-health runs call no model, and give the cost (or plan usage) and time of one trial per version
-compared; a yes approves that as this build's budget. Ask one question: build them all, build
-only the first few, or change the list.
+Use each task's `README.md` as its evolving design and validation record; reuse an existing
+equivalent record rather than create separate task-design and check-preview documents. Link to
+commands, tests, rubrics, run artifacts and independent review instead of copying them. Record
+approvals and their scope in `decisions.md` with links to the record. Keep subsequent run notes
+outside frozen task contents.
 
-## Preview the checks
+**Before building**, record the source, developer's request, kind and area, start/fix commits
+and fix date, contamination and network setting, intended checks and their source-backed lesson,
+and validity risks. Show a compact task table (source, request, what failing looks like), with
+real failures and corrections first. State that building and health checks call no model, and
+estimate trial cost or plan usage and time, with tasks × versions × attempts. Unless already
+authorized, obtain task selection and budget approval before building.
 
-Unless an agreement already covers it, and without running an agent, write every task's full
-preview to `relai/work/coding-evals/<date>-check-preview.md`: the oracle and nop scores of every
-outcome check, the hidden tests and what each asserts, the protected, restored and scope globs,
-the second correct fix, and each judge's rubric. Size chat previews by the shared
-[decision-effort rule](../start/template/README.md#working-with-the-user); use manageable subsets
-with the full artifact and pending decisions accessible. For the subset being approved, show
-every judge's rubric summary and
-every score that differs from what its case should get (an oracle check below full marks, a nop
-that passes the primary check); summarize the rest per task in one line, such as "4 code checks
-scored as expected". Ask one question across the current subset: would you score any of these
-differently, or is anything you care about not checked? Iterate until the answer is no, then
-review and freeze only that approved subset; remaining tasks stay pending.
+**Before freezing**, add the [validation evidence](references/task-format.md#validation), each
+hidden test's assertion, protected/restored/scope globs and judge rubrics to that same record,
+using links where the artifacts already say it. Preview every judge's rubric summary and any
+unexpected control score; summarize expected scores per task. Following the shared
+[decision-effort rule](../start/template/README.md#working-with-the-user), ask about scoring and
+coverage choices still needing approval, in manageable subsets. Resolve defects and obtain a
+fresh independent [review](references/review-coding-task.md), then freeze only the approved,
+validated subset. A delegated reviewer can cover preview approval and independent review in one
+pass when the agreement authorizes both; unresolved tasks stay pending.
 
 ## After the first comparison
 

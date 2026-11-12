@@ -1,0 +1,29 @@
+{
+  "description": "RELAI: warn when an edit changes a frozen test; run the project's checkers after edits under relai/. Silent outside RELAI projects.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/hooks/relai_hook.py\" guard-frozen --host codex",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/hooks/relai_hook.py\" check-edit --host codex",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

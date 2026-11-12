@@ -54,8 +54,8 @@ Sort every dimension the log and feedback suggest:
 
 - **Explicit**: the feedback or the user's answer states it. Cover it, or say why the recording
   cannot show it.
-- **Candidate**: the log suggests it but the feedback does not. Ask before evaluating it; group
-  related candidates into one question and ask them all at once.
+- **Candidate**: the log suggests it but the feedback does not. Ask before evaluating it; present
+  related candidates at the same checkpoint, keeping independent choices separately answerable.
 - **Unsupported**: there is no reliable expected behavior or source of truth. Do not evaluate it.
 
 Keep distinct confirmed criteria in separate evaluators, so one failure cannot hide behind
