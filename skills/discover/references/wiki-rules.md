@@ -1,10 +1,11 @@
 # Wiki page rules
 
-Use the wiki to assist future development, evaluation and improvement. Maintain it actively when
-the information serves that purpose, initializing it when justified unless the user opts out or
-requests read-only work. These page rules describe `relai/wiki/`; use suitable existing project
-records when they preserve the same knowledge. Explain material updates and run `check_wiki.py`
-after managed wiki changes.
+Use the wiki to assist future development, evaluation and improvement. Trace ingestion creates
+or updates it by default under the [discover skill](../SKILL.md); other discovery paths maintain
+it when the information serves that purpose. Respect explicit persistence opt-outs and read-only
+requests. These page rules describe `relai/wiki/`; an existing structured project wiki may preserve
+the same knowledge, but a standalone analysis report does not replace it. Explain material
+updates and run `check_wiki.py` after managed wiki changes.
 
 ## Rules
 

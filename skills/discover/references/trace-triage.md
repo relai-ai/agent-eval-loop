@@ -20,6 +20,11 @@ Inventory the selected set and reuse available summaries or mechanical checks fr
 heuristics cannot establish that an unconfirmed action was unauthorized or that an unmatched
 number was invented. Do not build a generic audit-script suite as a prerequisite.
 
+Seek breadth beyond the first failure cluster: use relevant task types, policy obligations,
+tool workflows and outcome groups to find unexplored signals. Adapt checks and sampling as new
+mechanisms appear. Keep lower-priority findings and unresolved leads visible separately from
+the shortlist; a few compelling failures do not establish that discovery is complete.
+
 Choose a pilot and inspect its output against the source traces before scaling an unfamiliar
 method. Revise the method if it misjudges outcomes or invents signals. Supply relevant target
 policy and requirements when judging behavior; unresolved expectations remain uncertain.
@@ -58,8 +63,9 @@ reading every trace after triage. Report selected and processed counts, errors, 
 sampling rationale, truncation and unresolved or unexamined material. A completed triage is not
 an exhaustive correctness judgment.
 
-Lead the handoff with findings, uncertainty and useful next decisions. Maintain durable findings
-and lessons when they help future work, respecting read-only requests and wiki opt-outs; the
-triage report itself is not automatically wiki content. Keep raw-trace reports under `relai/work/`
+Lead the handoff with findings, uncertainty and useful next decisions. Report why investigation
+stopped and what credible signals or coverage remain unexamined. Maintain structured EvalsWiki
+under the [ingestion default](../SKILL.md), respecting read-only requests and explicit opt-outs;
+distill checked findings rather than copying the triage report into wiki pages. Keep raw-trace reports under `relai/work/`
 or equivalent local work records; commit only checked, redacted excerpts under the applicable
 authorization.

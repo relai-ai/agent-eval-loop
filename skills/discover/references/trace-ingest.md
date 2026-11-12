@@ -1,7 +1,8 @@
 # Learn from traces
 
-Goal: answer the trace question and maintain durable knowledge when it helps future work. Every
-claim cites checked source evidence; retain redacted excerpts for claims persisted in the wiki.
+Goal: answer the trace question, seek broad useful signals and maintain EvalsWiki under the
+[ingestion default](../SKILL.md). Every claim cites checked source evidence; retain redacted
+excerpts for claims persisted in the wiki.
 Page rules are in [wiki rules](wiki-rules.md); trace safety, opt-outs and redaction are in the
 [discover skill](../SKILL.md).
 
@@ -9,6 +10,10 @@ Page rules are in [wiki rules](wiki-rules.md); trace safety, opt-outs and redact
 
 - Establish the selected source set and useful coverage with [trace auditing](trace-audit.md)
   or [scalable triage](trace-triage.md); reuse the project's inventory where suitable.
+- Keep the full finding inventory distinct from the priority shortlist. Repeated examples may
+  strengthen an existing finding; do not let them crowd out other mechanisms, lower-priority
+  findings or useful uncertainty. Keep unverified leads labelled in work records rather than
+  promoting them to requirements or established failures.
 - A requirement needs strong evidence of expected behavior (user feedback, corrections, policies).
 - Traces where the agent succeeded only sharpen a risk (see *Evidence for risks*); they never
   raise confidence in it on their own.

@@ -18,15 +18,21 @@ For a request to build or adapt an interactive trace viewer, use the
 a prerequisite. Reuse source-linked human feedback from an existing app as evidence, keeping
 verdicts distinct from recorded behavior.
 
-Goal: answer the user's question about intended behavior, supported risks and uncertainty, and
-leave knowledge that will help future development, evaluation or improvement.
+Goal: answer the user's question about intended behavior, supported risks and uncertainty, seeking
+broad coverage of useful signals within scope and available resources, and leave maintained
+knowledge for future development, evaluation or improvement.
 
-Actively maintain EvalsWiki and useful local state when the findings have that future value.
-Update existing knowledge rather than duplicate it; initialize needed records through the
-[start skill](../start/SKILL.md) when justified. Respect read-only requests and wiki opt-outs.
-Routine authorized maintenance needs no repeated approval, and setup is not an independent
-prerequisite for giving useful findings. The paths below describe RELAI-managed knowledge;
-project equivalents may serve the same purpose.
+Actively maintain EvalsWiki, useful local state and reusable project-local assets when they have
+that future value, following the [shared maintenance policy](../start/template/README.md#maintain-useful-knowledge).
+For trace ingestion, create or update structured EvalsWiki by default unless the user explicitly
+opts out of persistence or requests read-only work. Reuse existing wiki pages; when absent,
+initialize through the [start skill](../start/SKILL.md). A standalone report does not substitute
+for indexed requirements, risks and consequential open questions with checked evidence. Routine
+local maintenance needs no repeated approval; it does not require an eval harness, provider
+credentials or implemented tests. Give useful findings while maintaining knowledge, not only
+after setup. The paths below describe RELAI-managed knowledge; an existing structured project
+wiki can serve the same purpose. Other local records remain suitable for work inventories and
+reusable assets. Respect explicit read-only requests and wiki opt-outs across discovery paths.
 
 ## Done when
 
@@ -38,15 +44,17 @@ project equivalents may serve the same purpose.
     their source traces, and inspect a justified sample in full as
     [trace triage](references/trace-triage.md) describes. Do not also require a full read of every
     trace. Report processed, failed, sampled, truncated and unexamined material.
-- Useful durable findings were maintained in the wiki or relevant local records when authorized;
-  temporary plans and speculative filler were not persisted. Every claim cites checked source
+- The ingestion wiki default above was followed; useful durable findings from other discovery
+  paths were maintained in the wiki or relevant local records. Temporary plans and speculative
+  filler were not persisted. Every claim cites checked source
   evidence. For persisted trace-derived claims, retain short redacted excerpts under
   `relai/wiki/attachments/<ingest-id>/`; run `check_wiki.py` after managed wiki changes.
 - **Risk review:** consequential decisions needed for this work were resolved under existing
   authority, reviewed with the user, or explicitly deferred. Record admissions, revisions and
   rejections where useful. Commit excerpts only under authorization covering that data movement;
   explain their potential to hold personal data when that choice has not been settled.
-- Report the findings, limits, material knowledge updates and pending decisions. Update an
+- Report the finding inventory, limits, stopping reason, remaining coverage gaps, material
+  knowledge updates and pending decisions. Update an
   existing managed board when relevant, and name a next action only if one is useful.
 
 ## Rules
@@ -83,6 +91,11 @@ user" in `relai/README.md` says when the agreement leaves a consequential choice
   parallelize independent analysis as appropriate. The selected coverage mode, not a fixed script
   sequence, determines completion. Shortened transcripts can guide selection but cannot support
   claims about omitted content.
-- **Rank and stop.** Prefer well-evidenced risks over speculative volume.
+- **Discover before selecting.** Do not stop merely because enough high-priority findings have
+  been found. Preserve distinct lower-priority findings, weak signals, uncertainties and coverage
+  gaps with their evidence and status; rank without dropping that inventory. Continue while
+  credible unexplored signals remain within the request and available resources. Stop when
+  useful investigation opportunities are exhausted or an existing constraint prevents more work;
+  do not manufacture speculative volume or claim that triage found every issue.
 - **Say what it found.** Lead the report with what the user did not know: "your 20 runs had 1
   failure; the traces show 7 risks, 2 confirmed".
