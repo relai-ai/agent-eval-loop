@@ -6,15 +6,11 @@ Feature PRs do not bump versions. To release merged work:
 2. Leave version blank for the next patch, or enter a higher unused `X.Y.Z`.
 3. Keep early access enabled for the pilot. Supply project-copy migration notes when needed.
 
-The workflow bumps metadata, tests the selected revision, then uses `relai-release-bot` to
-push the tested commit and `vX.Y.Z` tag atomically to `main` and publish a GitHub release.
+The workflow bumps metadata, tests the selected revision, then pushes the tested commit and
+`vX.Y.Z` tag atomically to `main` and publishes a GitHub release.
 There is no release PR. [GitHub Releases](https://github.com/relai-ai/agent-eval-loop/releases)
 contains generated change notes plus the supplied migration notes. For loading/installation
 changes, verify a clean install and an upgrade in the affected hosts before releasing.
-
-The bot uses shared `RELAI_RELEASE_BOT_CLIENT_ID` and `RELAI_RELEASE_BOT_PRIVATE_KEY` secrets
-and its **Always allow** bypass in **Protect main**. Its short-lived token is scoped to this
-repo with `contents: write` and minted after tests; the default workflow token stays read-only.
 
 If preparation or tests fail, nothing is pushed. If `main` advances during testing, the push
 fails without creating a tag; trigger a fresh run against current `main`.

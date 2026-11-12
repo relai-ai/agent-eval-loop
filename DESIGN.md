@@ -28,8 +28,8 @@ Contracts the user's repository depends on live in the template, so `relai/` sta
 without the plugin. Methods for the coding agent live in the skills.
 
 `main` is the update branch. A manual release trigger versions and tests its selected revision,
-then uses the existing release bot to push the version bump and tag directly to `main` and
-publish a GitHub release. Feature PRs do not bump versions.
+then pushes the version bump and tag directly to `main` and publishes a GitHub release.
+Feature PRs do not bump versions.
 [RELEASING.md](RELEASING.md) defines that process; the [README](README.md#updating) covers updates.
 Project-owned copies have independent provenance and follow the template's
 [upgrade policy](skills/start/template/docs/upgrades.md), preserving adaptations and measurement identity.
