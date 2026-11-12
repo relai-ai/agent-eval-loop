@@ -3,7 +3,9 @@
 ## Before any paid run
 
 Every task is frozen and healthy. Measure one trial per version run (its cost, or with a
-subscription its plan usage and time); it also shows that the agent installs, reaches its model
+subscription its plan usage and time). This pilot is itself paid: state its expected cost and get
+the user's yes (or a covering agreement) first, then use it to estimate the full run for the budget
+question. It also shows that the agent installs, reaches its model
 and does work, so a trial with no model calls is fixed before any larger run. Then follow "Cost before spend" in `relai/README.md`.
 Choose attempts for the decision, observed variability and budget; coding agents can vary between
 runs. Reuse deterministic work only when it preserves the uncertainty being measured.
@@ -97,8 +99,7 @@ confirm from the agent version's documentation or a trial's trajectory that it l
 variant's files: agents differ, and one that reads only its own file (such as `CLAUDE.md`) reaches
 `AGENTS.md` or shared skills only through an import or link. A variant the agent never reads
 measures nothing. Check these differences before comparing, run the same agent and attempts, and compare
-task by task. Adopting this verifier for frozen tasks follows the *Frozen tests* rule; do not silently
-rewrite user-owned copies or mix earlier scores with changed measurement.
+task by task.
 
 **Which parts help.** One variant per part left out (a section of an instruction file, a skill, a
 hook, an MCP server). Trials grow as parts × tasks × attempts, so run it on the tasks that
@@ -108,14 +109,19 @@ effect at this sample size.
 ## Improving a setup
 
 With the [improve skill](../../improve/SKILL.md), the scope is `relai/setups/<id>/`: diagnose from development tasks'
-trajectories, decide on held-out tasks, and measure each candidate as a variant. Its rules apply
+trajectories, decide on held-out tasks when there are enough comparable tasks to hold some out
+(otherwise decide on the development tasks and report the result as selection evidence,
+`relai/README.md`, Terms), and measure each candidate as a variant. Its rules apply
 unchanged.
 
 ## Maintenance
 
 - Recheck affected [validation](task-format.md#validation) when a base image or dependency source
-  may have moved; a task broken by an outside change is repaired or retired under the *Frozen tests* rule.
+  may have moved; a task broken by an outside change is repaired under the *Frozen tests* rule, or
+  retired as below.
 - Add fresh tasks from recent work: newer fixes are less likely to be in training data.
-- Retire tasks that no longer separate anything only with the user's approval.
+- Retire a task (broken beyond repair, or no longer separating anything) only with the user's
+  approval, recording the reason in `decisions.md` as the *Frozen tests* rule asks; its earlier
+  scores stay recorded.
 - When an agent or model version changes, rerun at the new version; never mix versions under
   one label.

@@ -43,8 +43,10 @@ existing tests while allowing new tests is a policy choice, not an inherent defi
 fix. When the repository asks contributors to extend existing test files (its instruction files
 or contributing docs say so), protecting them scores the expected change against the agent: put
 the existing test files in `restore` instead, and install the hidden tests at a new protected
-path no existing file uses (such as `tests/relai-hidden/`). Confirm that constraints allow legitimate solutions; changing the policy later changes the
-evaluation and follows the *Frozen tests* rule.
+path no existing file uses (such as `tests/relai-hidden/`). Confirm that constraints allow legitimate solutions: the requirement-consistent alternative from
+[validation](task-format.md#validation) must pass with every protected and restored file in place.
+If it does not, loosen the constraint (or move the file to `restore`) before freezing. Changing the
+policy later changes the evaluation and follows the *Frozen tests* rule.
 
 ## What the verifier guards against
 
@@ -75,7 +77,8 @@ missing exact check), adapt a copy:
 - Rerun the plugin's verifier tests (`tests/test_coding_evals.py`, which replay the known
   attacks) against the adapted copy, and fix what fails before using it.
 - Every task in a comparison carries the same copy. Changing a frozen task's copy goes through
-  the *Frozen tests* rule and changes what its earlier scores mean.
+  the *Frozen tests* rule and changes what its earlier scores mean; never silently rewrite
+  user-owned copies or mix earlier scores with changed measurement.
 
 ## Safe process (shared evaluator)
 
