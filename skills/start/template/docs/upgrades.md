@@ -11,6 +11,12 @@ Plugin updates do not replace files already copied into this project.
   Test affected guarantees and record which files were upgraded, their source, and validation.
   Partial upgrades advance provenance only for those files; rollback restores files and provenance together.
 
+When an upgrade moves a managed path, move the project's existing files to match, or record the
+old location in `UPSTREAM.md`. For example, decision records moved from the uncommitted `work/`
+to the committed `records/`: `work/eval/` → `records/eval/`, `work/reviews/` → `records/reviews/`,
+`work/improve/plan.json` and `notes.md` → `records/improve/`, `work/loop/state.json` →
+`records/loop/state.json`. Redact before committing them.
+
 Changes to frozen content follow the [project contract](../README.md#fixed-rules): pause
 optimization against affected tests, record the reason, obtain fresh review, and refreeze with
 that reason. Preserve previous results. Changes to measurement meaning or relevant execution

@@ -11,9 +11,13 @@ its purpose is to choose useful experiments and reach defensible decisions withi
 Keep an incumbent: the last accepted version, initially the user's code. Explore in isolated
 branches or worktrees under `relai/work/candidates/<name>/`, measuring into their `runs/` folders.
 `relai/work/runs/` holds measurements of the user's checkout only. Measure another checkout as
-`relai/README.md`'s host notes describe.
+`relai/README.md`'s host notes describe. Without git, with uncommitted changes the user wants kept,
+or when the user does not want branches created, work in a copy of the project instead and record
+each side's content identity (for example a hash of the files the agent loads); ask before creating
+branches or worktrees the agreement does not cover.
 
-Keep the agreement, active work and lessons under `work/improve/`, and candidate decisions in
+Keep the agreement and lessons under `records/improve/` (committed), active work under
+`work/improve/`, and candidate decisions in
 `changes.md` (`relai/docs/files.md`).
 
 ## Choose the next useful experiment

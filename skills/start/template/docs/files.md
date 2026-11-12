@@ -24,11 +24,11 @@ mode = "api"                 # "api" (bin/judge.py, copied from the plugin) or "
 provider = "anthropic"       # or "openai", "openrouter", "openai-compatible" (model required)
 # base_url = "http://localhost:4000/v1"   # openai-compatible only (LiteLLM, vLLM, ...)
 # api_key_env = "LITELLM_API_KEY"         # openai-compatible only: the key's variable name
-model = "claude-opus-5-5"
+model = "claude-opus-5-5"     # required; no default
 effort = "medium"            # optional, Anthropic only
 
 [triage]                     # optional: the cheap model bin/triage.py uses on many traces
-provider = "openrouter"      # same keys as [judge]; without this table triage uses [judge]
+provider = "openrouter"      # same keys as [judge]; required for triage.py (it never uses [judge])
 model = "anthropic/claude-haiku-5.5"
 
 [runtime]
@@ -75,7 +75,7 @@ agent = "<Harbor agent name>"  # passed to `harbor run -a`
 model = "<provider/model>"     # passed as -m
 version = "<agent release>"    # the agent's own release, recorded before the first paid run; a change is a measurement change
 auth = "subscription"          # or "api-key": how the agent authenticates in a trial
-env = ["<CREDENTIAL_NAME>"]    # names only; values in relai/.env, written by the user
+env = ["<CREDENTIAL_NAME>"]    # names only; values exported, from a secrets tool, or in relai/.env (written by the user)
 training_cutoff = "YYYY-MM"    # optional: for reporting tasks whose public fix predates it
 baseline = true                # the version other runs are compared against
 
@@ -263,7 +263,9 @@ appends one JSON line per call to
 ## `frozen.json`
 
 Written only by `freeze.py`: each test's digest (all files except `README.md`), when it was
-frozen, and the reason for every re-freeze.
+frozen, and the reason for every re-freeze. `repair` (`reason`, `since`) marks an agreed repair
+in progress (`freeze.py --begin-repair`); re-freezing removes it. It changes no score's meaning:
+only editing hooks read it, to stop asking before each edit of that test.
 
 ## `changes.md`
 
@@ -334,16 +336,24 @@ Evidence: src/agent/prompts/refunds.md:12; attachments/ingest-2026-11/42.json
 `Status` is one of `proposed`, `admitted`, `confirmed`, `refined`, `rejected` or `retired`.
 Ratings are `low`, `medium`, `high` or `critical`. `Threatens` lists requirement ids.
 
-## `work/improve/`
+## `records/`
 
-- `plan.json`: the improvement agreement (README, Terms): objective, guardrails and their bounds,
+Committed decision records, so teammates can see what was approved and reviewed:
+`eval/<date>-scenarios.md` and `eval/<date>-grader-preview.md` (eval builds), `reviews/` (fresh
+reviews of harnesses, tests, coding tasks and changes), `improve/` and `loop/` below. Keep them
+short and redacted like wiki excerpts: link to runs and traces rather than copying their content,
+and keep protected assessment contents out. Raw runs, candidates and scratch stay in `work/`.
+
+## `records/improve/` and `work/improve/`
+
+- `records/improve/plan.json`: the improvement agreement (README, Terms): objective, guardrails and their bounds,
   scope, the selection rule when several candidates compete, `budget_usd` and `since` (an ISO
   date; the board counts spend from it). During a loop, use its contract instead of duplicating
   covered agreement or budget fields here.
-- `state.json`: active experiment work, as a checkpoint for resuming.
-- `notes.md`: evidence-backed lessons, updated rather than appended.
+- `work/improve/state.json`: active experiment work, as a checkpoint for resuming.
+- `records/improve/notes.md`: evidence-backed lessons, updated rather than appended.
 
-## `work/loop/state.json`
+## `records/loop/state.json`
 
 `contract`: the loop's agreement (objective, guardrails, scope, inputs, length, budget, when to
 ask, check-ins, watch mode, delivery). When a monetary ceiling applies, record `budget_usd` and

@@ -2,7 +2,7 @@
 """Triage a large set of traces with a cheap model: what each one teaches. Standard library only.
 
   python3 relai/bin/triage.py estimate --input traces.jsonl
-  python3 relai/bin/triage.py run --input traces.jsonl --ingest <id> [--limit N] [--concurrency 4]
+  python3 relai/bin/triage.py run --input traces.jsonl --ingest <id> [--limit N] [--concurrency 4] [--yes]
   python3 relai/bin/triage.py report --ingest <id>
 
 Input: JSONL, one trace per line: {"id": "...", "trace": "<text>" or [{"role", "content", ...}, ...],
@@ -21,8 +21,14 @@ report sorts the verdicts into three lanes and writes triage.md and lanes.json b
   C  weak signals         - per kind and risk, and which kinds co-occur: compound hard cases
 Verdicts are leads, not evidence: a page cites a trace excerpt you checked, never a verdict.
 
-Model: relai.toml [triage] (provider, model, base_url, api_key_env), else [judge]. Use a cheap
-model; estimate first and get the user's yes on the cost. Trace text is sent to that provider.
+Model: relai.toml [triage] (provider, model, base_url, api_key_env) is required; it is never taken
+from [judge], so a capable judge model is not silently used for one call per trace. Use a cheap model.
+
+Cost: estimate first and get the user's yes on the cost. run triages at most PILOT traces (a pilot)
+unless --yes says the user approved the full batch.
+
+Data sent: each trace's text, and the --context-file, go to that provider. Only the values of
+declared secret variables are replaced; personal or customer data in a trace is sent as recorded.
 """
 
 from __future__ import annotations
@@ -136,11 +142,14 @@ def load_input(path: Path) -> list[dict]:
     return rows
 
 
+PILOT = 20  # traces run triages without --yes (relai/README.md, Defaults: triage pilot)
+
+
 def model_config(relai_dir: Path) -> dict:
-    config = evals_config(relai_dir)
-    chosen = config.get("triage") or config.get("judge") or {}
-    if chosen.get("mode", "api") != "api":
-        sys.exit("error: triage needs an API model; set [triage] provider and model in relai.toml")
+    chosen = evals_config(relai_dir).get("triage") or {}
+    if chosen.get("mode", "api") != "api" or not chosen.get("model"):
+        sys.exit("error: set [triage] provider and model in relai.toml: triage makes one call per trace, so "
+                 "choose a cheap model; it does not fall back to [judge]")
     return chosen
 
 
@@ -170,6 +179,8 @@ def cmd_estimate(args, relai_dir: Path) -> int:
     if args.price_in is not None and args.price_out is not None:
         print(f"~${total_in / 1e6 * args.price_in + total_out / 1e6 * args.price_out:,.2f} at "
               f"${args.price_in}/M in, ${args.price_out}/M out")
+    else:
+        print("For a dollar figure, add --price-in and --price-out (the provider's $ per million tokens).")
     return 0
 
 
@@ -180,6 +191,11 @@ def cmd_run(args, relai_dir: Path) -> int:
     skip = done_ids(verdicts)
     todo = [r for r in rows if str(r["id"]) not in skip][: args.limit or None]
     config = model_config(relai_dir)
+    if len(todo) > PILOT and not getattr(args, "yes", False):
+        print(f"{len(todo)} traces would each make a paid call to {config.get('model')}. Run `estimate`, get the "
+              f"user's approval of the cost, then rerun with --yes; or run a pilot with --limit {PILOT} first.",
+              file=sys.stderr)
+        return 2
     ctx, secrets = context(relai_dir, args.context_file), judge.redaction_secrets(config, relai_dir)
     lock = threading.Lock()
     counts = collections.Counter()
@@ -286,6 +302,8 @@ def main() -> int:
                                                "without it the triager flags policy-backed statements as unverified")
     parser.add_argument("--price-in", type=float, help="$ per million input tokens, for estimate")
     parser.add_argument("--price-out", type=float, help="$ per million output tokens, for estimate")
+    parser.add_argument("--yes", action="store_true",
+                        help=f"the user approved the cost of a run larger than the {PILOT}-trace pilot")
     parser.add_argument("--relai-dir")
     args = parser.parse_args()
     relai_dir = relai_root(args.relai_dir)

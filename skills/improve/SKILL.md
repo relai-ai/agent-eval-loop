@@ -47,7 +47,7 @@ measured-improvement agreement, settle before editing:
 - **Check-ins and delivery:** rounds or stopping rule; a branch or worktree for review by
   default, or the user's working tree if already authorized.
 
-For managed measured work, record the agreement in `relai/work/improve/plan.json` (`relai/docs/files.md`),
+For managed measured work, record the agreement in `relai/records/improve/plan.json` (`relai/docs/files.md`),
 or use the covering loop contract. Existing project records may serve the same purpose when they
 preserve the agreement and evidence. Record consequential user choices alongside that agreement.
 Tell the user when the authorized budget is exhausted, and ask before exceeding it.

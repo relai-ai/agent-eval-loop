@@ -535,7 +535,7 @@ def main() -> int:
     relai_dir = relai_root(args.relai_dir)
     cand = summarize([Path(p) for p in args.runs], relai_dir)
     if not cand["trials"]:
-        print("error: no Harbor/native trials or relai-results.jsonl found under the given directories")
+        print("error: no Harbor/native trials or relai-results.jsonl found under the given directories", file=sys.stderr)
         return 2
     print_summary(cand, "Run" if not args.baseline else "Candidate", args.details)
     output = {"run": cand}

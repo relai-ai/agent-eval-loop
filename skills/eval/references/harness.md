@@ -48,13 +48,19 @@ prerequisites for the selected runner and fix what fails.
   Record `[runner].kind` and `.isolation` with their reason. The plugin's `examples/` (two levels
   above this skill's folder) has a native runner to copy to `relai/bin/`; prefer project-native
   adapters where practical.
+- When Harbor cannot run here (no `uv`, no running container engine, or Harbor failing on this
+  machine), say so plainly with the cause, and lay out the options with a recommendation: start or
+  install a container engine Harbor supports (any Docker-compatible engine or Podman); a native
+  runner, the project's own or the example, with containment the user authorizes
+  (`relai/docs/native.md`); or a hosted runner (`relai/docs/harbor.md`). Keep building what does
+  not need execution meanwhile. Never fall back to an uncontained run on your own.
 - With `[judge] mode = "api"`, copy the example `judge.py` to `relai/bin/judge.py` (or write an
   equivalent meeting the judge contract in `relai/docs/files.md`) before the first judged trial.
   Example providers are not a closed supported set: reuse a suitable project provider and adapt
   or replace the example for its API and credential mechanism. Preserve data authorization,
   credential redaction, score/error outputs and honest usage reporting; do not claim the shipped
   example implements a provider it does not.
-- Contain every trial (Fixed rule 3). Never run an uncontained agent as a workaround.
+- Contain every trial (`relai/README.md`, Fixed rules: *Containment*). Never run an uncontained agent as a workaround.
 - Integrate the configuration the repository presents as real use: what its README leads with,
   its defaults. Never a fixture that exists for its own tests. When several are plausible, ask.
 - Drive the agent through its real entrypoint and native lifecycle (a long-lived object, replayed
@@ -85,7 +91,10 @@ choices in a useful batch at the start of
 the `eval` skill, and ask what only comes up later (mocks, prompts) together when it comes up:
 
 - How judges should run: a coding-agent subagent or an existing suitable provider integration.
-  Establish what leaves the environment and which authorization covers it. The example judge's
+  Establish what leaves the environment and which authorization covers it, and tell the user in
+  plain terms before the first API-judged trial: which provider receives the trajectories, and
+  that the example judge removes only declared secret values, not personal or customer data. Name
+  the judge model with the user; the example has no default. The example judge's
   implemented providers are listed in `relai/docs/files.md`; other APIs may use an adapted or
   project-native judge meeting the same output contract. The example hosted runner uses API
   judging; another integration must demonstrate its own execution and credential setup.

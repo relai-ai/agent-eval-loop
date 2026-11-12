@@ -99,6 +99,11 @@ start, ask together only what is still open:
   a release, comparing models or prompts, or seeing where the agent stands. It sets the split
   recommendation, attempts and spend.
 - On first use, the harness questions still open ([harness](references/harness.md), *Ask the user*).
+- **How involved to be**, when no agreement says: approve the scenarios and grader preview
+  yourself (recommended for the first build), or delegate both to a fresh independent review and
+  see the results with the build's report. For a build of one or two tests, the user may also
+  prefer one sitting: build first (building runs no agent), then show the scenario with its
+  grader preview together. Record the choice in `decisions.md`.
 
 Name any missing credential variable and the project's credential mechanism (or `relai/.env`)
 as an instruction, not a question. Reuse existing setup and continue work that does not need it.
@@ -106,7 +111,7 @@ as an instruction, not a question. Reuse existing setup and continue work that d
 ## Approve the scenarios
 
 Unless an agreement already covers it, wait for a yes before building. Write each proposed
-test's full design to `relai/work/eval/<date>-scenarios.md` ([test-design](references/test-design.md),
+test's full design to `relai/records/eval/<date>-scenarios.md` ([test-design](references/test-design.md),
 *Proposing a test*). In chat, show one compact table, in the order you recommend building: the
 behavior, its source, the scenario in one line naming the real data and the trigger that makes
 it hard, what failing looks like, and its opposite-direction partner, if any. Below it, give the
@@ -120,13 +125,14 @@ Freezing stops anyone tuning a test to the agent's results, so preview without r
 score each test's evaluators on synthetic trajectories (a passing one, a failing one that commits
 the risk's observable failure, an empty reply) and on any real recorded traces that fit the
 scenario. Write every test's full table (evaluator × case → score and the first line of
-feedback) to `relai/work/eval/<date>-grader-preview.md`. Size chat previews by the shared
+feedback) to `relai/records/eval/<date>-grader-preview.md`. Size chat previews by the shared
 [decision-effort rule](../start/template/README.md#working-with-the-user), reviewing manageable
 subsets when needed while keeping the complete artifact and pending decisions visible. For the
 subset being approved, show every judge evaluator's rows and every score that differs from what
 its case should get (a failing case not scored low,
-a passing one below full marks, a missing required deliverable above the minimum). An empty
-reply may pass a pure prohibition; preview an actual violation to show that check can fail.
+a passing one below full marks, a missing required deliverable above the minimum; see
+[test-design](references/test-design.md#rules), *Missing deliverables and prohibitions*). For a
+pure prohibition, preview an actual violation to show that check can fail.
 Summarize the rest per test in
 one line, such as "4 code checks scored as expected". Ask whether the current subset needs scoring
 changes or is missing anything the user cares about; separate independent choices as the shared

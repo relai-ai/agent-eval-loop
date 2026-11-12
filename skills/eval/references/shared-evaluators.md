@@ -26,9 +26,9 @@ says what full marks need.
   `harbor trial regrade` with `-o`, see [harbor-notes](harbor-notes.md); it cannot see unexported
   state). `relai/bin/judge.py <run>` retries judge errors. After a rubric change, establish a
   comparable baseline.
-- A missing required deliverable scores the minimum. A pure prohibition may correctly reward
-  inactivity; show it can fail on a synthetic violating example instead. A check must measure its
-  stated outcome rather than activity alone.
+- Score missing deliverables and pure prohibitions as [test-design](test-design.md#rules) says
+  (*Missing deliverables and prohibitions*). A check must measure its stated outcome rather than
+  activity alone.
 
 ## Ask the user
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import unittest
@@ -20,11 +21,11 @@ class HookBase(unittest.TestCase):
         self.repo.close()
 
     def hook(self, name: str, file_path, tool: str = "Edit", raw: str | None = None, host: str | None = None,
-             tool_input: dict | None = None) -> dict | None:
+             tool_input: dict | None = None, python: str = sys.executable) -> dict | None:
         event = {"hook_event_name": "PreToolUse" if name == "guard-frozen" else "PostToolUse",
                  "cwd": str(self.repo.root), "tool_name": tool,
                  "tool_input": tool_input if tool_input is not None else {"file_path": str(file_path)}}
-        command = [sys.executable, str(HOOK), name, *(["--host", host] if host else [])]
+        command = [python, str(HOOK), name, *(["--host", host] if host else [])]
         result = subprocess.run(command, input=raw if raw is not None else json.dumps(event),
                                 capture_output=True, text=True, timeout=120)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -55,6 +56,23 @@ class GuardFrozenTest(HookBase):
         self.assertIsNone(self.hook("guard-frozen", self.repo.root / "src" / "agent.py"))
         self.assertIsNone(self.hook("guard-frozen", task / "task.toml", tool="Read"))
 
+    def test_an_open_repair_stops_asking_until_the_test_is_refrozen(self):
+        task = self.repo.task()
+        self.assertEqual(self.repo.run("freeze.py", str(task)).returncode, 0)
+        refused = self.repo.run("freeze.py", str(task), "--begin-repair")
+        self.assertNotEqual(refused.returncode, 0, "a repair needs a reason")
+        opened = self.repo.run("freeze.py", str(task), "--begin-repair", "--reason", "rubric typo")
+        self.assertEqual(opened.returncode, 0, opened.stderr)
+        self.assertIn("repair open", self.repo.run("freeze.py", "--check").stdout)
+        out = self.hook("guard-frozen", task / "tests" / "evaluate.py")["hookSpecificOutput"]
+        self.assertNotIn("permissionDecision", out)
+        self.assertIn("open repair", out["additionalContext"])
+        (task / "tests" / "evaluate.py").write_text((task / "tests" / "evaluate.py").read_text() + "\n# repaired\n")
+        self.assertEqual(self.repo.run("freeze.py", str(task), "--reason", "rubric typo").returncode, 0)
+        out = self.hook("guard-frozen", task / "tests" / "evaluate.py")["hookSpecificOutput"]
+        self.assertEqual(out["permissionDecision"], "ask", "re-freezing closes the repair")
+        self.assertIn("--begin-repair", out["permissionDecisionReason"])
+
     def test_frozen_benchmark_case(self):
         case = self.repo.relai / "benchmarks" / "bench" / "cases" / "c1"
         self.repo.write("relai/benchmarks/bench/cases/c1/task.toml", "[task]\nname = \"c1\"\n")
@@ -66,6 +84,43 @@ class GuardFrozenTest(HookBase):
         self.assertIsNone(self.hook("guard-frozen", "", raw="not json"))
         (self.repo.relai / "frozen.json").write_text("{broken")
         self.assertIsNone(self.hook("guard-frozen", self.repo.relai / "tests" / "orders" / "task.toml"))
+
+
+def older_python() -> str | None:
+    """A python3 older than 3.11 on this machine (such as macOS's /usr/bin/python3), if any."""
+    for candidate in ("/usr/bin/python3", shutil.which("python3.9"), shutil.which("python3.10")):
+        if not candidate:
+            continue
+        try:
+            out = subprocess.run([candidate, "-c", "import sys; print(sys.version_info >= (3, 8) and sys.version_info < (3, 11))"],
+                                 capture_output=True, text=True, timeout=30).stdout.strip()
+        except OSError:
+            continue
+        if out == "True":
+            return candidate
+    return None
+
+
+class OlderPythonTest(HookBase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.python = older_python()
+        if not self.python:
+            self.skipTest("no python3 older than 3.11 on this machine")
+
+    def test_frozen_tests_are_still_guarded(self):
+        task = self.repo.task()
+        self.assertEqual(self.repo.run("freeze.py", str(task)).returncode, 0)
+        out = self.hook("guard-frozen", task / "tests" / "evaluate.py", python=self.python)
+        self.assertEqual(out["hookSpecificOutput"]["permissionDecision"], "ask")
+
+    def test_check_edit_says_once_that_checks_cannot_run(self):
+        task = self.repo.task()
+        first = self.hook("check-edit", task / "task.toml", python=self.python)
+        self.assertIn("need Python 3.11+", first["systemMessage"])
+        self.assertIn("need Python 3.11+", first["hookSpecificOutput"]["additionalContext"])
+        self.assertIsNone(self.hook("check-edit", task / "task.toml", python=self.python), "shown once")
+        self.assertIsNone(self.hook("check-edit", self.repo.write("src/agent.py", "x = 1\n"), python=self.python))
 
 
 class CheckEditTest(HookBase):
@@ -93,6 +148,25 @@ class CheckEditTest(HookBase):
         out = self.hook("check-edit", task / "task.toml")["hookSpecificOutput"]
         self.assertIn("check_wiki.py", out["additionalContext"])
         self.assertIn("no-such-page", out["additionalContext"])
+
+    def test_problems_are_not_blamed_on_the_edit_and_timeouts_are_reported(self):
+        task = self.repo.task()
+        (task / "task.toml").write_text((task / "task.toml").read_text().replace('type = "judge"', 'type = "code"'))
+        context = self.hook("check-edit", task / "task.toml")["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("may predate this edit", context)
+        sys.path.insert(0, str(HOOK.parent))
+        try:
+            import relai_hook
+        finally:
+            sys.path.pop(0)
+        self.repo.write("relai/bin/slow.py", "import time\ntime.sleep(5)\n")
+        original = relai_hook.CHECK_TIMEOUT_SEC
+        relai_hook.CHECK_TIMEOUT_SEC = 0.5
+        try:
+            report = relai_hook.run_checker(self.repo.relai, "slow.py")
+        finally:
+            relai_hook.CHECK_TIMEOUT_SEC = original
+        self.assertIn("did not finish", report)
 
     def test_silent_outside_relai(self):
         path = self.repo.write("src/agent.py", "x = 1\n")

@@ -113,11 +113,14 @@ setup files as its scope ([comparing](references/comparing.md)).
 Carry forward scope, budget and approvals from the request, `relai/decisions.md`, the wiki or an
 agreement. Combine unresolved scope and task selection in one checkpoint when the evidence is
 ready; ask about check previews once validation is ready, unless already covered or delegated.
-Approval of a task list alone does not approve unseen scoring. Present discovered facts first
+Approval of a task list alone does not approve unseen scoring. When no agreement says how
+involved the user wants to be, offer at the first checkpoint to delegate task-list and check
+approval to a fresh independent review, reporting the results afterwards; record the choice. Present discovered facts first
 ([scope](references/scope.md)); ask only about uncovered choices or material changes. What to
 compare and the run budget change the runs, not the tasks: ask them when the request raises them
 or before the first paid run, and keep building meanwhile. After the first run, show the
-real-trial judge checks. Name credentials to add to `relai/.env` as instructions and continue work
+real-trial judge checks. Name the credentials needed as instructions (export them, use the team's secrets tool, or add them
+to `relai/.env`) and continue work
 that does not need them.
 
 Long steps (image builds, health runs, trials) stay visible: say what is running, how far along it
@@ -143,8 +146,8 @@ outside frozen task contents.
 **Before building**, record the source, developer's request, kind and area, start/fix commits
 and fix date, contamination and network setting, intended checks and their source-backed lesson,
 and validity risks, including what the fix's tests pin ([sources](references/sources.md), *Read
-the fix's tests*). Show a compact task table (source, request, what failing looks like), with
-real failures and corrections first. State that building and health checks call no model, and
+the fix's tests*). Show a compact task table (source, request, what failing looks like) and the
+estimated disk use, with real failures and corrections first. State that building and health checks call no model, and
 estimate trial cost or plan usage and time, with tasks × versions × attempts, as information.
 Unless already authorized, obtain task selection approval before building; run budget is
 approved before the first paid run.

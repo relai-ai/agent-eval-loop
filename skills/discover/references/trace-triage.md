@@ -30,8 +30,9 @@ policy and requirements when judging behavior; unresolved expectations remain un
 
 Before paid processing or sending trace text to a provider, check the existing agreement for
 cost and data authorization. Ask only for what it leaves open, naming the provider, material
-sent and estimated spend. Redact as appropriate; redaction does not itself authorize external
-processing.
+sent and estimated spend. Say plainly that personal or customer data in the traces goes to the
+provider as recorded unless you remove it first: the example removes only declared secret values.
+Redaction does not itself authorize external processing.
 
 ## If using the example
 
@@ -39,9 +40,11 @@ processing.
   Keep stable ids so incremental runs skip completed traces. The example resumes by id only;
   use a fresh ingest or adapt it when source content, policy or analysis assumptions change. Keep
   the adapter and normalized input under `relai/work/discover/<ingest-id>/`.
-- The example reads `[triage]` in `relai.toml`, else `[judge]`. Provide policy using
-  `--context-file`. `estimate --input traces.jsonl` estimates tokens and cost; `run --limit N`
-  permits a pilot; `run` processes the remaining traces. Errors are recorded in `errors.jsonl`
+- The example needs `[triage]` with a cheap model in `relai.toml`; it never falls back to
+  `[judge]`. Provide policy using `--context-file`. `estimate --input traces.jsonl` estimates
+  tokens (and dollars with `--price-in`/`--price-out`); `run --limit 20` runs a pilot; `run --yes`
+  processes the remaining traces once the user has approved the cost (without `--yes`, a run larger
+  than the pilot stops before any call). Errors are recorded in `errors.jsonl`
   and retried by rerunning; they are not verdicts.
 - `--max-chars` bounds each trace's model input, keeping its head and tail with an omission
   marker. Treat these as partial views, disclose truncation, and inspect the full source before
