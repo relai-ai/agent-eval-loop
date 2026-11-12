@@ -53,8 +53,10 @@ reusable assets. Respect explicit read-only requests and wiki opt-outs across di
 - Credible consequential leads have been investigated within the agreed scope and resources,
   with adaptive follow-through and a deliberate blind-spot review for substantial trace work
   as [trace investigation](references/trace-investigation.md) describes. Merely labelling a
-  feasible lead "deferred" does not complete it. When resources prevent follow-through, deliver
-  a partial handoff with unresolved leads and coverage gaps rather than claim discovery complete.
+  feasible lead "deferred" does not complete it. Before declaring completion, assess the most
+  valuable remaining investigation and justify stopping, as that reference describes. When
+  resources prevent follow-through, deliver a partial handoff with unresolved leads and coverage
+  gaps rather than claim discovery complete.
 - The ingestion wiki default above was followed; useful durable findings from other discovery
   paths were maintained in the wiki or relevant local records. Temporary plans and speculative
   filler were not persisted. Every claim cites checked source
@@ -106,7 +108,8 @@ user" in `relai/README.md` says when the agreement leaves a consequential choice
   claims about omitted content.
 - **Discover before selecting.** Preserve distinct findings, weak signals and uncertainty beyond
   the priority shortlist. Follow useful new mechanisms and test the blind spots of the chosen
-  method; a long finding list is not a stopping rule. Stop when useful opportunities are exhausted
-  or an agreed constraint prevents more work, without extending the allowance on your own.
+  method; a long finding list is not a stopping rule. Assess remaining opportunities and justify
+  stopping under [trace investigation](references/trace-investigation.md), without extending the
+  allowance on your own.
 - **Say what it found.** Lead the report with what the user did not know: "your 20 runs had 1
   failure; the traces show 7 risks, 2 confirmed".

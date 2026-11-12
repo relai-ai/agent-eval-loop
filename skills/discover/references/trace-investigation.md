@@ -5,6 +5,23 @@ boundary and completion conditions live in the [discover skill](../SKILL.md). Ch
 the decision and corpus; this method requires neither a new analysis framework nor fixed rounds,
 sample counts or a particular record format.
 
+## Balance breadth and depth
+
+Use existing knowledge and reconnaissance appropriate to the request to establish breadth across
+relevant workflows, obligations, outcomes and evidence types. Investigate promising leads far
+enough to judge them accurately; necessary contextual verification should not be abandoned to
+collect more flags. Once a mechanism is supported,
+compare further deepening with unexplored areas and unchecked assertions within familiar
+episodes. Checking an action's eligibility does not also check its narrated attributes, amounts
+or resulting state.
+
+Favor the next investigation likely to add a distinct consequential signal, resolve material
+uncertainty or change an evaluation decision, considering its effort and dependencies. More
+examples of one mechanism must compete with other promising opportunities. Rebalance as new
+evidence changes that judgment; neither depth-first nor breadth-first traversal is a required
+algorithm. Keep useful lead dispositions in existing work records rather than building a new
+tracking system.
+
 ## Follow consequential leads
 
 Use policy obligations, user goals and actual tool behavior to form investigable questions.
@@ -52,8 +69,17 @@ Maintain reusable checks and their limits when they will help the next investiga
 previous results only while their source, policy and method assumptions still apply; an unchanged
 trace id alone does not establish that.
 
+Before declaring substantial discovery complete, identify the most valuable remaining
+investigation, considering both deeper follow-through and broader exploration. Explain whether
+it was pursued, blocked, outside the agreed scope, or unlikely to materially change the
+recommendations. If it is still worthwhile, feasible and within scope and resources, pursue it;
+a label such as "deferred" or "next pass" is not a stopping justification. Completing a
+self-selected sample or first-pass milestone alone does not establish completion. Respect a
+genuinely bounded user request; do not require exhausting the corpus or spending the allowance.
+
 Report what was actually examined, how adaptive searches and blind-spot review affected the
-findings, remaining consequential opportunities, and why work stopped. If a resource boundary
-is reached, preserve a resumable partial result and the next useful investigations. Do not
-claim exhaustive semantic coverage from parsing, sampling or the absence of flags; do not
-manufacture speculative findings to fill a coverage table.
+findings, the remaining opportunity assessment, and why work stopped. When a resource boundary
+prevents worthwhile in-scope work, preserve a resumable partial result and useful next
+investigations. Do not claim exhaustive semantic coverage from parsing, sampling or the absence
+of flags, or manufacture leads to justify more work. Keep this assessment in existing notes or
+the handoff; it requires no new ledger or repeated permission to stop.

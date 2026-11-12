@@ -98,7 +98,12 @@ existing entries and revise or remove superseded conclusions. Retain durable req
 decisions, supported risks, corrections and reusable lessons rather than transient plans or
 speculative filler. Explain material updates in the normal report without repeating covered
 approval requests. Setup serves that future value; it is not a prerequisite to answering the
-immediate question. Do not put protected assessment contents into optimizer-visible knowledge.
+immediate question. Give substantive knowledge one authoritative home; link to it with concise
+summaries in reports, boards or proposals rather than repeating the full analysis. Keep useful
+state current as work progresses without turning every intermediate observation into another
+artifact. Preserve independently maintainable requirements, risks and consequential questions;
+less duplication must not mean losing their evidence or uncertainty. Do not put protected
+assessment contents into optimizer-visible knowledge.
 
 Actively maintain reusable project-local assets when they will make future analysis or development
 easier. Inspect and reuse existing scripts, adapters, queries or other suitable assets; improve or
