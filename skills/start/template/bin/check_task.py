@@ -839,17 +839,27 @@ def check_task_images(task: Path, config: dict, relai_dir: Path, report: Report,
                         "needs a registry secret for it")
 
 
+HARBOR_LOAD_TIMEOUT_SEC = 600
+HARBOR_SKIPPED = "__skipped__"  # why Harbor's loading did not run, when it did not
+
+
 def harbor_load(tasks: list[Path], version: str | None) -> dict:
-    if not version or not shutil.which("uv"):  # check_harbor reports a missing version
-        return {}
+    if not version:  # check_harbor reports a missing version
+        return {HARBOR_SKIPPED: "no [harbor].version in relai.toml"}
+    if not shutil.which("uv"):
+        return {HARBOR_SKIPPED: "uv is not installed"}
+    print(f"Loading the task(s) with Harbor {version} through uv; the first run may download it "
+          "(--no-harbor skips this).", file=sys.stderr, flush=True)
     command = ["uv", "tool", "run", "--python", HARBOR_PYTHON, "--from", f"harbor=={version}",
                "python", "-c", HARBOR_LOAD, *map(str, tasks)]
     try:
-        ran = subprocess.run(command, capture_output=True, text=True, timeout=600)
+        ran = subprocess.run(command, capture_output=True, text=True, timeout=HARBOR_LOAD_TIMEOUT_SEC)
         return json.loads(ran.stdout.strip().splitlines()[-1]) if ran.returncode == 0 else {
             str(t): f"could not run Harbor's loader: {ran.stderr.strip()[-500:]}" for t in tasks}
-    except (subprocess.TimeoutExpired, ValueError, IndexError):
-        return {}
+    except subprocess.TimeoutExpired:
+        return {HARBOR_SKIPPED: f"it did not finish within {HARBOR_LOAD_TIMEOUT_SEC}s"}
+    except (ValueError, IndexError):
+        return {HARBOR_SKIPPED: "its output could not be read"}
 
 
 def synthetic(empty: bool) -> dict:
@@ -1039,8 +1049,9 @@ def main() -> int:
         config = check_static(task, relai_dir, report, native, cloud=args.cloud)
         if loaded.get(str(task)):
             report.error(f"Harbor cannot load it: {loaded[str(task)]}")
-        elif not args.no_harbor and not native and not loaded:
-            report.note("Harbor's own task loading did not run (uv missing or Harbor unavailable)")
+        elif not args.no_harbor and not native and (not loaded or HARBOR_SKIPPED in loaded):
+            why = loaded.get(HARBOR_SKIPPED, "Harbor was unavailable")
+            report.note(f"Harbor's own task loading did not run: {why}")
         if args.verifier and native:
             report.error("--verifier is Harbor-only; demonstrate native grading on synthetic passing, failing and empty-reply trials")
         elif args.verifier and config and is_agent_neutral(config):

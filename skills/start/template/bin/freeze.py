@@ -56,8 +56,8 @@ def main() -> int:
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for task in tasks:
         if not (task / "task.toml").is_file():
-            print(f"error: {task} has no task.toml")
-            status = 1
+            print(f"error: {task} has no task.toml", file=sys.stderr)
+            status = 2
             continue
         key = test_key(task, relai_dir)
         digest = dir_digest(task)
@@ -68,12 +68,12 @@ def main() -> int:
                 label += f" (repair open: {entry['repair'].get('reason', '')})"
             print(f"{key}: {label}")
             if entry and entry["digest"] != digest:
-                status = 1
+                status = max(status, 1)
             continue
         if args.begin_repair:
             if not entry:
                 print(f"error: {key} is not frozen; there is nothing to repair", file=sys.stderr)
-                status = 1
+                status = max(status, 1)
                 continue
             entry["repair"] = {"reason": args.reason, "since": now}
             changed_state = True
@@ -88,8 +88,8 @@ def main() -> int:
             continue
         if entry and not args.reason:
             print(f"error: {key} changed since it was frozen on {entry['frozen_at']}; re-freezing needs --reason "
-                  "(and a note in decisions.md plus a fresh review)")
-            status = 1
+                  "(and a note in decisions.md plus a fresh review)", file=sys.stderr)
+            status = max(status, 1)
             continue
         history = (entry or {}).get("history", [])
         history.append({"digest": digest, "at": now, "reason": args.reason or "first freeze"})
