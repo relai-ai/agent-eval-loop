@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -162,6 +163,42 @@ class ReleaseTest(unittest.TestCase):
             self.prepare(self.current)
         next_release = self.prepare()
         self.assertEqual(next_release["version"], self.target)
+
+    def reconstruct(self, version, tested_tree):
+        output = Path(self.temp.name) / "snapshot-output"
+        step = self.workflow_step("Prepare verified release snapshot").replace(
+            "python scripts/release.py", f"{shlex.quote(sys.executable)} scripts/release.py")
+        env = {**os.environ, "VERSION": version, "TESTED_TREE": tested_tree,
+               "GITHUB_OUTPUT": str(output), "GIT_COMMITTER_DATE": "2001-01-01T00:00:00Z"}
+        result = subprocess.run(["bash", "-c", "set -e\n" + step], cwd=self.root,
+                                env=env, capture_output=True, text=True)
+        return result, dict(line.split("=", 1) for line in output.read_text().splitlines())
+
+    @unittest.skipUnless(shutil.which("bash"), "snapshot integration needs bash")
+    def test_publish_reconstructs_the_tested_files_with_a_new_commit_timestamp(self):
+        for version in (self.current, self.target):
+            with self.subTest(version=version):
+                self.git("checkout", "-q", "--detach", self.source)
+                tested = self.prepare(version)
+                tree = self.git("rev-parse", "HEAD^{tree}")
+                self.git("checkout", "-q", "--detach", self.source)
+                result, snapshot = self.reconstruct(version, tree)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotEqual(snapshot["sha"], tested["sha"])
+                self.assertEqual(snapshot["source_sha"], self.source)
+                self.assertEqual(snapshot["version"], version)
+                self.assertEqual(self.git("diff", "--name-only", tested["sha"], snapshot["sha"]), "")
+
+    @unittest.skipUnless(shutil.which("bash"), "snapshot integration needs bash")
+    def test_publish_rejects_a_tree_different_from_the_tested_files(self):
+        self.prepare(self.current)
+        tree = self.git("rev-parse", "HEAD^{tree}")
+        self.git("checkout", "-q", "--detach", self.source)
+        (self.root / "unexpected.txt").write_text("untested change\n")
+        self.commit()
+        result, _ = self.reconstruct(self.current, tree)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.git("tag", "--list"), "")
 
     def test_prepare_rejects_existing_tag_dirty_checkout_and_old_versions(self):
         before = self.snapshot()
