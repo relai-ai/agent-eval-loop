@@ -5,7 +5,7 @@ candidate, plus a rule fixed in advance, because picking the best of several add
 effects.
 
 Before building the second alternative, record the selection rule in
-`relai/work/improve/plan.json`, the loop contract or equivalent project records: objective metric,
+`relai/records/improve/plan.json`, the loop contract or equivalent project records: objective metric,
 tests, attempts, the evidence needed to
 distinguish candidates, guardrails, and tie-break order. Give reviewers this agreement and the
 selection results, separately from diagnostic notes. Follow the recorded rule.

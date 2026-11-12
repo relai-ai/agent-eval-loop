@@ -38,7 +38,7 @@ The paths below describe RELAI-managed records. Existing project contracts, iter
 candidate decisions and reporting may serve the same purpose when authorization and evidence
 remain inspectable and recoverable; do not create duplicate state merely to match these filenames.
 
-- **The contract was approved** (below) and saved in `relai/work/loop/state.json`
+- **The contract was approved** (below) and saved in `relai/records/loop/state.json`
   (`relai/docs/files.md`), with a line in `decisions.md`.
 - Before claiming an improvement, a comparable baseline exists for the objective and guardrails,
   measured or reused with a rationale. Investigation without a candidate records its findings and

@@ -48,6 +48,12 @@ prerequisites for the selected runner and fix what fails.
   Record `[runner].kind` and `.isolation` with their reason. The plugin's `examples/` (two levels
   above this skill's folder) has a native runner to copy to `relai/bin/`; prefer project-native
   adapters where practical.
+- When Harbor cannot run here (no `uv`, no running container engine, or Harbor failing on this
+  machine), say so plainly with the cause, and lay out the options with a recommendation: start or
+  install a container engine Harbor supports (any Docker-compatible engine or Podman); a native
+  runner, the project's own or the example, with containment the user authorizes
+  (`relai/docs/native.md`); or a hosted runner (`relai/docs/harbor.md`). Keep building what does
+  not need execution meanwhile. Never fall back to an uncontained run on your own.
 - With `[judge] mode = "api"`, copy the example `judge.py` to `relai/bin/judge.py` (or write an
   equivalent meeting the judge contract in `relai/docs/files.md`) before the first judged trial.
   Example providers are not a closed supported set: reuse a suitable project provider and adapt

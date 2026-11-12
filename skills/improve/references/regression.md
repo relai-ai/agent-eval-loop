@@ -19,7 +19,8 @@ honest coverage limits, not a new RELAI directory.
 - Choose by the change's mechanism, the runtime path it touches, the product surface, and what
   each test's evaluators check, not by tags alone. Never select the smoke test.
 - Run the baseline before the edit, or from the pre-change revision in a separate checkout
-  (`relai/README.md`, host notes).
+  (`relai/README.md`, host notes); without git or with uncommitted changes, use a copy and record
+  its content identity ([improve-loop](improve-loop.md)).
 - Run and score tests as [eval: measure](../../eval/references/measure.md) describes.
 - Separate observed changes from justified conclusions: an unchanged mean or no observed
   regression is not proof of safety. Report uncertainty, differing attempt counts and uncovered

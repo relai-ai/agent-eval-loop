@@ -81,8 +81,8 @@ invoked) is the choice of whoever builds the tests.
   is not a win, an equal mean is not equivalence or absence of harm, and a stronger claim needs
   its own justified method.
 - **Agreement.** The objective, guardrails, scope, budget, check-ins and delivery for improvement
-  work: the user's existing instructions, an improvement agreement (`work/improve/plan.json`), or
-  a loop contract (`work/loop/state.json`). The **objective** is the measure that must improve
+  work: the user's existing instructions, an improvement agreement (`records/improve/plan.json`), or
+  a loop contract (`records/loop/state.json`). The **objective** is the measure that must improve
   (behavioral success, cost or latency); **guardrails** are the other measures a change must
   keep within agreed bounds. During a loop its contract is the active agreement, including
   covered improvement work; otherwise use the current improvement agreement. Do not create
@@ -132,8 +132,9 @@ generic infrastructure without a concrete need.
 | `evaluators/<id>/` | Criteria shared across tests | yes |
 | `setups/<id>/` | A team's setup for coding agents, laid out as in a repository root (the `coding-evals` skill) | yes |
 | `frozen.json` | Digests of frozen tests (written by `freeze.py`) | yes |
+| `records/` | Decision records teammates need: scenario tables and grader previews (`eval/`), fresh reviews (`reviews/`), the improvement agreement and lessons (`improve/`), the loop contract and iterations (`loop/`) | yes |
 | `.env` | Secret values | never |
-| `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `improve/`, `loop/`, `benchmarks/<id>/ledger.json`, `reviews/`, scratch | never |
+| `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `improve/state.json` (resume checkpoint), `benchmarks/<id>/ledger.json`, scratch | never |
 
 ## Checkers
 
@@ -188,6 +189,10 @@ or printing the value.
   directory. A task with a restricted network also needs the engine's image builder for Harbor's
   egress sidecar (`docker buildx` on a Docker CLI; the Harbor notes).
 - **Native:** the integration declares and checks its own runtime and containment (Fixed rule 3).
+- **When Harbor or a container engine is missing:** tell the user what is missing and the
+  alternatives: start or install a supported engine, a native runner with authorized containment
+  (`docs/native.md`), or a hosted runner (`docs/harbor.md`). Agent-neutral coding tasks need
+  Harbor-compatible execution, locally or hosted.
 
 ## Working with the user
 
@@ -197,9 +202,9 @@ RELAI is something the user steers, not a black box.
   for the risk list, test scenarios, grader previews before freezing, and the improvement
   agreement. These are named decisions within independent workflows, not a sequence every task
   must complete. Ask only about what remains open; restate consequential changes after discussion.
-- **Recommendation first.** Ask with the host's question tool (`AskUserQuestion` in Claude Code,
-  `request_user_input` in Codex when available, or another available question tool or ordinary chat),
-  your recommendation first. Pause only work that depends on the answer.
+- **Recommendation first.** Ask with the host's structured question tool when it has one (for
+  example `AskUserQuestion` or `request_user_input`), otherwise in ordinary chat, your
+  recommendation first. Pause only work that depends on the answer.
   Never ask the user to edit a file to answer. Append every answer to `decisions.md`, and every
   consequential choice you made yourself as an assumption.
 - **Clear questions.** State the decision and why it matters in the user's terms; explain

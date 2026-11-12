@@ -56,7 +56,8 @@ the benchmark itself would, with its splits respected, and a small budget still 
   (under the home directory, so container mounts see it), at the commit the user
   names or else the default branch's latest, and record it. Never copy the benchmark into the
   agent's repository.
-- Before downloading, check its size. Ask first when it is large (Git LFS, separately fetched
+- Before downloading, check its size and tell the user what lands where (path and approximate
+  size), since it is outside the project. Ask first when it is large (Git LFS, separately fetched
   datasets, roughly 1 GB or more) or needs credentials, naming what will be downloaded and where.
 - `relai.toml`'s `source` is the link and `commit` the pinned commit; the benchmark's README in
   `relai/benchmarks/<id>/` says where the clone lives and how to recreate it.

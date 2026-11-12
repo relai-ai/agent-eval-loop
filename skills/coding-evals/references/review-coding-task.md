@@ -58,5 +58,5 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
     ([comparing](comparing.md), *Before any paid run*).
 
 Report each verdict, then findings: what is wrong, the evidence, and the change that would fix it,
-marked blocking or advisory. Write the report to `relai/work/reviews/coding-task-<id>-<date>.md`
+marked blocking or advisory. Write the report to `relai/records/reviews/coding-task-<id>-<date>.md`
 if you can write files; otherwise return it.

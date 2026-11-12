@@ -61,5 +61,5 @@ or a trajectory step):
 
 Report each property's verdict, then findings: for each failed or unsure property, what is wrong,
 the quoted evidence, and the change that would fix it, marked blocking or advisory. Write the
-report to `relai/work/reviews/harness-<date>-<pass>.md` if you can write files; otherwise return
+report to `relai/records/reviews/harness-<date>-<pass>.md` if you can write files; otherwise return
 it.

@@ -36,7 +36,7 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    benchmark case inputs, expected answers or case ids, and the agent does not read the benchmark
    repository at run time.
 5. **Objective improvement.** Read the factual objective, guardrails and selection rule from
-   `work/improve/plan.json` (or the loop contract or equivalent project agreement), without the author's diagnostic notes. Verify
+   `records/improve/plan.json` (or the loop contract or equivalent project agreement), without the author's diagnostic notes. Verify
    improvement against that objective and the exercised mechanism. Preserved behavioral performance
    with lower cost or latency is valid. For multiple candidates, selection followed the recorded
    rule, ties were reported as ties, and best-of-k assessment reuse was authorized and disclosed.
@@ -61,4 +61,4 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    entry matches the runs.
 
 Report each verdict, then findings with evidence and the fix, marked blocking or advisory. Write
-the report to `relai/work/reviews/change-<date>.md` if you can write files; otherwise return it.
+the report to `relai/records/reviews/change-<date>.md` if you can write files; otherwise return it.

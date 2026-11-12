@@ -106,7 +106,7 @@ as an instruction, not a question. Reuse existing setup and continue work that d
 ## Approve the scenarios
 
 Unless an agreement already covers it, wait for a yes before building. Write each proposed
-test's full design to `relai/work/eval/<date>-scenarios.md` ([test-design](references/test-design.md),
+test's full design to `relai/records/eval/<date>-scenarios.md` ([test-design](references/test-design.md),
 *Proposing a test*). In chat, show one compact table, in the order you recommend building: the
 behavior, its source, the scenario in one line naming the real data and the trigger that makes
 it hard, what failing looks like, and its opposite-direction partner, if any. Below it, give the
@@ -120,7 +120,7 @@ Freezing stops anyone tuning a test to the agent's results, so preview without r
 score each test's evaluators on synthetic trajectories (a passing one, a failing one that commits
 the risk's observable failure, an empty reply) and on any real recorded traces that fit the
 scenario. Write every test's full table (evaluator × case → score and the first line of
-feedback) to `relai/work/eval/<date>-grader-preview.md`. Size chat previews by the shared
+feedback) to `relai/records/eval/<date>-grader-preview.md`. Size chat previews by the shared
 [decision-effort rule](../start/template/README.md#working-with-the-user), reviewing manageable
 subsets when needed while keeping the complete artifact and pending decisions visible. For the
 subset being approved, show every judge evaluator's rows and every score that differs from what
