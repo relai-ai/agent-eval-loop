@@ -2,24 +2,20 @@
 
 ## The repository
 
-`relai/` in the repository the tasks come from, or in a separate repository or a folder outside
-the source repository, set up
-with the [start skill](../../start/SKILL.md). Neither is the default; choose from what you found:
+`relai/` lives in the repository the tasks come from, or in a separate repository or a folder
+outside the source repository, set up with the [start skill](../../start/SKILL.md). Neither is
+the default. Unless the request or `decisions.md` already settles it, present both at the scope
+checkpoint with their pros and cons, and recommend one from what you found (which repositories
+tasks come from, one bundle's size times the planned tasks, who owns the evals, whether the
+product repository is public):
 
-- **The source repository** suits tasks from it alone, with modest history, owned with the code.
-  Keep `relai/tests/` out of its own test collection and CI (hidden tests are copies of its
-  tests). Tasks must start before `relai/` was committed, or the workspace would carry other
-  tasks' hidden tests, fixes and bundles (`check_task.py` refuses such a bundle); fresh tasks from
-  recent work then need a separate place.
-- **A separate repository or outside folder** suits tasks from several repositories, an eval set owned or
-  shared apart from the code, tasks that must stay away from the agents and CI working on the
-  product, a public product repository with private task code, or history too large to repeat
-  in it. Make it private when tasks hold private code.
+| | The source repository | A separate repository or outside folder |
+| --- | --- | --- |
+| **Pros** | One place: tasks sit beside the code and setups they test, and the team reviews them as usual. Nothing new to create or keep in sync. | Holds tasks from several repositories. Keeps product history, CI and daily coding agents free of hidden tests and reference fixes. Can be private or shared apart from the product. Can take new tasks from any point in history. |
+| **Cons** | Every task repeats the history up to its start, so the repository grows with each task. Hidden tests must be kept out of its test runs and CI. Tasks cannot start after `relai/` is committed, or they would carry earlier tasks' answers and bundles (`check_task.py` refuses such a bundle), so tasks from recent work need another place later. Task code is as visible as the product. | One more repository or folder to create, own and grant access to. Setups copied from the product repository must be kept in sync. Evals are less visible to the people working on the code. |
 
-Each task carries the history up to its start ([task-format](task-format.md), step 2), so size
-one bundle before proposing many. When the facts point one way, state the choice and why in a
-line with the findings; when they do not, or the choice matters, ask at the scope checkpoint
-with a recommendation. It needs no
+Make a separate repository private when tasks hold private code. Each task carries the history up
+to its start ([task-format](task-format.md), step 2). It needs no
 application-agent harness: Harbor installs supported coding agents. A custom coding agent needs
 a suitable installer/adapter that executes the real agent and preserves the task/result contract;
 inspect existing support before proposing new integration work. A team's setups (instruction
@@ -28,7 +24,8 @@ files, skills, hooks, MCP configuration) live under `relai/setups/<id>/`, laid o
 ## Size it to the request
 
 Start with what the request needs and grow the scope when later requests need more. A test from
-one pull request or session needs the source repository, where task code may live, and standards
+one pull request or session needs the source repository, where the eval project and task code
+live, and standards
 drafted from the instruction files and contributing docs at hand, shown with the task list rather
 than in a round of their own. Mining review comments, other repositories and kinds of work suits
 a request to mine a repository or build a set. The agent's model, version and authentication wait
@@ -61,7 +58,9 @@ the drafted standards), then ask only what remains open, following
 
 1. **Source repositories** tasks may come from, and the **kinds of work** that matter, when the
    request does not say.
-2. **Where task code may live** (`task_code`), only when it could leave the eval project's
+2. **Where the eval project lives**, with the pros, cons and your recommendation (*The
+   repository*), unless already settled.
+3. **Where task code may live** (`task_code`), only when it could leave the eval project's
    repository: `"private"`, kept there (default), or `"shareable"`. Never assume shareable.
 
 When some fix can be found online (a public source, a published release), state the network default with the findings: tasks whose fix can be

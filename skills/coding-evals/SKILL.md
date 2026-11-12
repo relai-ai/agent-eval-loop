@@ -15,8 +15,8 @@ version and setup the team uses. Often there is one such agent, and the first qu
 does on the team's work; that run is the baseline. A later question may be whether a change helps:
 a new model or version, an edit to its instruction files, a skill or hook. Comparing changes or
 other agents is optional; never assume it. The **eval project** holds `relai/`: the source
-repository or a separate one, chosen from the situation ([scope](references/scope.md), *The
-repository*). Task source can come from this or
+repository or a separate one, which the user chooses after you lay out the pros and cons and
+recommend one ([scope](references/scope.md), *The repository*). Task source can come from this or
 other scoped repositories, and reaches each task's workspace only up to its starting commit.
 
 Goal: tasks from the team's real work that any coding agent can run, that a correct fix passes
