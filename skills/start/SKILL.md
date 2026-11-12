@@ -38,6 +38,9 @@ paths refer to project artifacts, not files inside the plugin.
 - When initialization is needed and authorized, copy [template/](template/) to the repository's
   `relai/`, skipping caches, and rename `gitignore` to `.gitignore`. Explain what will be added;
   ask only when existing instructions do not authorize it.
+- Record the source of copied files in `relai/UPSTREAM.md` or existing project provenance,
+  following the [project-copy upgrade policy](template/docs/upgrades.md). Apply that policy
+  when upgrading existing copies; an installed plugin update does not replace project files.
 - If setup was interrupted, restore missing template files needed for the selected work. Preserve
   project modifications. If an existing file is incompatible with the needed operation, explain
   the difference and resolve that file rather than silently replacing the project copy.

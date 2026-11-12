@@ -21,6 +21,7 @@ runner details are in `docs/`, read when the work touches them:
 | `docs/harbor.md` | Running Harbor, or setting up a hosted runner for pull requests |
 | `docs/native.md` | Writing or using a native runner |
 | `docs/board.md` | Rewriting `STATUS.md` |
+| `docs/upgrades.md` | Copying or upgrading supplied files, including task verifiers |
 
 ## Fixed rules
 
@@ -116,6 +117,7 @@ generic infrastructure without a concrete need.
 | `changes.md` | Every attempted change to the agent: what, why, before/after, kept or not | yes |
 | `feedback.md` | The user's feedback on specific runs and judge scores, and what each answer became | yes |
 | `decisions.md` | The user's choices and the coding agent's stated assumptions, newest last | yes |
+| `UPSTREAM.md` | Source versions/commits and adaptations of copied files (`docs/upgrades.md`); an existing equivalent record is fine | yes |
 | `docs/` | The detailed contracts listed above | yes |
 | `bin/` | The shared checkers (below), plus any example script copied from the plugin | yes |
 | `harness/` | How the agent runs in a trial: adapter, recorder, image recipe; `mocks/` with `MOCKS.md`; `smoke/`, the smoke test | yes |

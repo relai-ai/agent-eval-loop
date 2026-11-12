@@ -45,8 +45,8 @@ and plugin users do not need this development environment. For a standard-librar
 `python3 -m unittest discover -s tests` still works, with prerequisite-dependent skips.
 
 GitHub Actions runs the suite, including manifest version consistency and referenced-file
-checks, on every pull request and manual dispatch, using Python 3.12 on Linux. CI installs uv
-and syncs the locked development dependencies; container tests detect an available compatible
+checks, on every pull request and manual dispatch, using Python 3.12 on Linux.
+CI installs uv and syncs the locked development dependencies; container tests detect an available compatible
 engine. The logs show each test outcome, and the job summary lists every skipped test with its reason.
 Skipped tests do not establish integration coverage. To use the same runner locally:
 
@@ -104,6 +104,12 @@ Use synthetic fixtures where possible. Keep frozen evaluation evidence stable wh
 changes, and qualify improvement claims with the attempts, costs, uncertainty, and limitations.
 
 ## Open a pull request
+
+Feature PRs do not bump versions. Describe behavior and project-copy migrations in the PR;
+GitHub generates release notes from the merged work. The manually triggered Release workflow
+bumps and tests a snapshot of `main`, then pushes the version bump directly to `main` with a tag and
+GitHub release. See [RELEASING.md](RELEASING.md) for that process.
+User update instructions are in the [README](README.md#updating).
 
 Keep each pull request focused. Explain the problem, observable behavior changes, and validation
 results using the provided template. Note compatibility concerns, skipped checks, and any
