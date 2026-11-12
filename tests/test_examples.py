@@ -381,6 +381,33 @@ class OutboundRedactionTest(unittest.TestCase):
         self.assertNotIn(canary, result["error"])
         self.assertIn("outside", result["error"])
 
+    def test_self_test_redacts_provider_diagnostic_in_console_output(self):
+        import urllib.error
+        canary = "opaque-self-test-credential-0123456789"
+        self.repo.write("relai/relai.toml", '''
+            [judge]
+            provider = "openai-compatible"
+            model = "synthetic"
+            base_url = "https://offline.invalid/v1"
+            api_key_env = "AUDIT_PROVIDER_KEY"
+        ''')
+        self.judge = load("judge")  # Restore the real transport, mocked only at urlopen.
+        error = urllib.error.HTTPError("https://offline.invalid", 400, "bad request", {},
+                                       io.BytesIO(("diagnostic echoed " + canary).encode()))
+        output, stderr = io.StringIO(), io.StringIO()
+        argv = ["judge.py", "--self-test", str(self.task), "--relai-dir", str(self.repo.relai)]
+        with contextlib.closing(error), \
+                patch.dict(os.environ, {"AUDIT_PROVIDER_KEY": canary}), \
+                patch.object(self.judge.urllib.request, "urlopen", side_effect=error) as request, \
+                patch.object(sys, "argv", argv), \
+                contextlib.redirect_stdout(output), contextlib.redirect_stderr(stderr):
+            self.assertEqual(self.judge.main(), 1)
+        request.assert_called_once()
+        self.assertIn("FAIL explains:", output.getvalue())
+        self.assertIn("HTTP 400", output.getvalue())
+        self.assertIn("[redacted AUDIT_PROVIDER_KEY (environment)]", output.getvalue())
+        self.assertNotIn(canary, output.getvalue() + stderr.getvalue())
+
 
 class EvaluateHelperTest(unittest.TestCase):
     def test_rerun_replaces_prior_errors_and_scores(self):

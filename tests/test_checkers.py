@@ -57,6 +57,27 @@ class CheckTaskTest(Base):
         self.assertIn("contains the value of OPENAI_API_KEY", result.stdout)
         self.assertNotIn(secret, result.stdout + result.stderr)
 
+    def test_json_secret_diagnostics_include_names_and_labels_but_not_values(self):
+        canary = "synthetic-checker-credential-0123456789"
+        pattern_canary = "AKIA" + "0" * 16  # Synthetic match for the AWS access-key pattern.
+        self.repo.write("relai/.env", f"AUDIT_TEST_KEY={canary}\n")
+        task = self.repo.task()
+        (task / "environment" / "config.json").write_text(
+            json.dumps({"key": canary, "aws_key": pattern_canary}))
+
+        result = self.repo.run("check_task.py", str(task), "--json", "--no-harbor")
+
+        self.assertEqual(result.returncode, 1)
+        # The CLI emits a suite report followed by one JSON document per task.
+        _, end = json.JSONDecoder().raw_decode(result.stdout)
+        report = json.loads(result.stdout[end:])
+        self.assertFalse(report["ok"])
+        self.assertIn("environment/config.json contains the value of AUDIT_TEST_KEY from relai/.env",
+                      report["errors"])
+        self.assertIn("environment/config.json contains what looks like a AWS access key", report["errors"])
+        for value in (canary, pattern_canary):
+            self.assertNotIn(value, result.stdout + result.stderr)
+
     def test_copy_of_live_file_in_image_inputs_is_rejected(self):
         self.repo.write("src/prompts/system.md", "You are a helpful retail agent.\n")
         self.repo.write("relai/relai.toml", '[target]\nlive_paths = ["src/prompts/**"]\n')
