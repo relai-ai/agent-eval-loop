@@ -185,7 +185,8 @@ or printing the value.
   containers and shows temp-directory files through bind mounts. A mount the engine
   cannot see arrives empty without an error (VM-based engines such as Colima may share only the
   home directory), so keep mounted paths, including `TMPDIR` for the checkers, under the home
-  directory.
+  directory. A task with a restricted network also needs the engine's image builder for Harbor's
+  egress sidecar (`docker buildx` on a Docker CLI; the Harbor notes).
 - **Native:** the integration declares and checks its own runtime and containment (Fixed rule 3).
 
 ## Working with the user

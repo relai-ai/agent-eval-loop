@@ -1,17 +1,29 @@
 #!/bin/bash
 # Runs after the agent is done, in its container. The agent could have left processes running and
 # written to /logs/verifier and /tests, so first:
-#  1. stop every process except PID 1 and this script's own ancestors (Harbor's exec);
+#  1. stop every process except PID 1, the container's keep-alive (a child of PID 1 started with
+#     it: Harbor's `sh -c "sleep infinity"` may keep `sleep` as a child rather than exec it, and the
+#     container stops when it dies) and this script's own ancestors (Harbor's exec);
 #  2. remove score files planted in /logs/verifier (Harbor scores reward.json if it exists);
 #  3. run verify.py isolated: -I -S (no PYTHON* variables, user or site packages), /tests last on
 #     the path, so nothing planted there stands in for a standard module.
 # Scores go in /logs/verifier/reward.json; a low score is not a failed script.
+field() { sed -e 's/^.*) //' "/proc/$1/stat" 2>/dev/null | cut -d' ' -f"$2"; }  # 2 = parent, 20 = start time
 keep=" 1 $$ "
 pid=$$
 while [ "${pid:-1}" -gt 1 ] 2>/dev/null; do
-  pid=$(sed -e 's/^.*) //' "/proc/$pid/stat" 2>/dev/null | cut -d' ' -f2)
+  pid=$(field "$pid" 2)
   [ -n "$pid" ] || break
   keep="$keep$pid "
+done
+# The agent starts long after the container; anything it left under PID 1 started later than this.
+born=$(field 1 20)
+window=$(( 2 * $(getconf CLK_TCK 2>/dev/null || echo 100) ))
+for dir in /proc/[0-9]*; do
+  p=${dir#/proc/}
+  [ "$(field "$p" 2)" = 1 ] || continue
+  started=$(field "$p" 20)
+  [ -n "$started" ] && [ -n "$born" ] && [ $((started - born)) -le "$window" ] 2>/dev/null && keep="$keep$p "
 done
 for dir in /proc/[0-9]*; do
   p=${dir#/proc/}

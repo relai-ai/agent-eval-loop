@@ -142,7 +142,8 @@ outside frozen task contents.
 
 **Before building**, record the source, developer's request, kind and area, start/fix commits
 and fix date, contamination and network setting, intended checks and their source-backed lesson,
-and validity risks. Show a compact task table (source, request, what failing looks like), with
+and validity risks, including what the fix's tests pin ([sources](references/sources.md), *Read
+the fix's tests*). Show a compact task table (source, request, what failing looks like), with
 real failures and corrections first. State that building and health checks call no model, and
 estimate trial cost or plan usage and time, with tasks × versions × attempts, as information.
 Unless already authorized, obtain task selection approval before building; run budget is

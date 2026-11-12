@@ -274,7 +274,7 @@ Questions wait for a natural decision point: the end of `discover`, the first ti
 ## Requirements
 
 - **Python 3.11+** for bundled checkers and reference scripts; project-native integrations are supported.
-- **Harbor execution:** [uv](https://docs.astral.sh/uv/) and a locally supported container engine with a Docker-compatible CLI, or Podman.
+- **Harbor execution:** [uv](https://docs.astral.sh/uv/) and a locally supported container engine with a Docker-compatible CLI, or Podman. Tasks with a restricted network also need the engine's image builder (`docker buildx` on a Docker CLI).
 - **Native execution:** the project or benchmark runner's own prerequisites; unused Harbor or container tools are not required.
 - **Model access** for the agent, simulated users and judges, through your project's credential mechanism or `relai/.env`.
 

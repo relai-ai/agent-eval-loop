@@ -430,13 +430,18 @@ class SummarizeTest(Base):
                      judges={"explains": {"score": 0.0, "feedback": "judged a crashed run"}})
         harbor_trial(job, "t6", self.task, {"looks-up-order": 0.0}, exception="AgentTimeoutError",
                      feedback={"looks-up-order": "timed out"}, judges={"explains": {"score": 0.0, "feedback": "x"}})
+        # graded, but the agent never reached its model: the untouched workspace's 0 is not the agent's score
+        harbor_trial(job, "t7", self.task, {"looks-up-order": 0.0}, exception="NonZeroAgentExitCodeError",
+                     feedback={"looks-up-order": "untouched"}, judges={"explains": {"score": 0.0, "feedback": "x"}},
+                     usage={"n_input_tokens": 0, "n_output_tokens": 0, "cost_usd": 0.0})
         result = self.repo.run("summarize.py", "--details", str(self.repo.root / "runs" / "a"), "--json",
                                str(self.repo.root / "s.json"))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         summary = json.loads((self.repo.root / "s.json").read_text())["run"]
         self.assertEqual(summary["status_counts"], {"scored": 2, "evaluator error": 1, "judges pending": 1,
-                                                    "runtime failure": 2, "unscored": 0, "task not found": 0})
+                                                    "runtime failure": 3, "unscored": 0, "task not found": 0})
         self.assertAlmostEqual(summary["tests"]["tests/orders"]["mean"], 0.375)
+        self.assertIn("made no model calls", result.stdout)
         self.assertIn("scored, but the runner recorded AgentTimeoutError", result.stdout)
         self.assertIn("1 errored trial", result.stdout)
 

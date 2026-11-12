@@ -9,7 +9,9 @@ Reads every Harbor or native trial under the given directories: result.json (exc
 task checksum, usage), verifier/feedback.json and verifier/errors.json (code evaluators),
 and judges/<evaluator-id>.json (judges, written after the trial). Each trial is classified
 as scored, evaluator error, judges pending, runtime failure, or unscored; these are never
-merged, and Harbor's own exit status is not trusted (it exits 0 when trials fail).
+merged, and Harbor's own exit status is not trusted (it exits 0 when trials fail). A trial with an
+exception and recorded token counts that are all zero is a runtime failure even when the verifier
+scored it: the agent never reached its model, so the score is the untouched workspace's.
 
 An agent-neutral coding task ([metadata.relai].agent_neutral = true) needs no trajectory to be scored: its
 checks read the workspace. Without a trajectory, the evaluators that need one (code evaluators with
@@ -200,6 +202,12 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
     feedback = read_json_dict(trial_dir / "verifier" / "feedback.json")
     errors = read_json_dict(trial_dir / "verifier" / "errors.json")
     crashed = bool(exception) and result.get("verifier_result") is None
+    # Harbor grades the untouched workspace even when the agent never reached its model, which would read
+    # as a real 0: an exception with recorded token counts that are all zero is a runtime failure
+    tokens = [usage[k] for k in ("n_input_tokens", "n_output_tokens") if valid_number(usage[k])]
+    if exception and tokens and not any(tokens):
+        crashed = True
+        base["missing"] = "the agent recorded an exception and made no model calls, so its verifier scores are not counted"
     has_trajectory = (trial_dir / "agent" / "trajectory.json").is_file()
     outcomes = {}
     for ev in evaluators:
