@@ -68,38 +68,44 @@ You can start at any skill without completing the full workflow.
 
 ## Installation
 
-Install all seven skills with the [skills CLI](https://github.com/vercel-labs/skills) (requires Node.js/npm):
+RELAI supports Claude Code, Codex, and other coding agents. Native installs for Claude Code
+and Codex are below; expand **Other agents, Skills CLI, and manual installation** for
+additional options.
 
-```bash
-npx skills add relai-ai/agent-eval-loop --skill '*'
-```
+### Claude Code
 
-Choose your coding agent when prompted. That is the whole setup: RELAI is a set of skills your
-coding agent reads, with no CLI, server or account of its own.
-
-Installs into the current project; add `-g` for all projects. Install all seven skills together
-so their cross-references stay available.
-Skills-only installs include the bundled templates and checkers; for the optional scripts in
-[`examples/`](examples/) and the optional [hooks](hooks/), use a native plugin install or keep a full clone.
-
-<details>
-<summary><b>Native plugins, Gemini CLI and manual installation</b></summary>
-
-**Claude Code** — from a shell:
+From a terminal:
 
 ```bash
 claude plugin marketplace add relai-ai/agent-eval-loop
 claude plugin install relai@agent-eval-loop
 ```
 
-**Codex** — from a shell:
+### Codex
+
+From a terminal:
 
 ```bash
 codex plugin marketplace add relai-ai/agent-eval-loop
 codex plugin add relai@agent-eval-loop
 ```
 
-Codex asks you to review and trust the plugin's optional hooks (`/hooks`) before they run.
+Start a new session after installing. Codex asks you to review and trust the optional hooks
+before they run.
+
+<details>
+<summary><b>Other agents, Skills CLI, and manual installation</b></summary>
+
+**Skills CLI** (requires Node.js/npm):
+
+```bash
+npx skills add relai-ai/agent-eval-loop --skill '*'
+```
+
+Choose your coding agent when prompted. This installs into the current project; add `-g` for
+all projects. Install all seven skills together so their cross-references stay available.
+This method includes templates and checkers; for the optional scripts in
+[`examples/`](examples/) and optional [hooks](hooks/), use a native plugin install or a full clone.
 
 **Antigravity:**
 
@@ -127,9 +133,29 @@ cp -R ~/agent-eval-loop/skills/* .agents/skills/
 Other project directories: `.cursor/skills/` (Cursor), `.windsurf/skills/` (Windsurf),
 `.opencode/skills/` (OpenCode), `.github/skills/` (GitHub Copilot), `.kiro/skills/` (Kiro).
 Copy each skill's whole folder, including the files next to `SKILL.md`, then reload your agent.
-To update a manual install, run `git -C ~/agent-eval-loop pull` and copy the skills again.
 
 </details>
+
+## Updating
+
+Update using the same method and scope you installed with, then start a new session.
+Read [release notes](https://github.com/relai-ai/agent-eval-loop/releases) for migration steps.
+
+| Installation | Update |
+| --- | --- |
+| Claude Code plugin | Enable auto-update for **agent-eval-loop** in the plugin manager's Marketplaces tab (off by default), or run `claude plugin marketplace update agent-eval-loop`. |
+| Codex plugin | Run `codex plugin marketplace upgrade agent-eval-loop` and verify the installed version; use the plugin manager's install controls if it remains stale. |
+| Skills CLI | Run `npx skills update`; keep all seven RELAI skills together. |
+| Manual copy | Run `git -C ~/agent-eval-loop pull`, then copy the complete skill folders again, preserving local edits. |
+
+The Skills CLI and manual copies need explicit updates. Native refresh policies are described
+in the [Claude Code](https://code.claude.com/docs/en/plugins/install#keep-plugins-updated) and
+[Codex](https://developers.openai.com/plugins/build/plugins) docs; commands were checked with
+Claude Code 2.1.284 and Codex CLI 0.160.0 on 2026-11-11. Internal installs need repository read
+access. `main` can contain unreleased changes; pin a tag where supported for a fixed release.
+
+Plugin updates do not replace existing project files in `relai/` or frozen tasks. Use the
+[project-copy policy](skills/start/template/docs/upgrades.md) to preserve adaptations and evidence.
 
 ## Why RELAI
 

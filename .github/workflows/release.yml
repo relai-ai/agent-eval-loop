@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version (X.Y.Z); leave blank for the next patch'
+        required: false
+        type: string
+      prerelease:
+        description: Mark the GitHub release as early access
+        type: boolean
+        default: true
+      project_copy_notes:
+        description: 'Migration steps for project copies, if any (included in release notes)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Bump, test, and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Require main
+        run: test "$GITHUB_REF" = refs/heads/main
+
+      - name: Check out the selected main revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Prepare local release snapshot
+        id: snapshot
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name 'relai-release-bot[bot]'
+          git config user.email 'relai-release-bot[bot]@users.noreply.github.com'
+          python scripts/release.py prepare "$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install uv
+        run: python -m pip install uv
+
+      - name: Sync locked test environment
+        run: uv sync --locked --python 3.12
+
+      - name: Run tests on the release snapshot
+        run: uv run --locked python .github/scripts/run_tests.py
+
+      - name: Create release bot token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          client-id: ${{ secrets.RELAI_RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELAI_RELEASE_BOT_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+
+      - name: Publish tested snapshot
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ steps.snapshot.outputs.version }}
+          RELEASE_SHA: ${{ steps.snapshot.outputs.sha }}
+          SOURCE_SHA: ${{ steps.snapshot.outputs.source_sha }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          PROJECT_COPY_NOTES: ${{ inputs.project_copy_notes }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          python scripts/release.py check --version "$VERSION"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          tag="v$VERSION"
+          git tag "$tag" "$RELEASE_SHA"
+          gh auth setup-git
+          git push --atomic origin "$RELEASE_SHA:refs/heads/main" "refs/tags/$tag"
+          printf 'Source main commit: %s\n\n### Project copies\n\n' "$SOURCE_SHA" > "$RUNNER_TEMP/release-notes.md"
+          if [ -n "$PROJECT_COPY_NOTES" ]; then
+            printf '%s\n' "$PROJECT_COPY_NOTES" >> "$RUNNER_TEMP/release-notes.md"
+          else
+            printf 'No migration notes were supplied. Plugin updates do not overwrite project-owned files; review the project-copy upgrade policy before changing them.\n' >> "$RUNNER_TEMP/release-notes.md"
+          fi
+          options=(release create "$tag" --verify-tag --generate-notes --target "$RELEASE_SHA"
+            --title "RELAI $VERSION" --notes-file "$RUNNER_TEMP/release-notes.md")
+          if [ "$PRERELEASE" = true ]; then options+=(--prerelease); fi
+          gh "${options[@]}"

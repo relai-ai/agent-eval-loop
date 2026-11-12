@@ -8,8 +8,7 @@
     {
       "name": "relai",
       "source": "./",
-      "description": "Eval-driven improvement for AI agents.",
-      "version": "0.1.0"
+      "description": "Eval-driven improvement for AI agents."
     }
   ]
 }

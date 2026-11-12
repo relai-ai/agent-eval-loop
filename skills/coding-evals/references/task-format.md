@@ -4,6 +4,9 @@ Write each task from the contract in `relai/docs/files.md` (*An agent-neutral co
 plugin ships only the [verifier](../verifier/): `coding_checks.py` and `test.sh`, copied into each
 task's `tests/`, used as they are unless adapted under [checks](checks.md) (*Adapting the
 verifier*).
+Record each verifier copy's source and adaptations using the
+[project-copy policy](../../start/template/docs/upgrades.md); updating the plugin does not
+update an existing task, and frozen copies follow controlled repair.
 
 ```
 relai/tests/<id>/
