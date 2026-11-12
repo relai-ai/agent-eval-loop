@@ -5,12 +5,14 @@
   "author": {
     "name": "RELAI"
   },
+  "homepage": "https://relai.ai",
+  "repository": "https://github.com/relai-ai/agent-eval-loop",
   "skills": "./skills/",
   "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "RELAI",
     "shortDescription": "Eval-driven improvement for AI agents.",
-    "longDescription": "RELAI turns traces into requirements, risks and evaluations, and measures improvements against agreed behavioral, cost or latency objectives. Seven skills: start, discover, trace-review (project-owned trace review apps with persistent feedback), eval, improve, loop, coding-evals (agent-neutral evals for the coding agents a team uses, from its sessions, pull requests and git history). Supports Harbor and native runners, optional held-out tests, and bounded direct fixes.",
+    "longDescription": "RELAI turns your agent's code and traces into requirements, risks and evaluations, then measures changes against the behavior, cost or latency goal you agree. Seven skills: start, discover, trace-review (a trace review app you own, with saved feedback), eval, improve, loop, and coding-evals (evaluations for the coding agent your team uses, built from its sessions, pull requests and git history). Runs on Harbor or your own runner. Needs Python 3.11+; running evals needs a container engine or your own runner, and model access.",
     "developerName": "RELAI",
     "category": "Productivity",
     "capabilities": [

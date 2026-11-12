@@ -1,6 +1,6 @@
 ---
 name: improve
-description: Use to fix agent code, improve the AI agent against its evaluations, reduce cost or latency while preserving behavior, or check a change for regressions ("fix this crash", "make the agent pass X", "make it cheaper", "did this change break anything"). For an ongoing loop that also learns from new traces, use the loop skill. To only run evaluations, use the eval skill.
+description: Use to fix the AI agent's code, improve the agent (or LLM app, chatbot or pipeline) against its evaluations, compare prompts, models or settings for it, reduce its cost or latency while preserving behavior, or check a change to it for regressions ("fix this crash in the agent", "make the agent pass X", "compare these two prompts for the agent", "does this change help the agent", "make it cheaper", "did this change break the agent"). Not for general code bugs outside an AI agent. For an ongoing loop that also learns from new traces, use the loop skill. To only run evaluations, use the eval skill.
 ---
 
 # Improve the agent

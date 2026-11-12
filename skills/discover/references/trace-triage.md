@@ -4,7 +4,8 @@ Use when exhaustive reading is not justified by the question, scale or budget. R
 project tooling or choose an approach that preserves trace references, coverage and failures.
 The optional [triage example](../../../examples/triage.py), with
 [judge.py](../../../examples/judge.py) beside it, can be copied to `relai/bin/` and adapted or
-replaced in the project's language. Its three lanes are a useful starting point, not mandatory
+replaced in the project's language (if `examples/` is not installed, fetch it as the project
+contract's *Checkers* section says). Its three lanes are a useful starting point, not mandatory
 categories:
 
 | Lane | What it is | Where it goes |

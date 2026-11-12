@@ -1,6 +1,6 @@
 ---
 name: loop
-description: Use to improve the AI agent in this repository continuously from traces, feedback and evaluations ("improve this agent from ./traces", "keep improving it as new traces come in", "run the improvement loop", "make it better and cheaper with as little of my time as possible"). Not for a one-off test run (use the eval skill) or a single fix (use the improve skill).
+description: Use to improve the AI agent in this repository continuously from traces, feedback and evaluations ("improve this agent from ./traces", "keep improving it as new traces come in", "run the improvement loop", "make it better and cheaper with as little of my time as possible"). Not for a one-off test run (use the eval skill) or a single fix (use the improve skill), and not for running a prompt on a schedule or polling.
 ---
 
 # Loop: learn from new traces, fix, repeat

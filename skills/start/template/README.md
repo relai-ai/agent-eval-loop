@@ -161,7 +161,10 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 Example scripts (a Harbor agent and launcher, a native runner, an API judge, a trace triager and
 a code-evaluator helper) live in the plugin's `examples/`. None is part of `relai/` until an
 integration chooses it; then it is copied, owned and adapted like any project code, or replaced
-by a project-native equivalent that meets the same contract.
+by a project-native equivalent that meets the same contract. Some installs (the Skills CLI, Gemini
+CLI or a manual copy of the skills) do not include `examples/`: then fetch the needed file from the
+plugin repository (github.com/relai-ai/agent-eval-loop) at the installed version, or write a
+project-native equivalent.
 
 ## Adapting supplied implementations
 
