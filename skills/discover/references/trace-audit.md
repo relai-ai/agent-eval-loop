@@ -3,6 +3,8 @@
 Choose checks for the target agent's policies, failure mechanisms and the user's question.
 Reuse existing analysis tools, inspect directly, or write focused scripts when scale warrants
 them. Script outputs and model flags are leads; cite the source trace after checking it.
+For substantial work, follow [adaptive investigation and blind-spot review](trace-investigation.md)
+across checks rather than treating this list as exhaustive.
 
 ## Establish scope and coverage
 
