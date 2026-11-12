@@ -26,8 +26,9 @@ The sections:
 - **Next action:** continue the user's request or resolve its actual missing prerequisite. A
   question blocks only dependent work. Show broader coverage, hardening or new trace analysis as
   optional opportunities, not mandatory next stages. If the request is complete, say so.
-- **Waiting on the user:** open questions, proposed risks, pending feedback items, unfrozen tests,
-  a judge flagged for low agreement, and a spent budget.
+- **Waiting on the user:** decisions or resource limits that block the current request, such as
+  consequential open questions, risk admissions, feedback or test approvals needed now. Keep
+  uncertainties and approvals for future work visible without presenting them as current blockers.
 - **Next to answer:** a manageable batch sized by actual judgment effort, using "When the user
   is asked" in `../README.md`, each with its kind (marked blocking where it is), recommendation
   and source, and how many remain. A large table does not automatically count as one small choice.

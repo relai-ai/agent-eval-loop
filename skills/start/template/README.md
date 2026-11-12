@@ -8,8 +8,10 @@ shows where things stand and what to do next. It was set up by the RELAI plugin,
 needs the plugin to run: any coding agent or person can read, run and extend it with the declared
 runner and the bundled Python checkers.
 
-This file holds shared guarantees and terms. Read the parts relevant to the selected task;
-direct fixes and project-native regression checks need no evaluation setup. Maintain useful
+This file holds shared guarantees and terms. Read the parts relevant to the selected task.
+Adapt, combine or omit suggested activities to fit the request; completion criteria for a later
+stage apply when that stage is requested. Preserve the applicable evidence, authorization, budget
+and measurement guarantees. Direct fixes and project-native regression checks need no evaluation setup. Maintain useful
 knowledge as described below. The layout below is the
 default for RELAI-managed work: reuse existing project records when they preserve the needed
 evidence, and use checker-specific formats only when using those checkers. File formats and
@@ -153,7 +155,7 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 | --- | --- |
 | `python3 relai/bin/check_task.py relai/tests/<id> [--cloud] [--verifier [--fixture DIR]]` | After writing or changing a test. `--cloud` additionally checks the bundled hosted-builder recipe; local checks do not require anonymous public images. `--verifier` (Harbor only) runs the verifier in the local container engine on a synthetic normal and empty-reply trajectory; `--fixture DIR` adds files to `/logs/agent` |
 | `python3 relai/bin/check_trajectory.py <trajectory.json> [--turns N]` | On a trajectory from a trial |
-| `python3 relai/bin/check_wiki.py [relai]` | After changing the wiki or a test's `covers`; checks managed attachment JSON syntax, not factual fidelity |
+| `python3 relai/bin/check_wiki.py [relai]` | After changing the wiki or a test's `covers`; checks typed pages, a present wiki index and managed attachment JSON syntax, not factual fidelity |
 | `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | After a run; concise by default, `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`) and descriptive `noise`/`se` |
 | `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run; `--reason` to re-freeze a change, `--begin-repair --reason` to open an agreed repair, `--check` to report |
 | `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer |
