@@ -27,8 +27,8 @@ provider = "anthropic"       # or "openai", "openrouter", "openai-compatible" (m
 model = "claude-opus-5-5"     # required; no default
 effort = "medium"            # optional, Anthropic only
 
-[triage]                     # optional: the cheap model bin/triage.py uses on many traces
-provider = "openrouter"      # same keys as [judge]; required for triage.py (it never uses [judge])
+[triage]                     # optional table; needed only to run bin/triage.py (it never uses [judge])
+provider = "openrouter"      # same keys as [judge]: a cheap model, one call per trace
 model = "anthropic/claude-haiku-5.5"
 
 [runtime]
@@ -263,8 +263,9 @@ appends one JSON line per call to
 ## `frozen.json`
 
 Written only by `freeze.py`: each test's digest (all files except `README.md`), when it was
-frozen, and the reason for every re-freeze. `repair` (`reason`, `since`) marks an agreed repair
-in progress (`freeze.py --begin-repair`); re-freezing removes it. It changes no score's meaning:
+frozen, and the reason for every re-freeze. `repair` (`reason`, `since`) marks a repair in
+progress (`freeze.py --begin-repair`), run only after the repair is agreed and recorded in
+`decisions.md`; re-freezing removes it. It changes no score's meaning:
 only editing hooks read it, to stop asking before each edit of that test.
 
 ## `changes.md`
@@ -274,6 +275,15 @@ where the change lives (branch, commit or worktree); the diagnosis it acted on; 
 targeted and checked; the before and after scores from comparable runs; the verdict (kept,
 rejected, or left for review) with the reason. A rejected change stays recorded so nobody
 retries it blindly.
+
+## `decisions.md` and `UPSTREAM.md`
+
+`decisions.md` is one line per decision, newest last:
+`- 2026-11-12 · <the choice, in a sentence> · <asked: the user | assumed: the coding agent> · <source>`.
+The source links to where the detail lives (a feedback item such as `feedback.md#FB-2026-11-traces-07`,
+a wiki page, `records/eval/2026-11-12-scenarios.md`); link to it rather than copying the answer.
+`UPSTREAM.md` is one line per copied file or folder: its path here, the plugin path and version
+or commit it came from, and a short note of local adaptations.
 
 ## `feedback.md`
 
@@ -287,7 +297,8 @@ It is not the place for general questions:
 | Lifetime | Durable knowledge, cited by tests | Closed once answered |
 
 A feedback answer that exposes a general ambiguity also opens a question; answering a question
-can settle pending feedback items. One `## ` item each:
+can settle pending feedback items. One `## ` item each, with an id `FB-<year>-<month>-<source>-<n>`
+(the source being the trace batch or run it came from) so other files can link to it:
 
 ```markdown
 ## FB-2026-11-traces-07: Should the agent have refunded the lost tablet?
@@ -355,11 +366,14 @@ and keep protected assessment contents out. Raw runs, candidates and scratch sta
 
 ## `records/loop/state.json`
 
-`contract`: the loop's agreement (objective, guardrails, scope, inputs, length, budget, when to
-ask, check-ins, watch mode, delivery). When a monetary ceiling applies, record `budget_usd` and
+`contract`: the loop's agreement (objective, guardrails, scope, inputs including any triage
+provider and its data authorization, length, budget, when to ask, `approvals` (`delegated` or
+`supervised`), check-ins, watch mode, delivery). When a monetary ceiling applies, record `budget_usd` and
 `since` (the budget's ISO start time) in the contract. The board counts actual spend since that
 time, including delegated improvement work; per-iteration limits supplement the overall ceiling.
-`iterations`: one entry per iteration:
+`iterations`: one entry per iteration. `n`, `started`, `trigger`, `verdict`, `reason` and
+`cost_usd` are required; the counts are optional summaries, filled when known (the authoritative
+records are `changes.md`, `decisions.md` and the runs):
 
 ```json
 {"n": 1, "started": "2026-11-10", "trigger": "new traces", "traces_triaged": 0, "wiki_updates": 0,

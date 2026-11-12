@@ -24,7 +24,12 @@ From the repository root:
    a Docker-compatible CLI (Docker Desktop, OrbStack, Colima, Rancher Desktop) or `-e podman` for
    Podman, one `--ae` per `agent_env` entry and each `[runtime].env` name set in Harbor's
    environment. Harbor records `-p` as typed, so
-   use absolute task paths.
+   use absolute task paths. Also pass where the job goes, how many attempts and how many run at
+   once: `-o relai/work/runs/<run-id>` (`--jobs-dir`; otherwise the job lands outside `relai/work/`,
+   which is not ignored by git), `-k <attempts>` (`--n-attempts`) and `-n <concurrency>`
+   (`--n-concurrent`). An interrupted job resumes with `harbor job resume` on its job directory;
+   stopping Harbor (Ctrl-C) cancels the rest. These flags were checked against Harbor 0.25.0;
+   check `harbor run --help` on the release in `[harbor].version`.
 3. Score the judges the way `[judge]` says, writing `<trial dir>/judges/<id>.json` (`files.md`,
    Scores). `bin/judge.py`, the plugin's example, implements this.
 4. Apply the pass rule (`files.md`), or run `summarize.py`.

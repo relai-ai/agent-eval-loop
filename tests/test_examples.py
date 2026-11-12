@@ -45,10 +45,11 @@ for line in sys.stdin:
 
 
 class LauncherTest(unittest.TestCase):
-    def run_launcher(self, env_extra: dict) -> tuple[subprocess.CompletedProcess, Path]:
+    def run_launcher(self, env_extra: dict, scenario=None) -> tuple[subprocess.CompletedProcess, Path]:
         tmp = Path(tempfile.mkdtemp(prefix="relai-launcher-"))
         (tmp / "adapter.py").write_text(ADAPTER)
-        (tmp / "scenario.json").write_text(json.dumps({"turns": ["first", "second"]}))
+        (tmp / "scenario.json").write_text(scenario if isinstance(scenario, str) else
+                                           json.dumps(scenario or {"turns": ["first", "second"]}))
         traj = tmp / "trajectory.json"
         result = subprocess.run(
             [sys.executable, str(EXAMPLES / "launcher.py"), "--scenario", str(tmp / "scenario.json"),
@@ -62,6 +63,18 @@ class LauncherTest(unittest.TestCase):
         steps = json.loads(traj.read_text())["steps"]
         self.assertEqual([s["message"] for s in steps], ["first", "echo: first", "second", "echo: second"])
         self.assertNotIn("leaked", result.stderr)
+
+    def test_configuration_problems_are_named_without_a_traceback(self):
+        user = {"user": {"instructions": "be a customer", "model": "anthropic:some-model"}}
+        cases = [({}, "not json", "cannot read the scenario file"),
+                 ({}, {"user": {"instructions": "be a customer"}}, 'needs "model"'),
+                 ({}, user, "RELAI_USER_SIM_KEY")]
+        for env, scenario, message in cases:
+            with self.subTest(message=message):
+                result, _ = self.run_launcher(env, scenario)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn(message, result.stderr)
+                self.assertNotIn("Traceback", result.stderr)
 
     def test_missing_recording_is_reported(self):
         result, _ = self.run_launcher({"SKIP_RECORDING": "1"})
@@ -465,6 +478,10 @@ class EvaluateHelperTest(unittest.TestCase):
         results.write(out)
         self.assertEqual(json.loads((out / "reward.json").read_text()), {"looks-up": 1.0})
         self.assertIn("KeyError", json.loads((out / "errors.json").read_text())["broken"])
+        expected = evaluate.Results(["looks-up", "forgotten"])
+        expected.score("looks-up", 1.0, "called get_order")
+        expected.write(out)
+        self.assertIn("never ran", json.loads((out / "errors.json").read_text())["forgotten"])
 
 
 class TriageTest(unittest.TestCase):

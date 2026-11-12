@@ -149,6 +149,13 @@ class CheckTrajectoryTest(Base):
         path.write_text(json.dumps(doc))
         return self.repo.run("check_trajectory.py", str(path), "--no-harbor", *args)
 
+    def test_an_unreadable_previous_snapshot_is_a_usage_error(self):
+        doc = trajectory([{"source": "user", "message": "a"}, {"source": "agent", "message": "b"}])
+        result = self.check(doc, "--previous", str(self.repo.root / "missing.json"))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("cannot read --previous", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
     def test_answered_turns_pass(self):
         doc = trajectory([{"source": "user", "message": "a"}, {"source": "agent", "message": "b"},
                           {"source": "user", "message": "c"}, {"source": "agent", "message": "d"}])

@@ -38,6 +38,35 @@ class DescriptiveSummaryTest(unittest.TestCase):
         self.assertNotIn('improved', result.stdout)
         self.assertNotIn('regressed', result.stdout)
 
+    def test_default_output_shows_each_test_with_pass_or_fail_and_named_warnings(self):
+        job = self.run_data('run', [1.0, 0.5, None])
+        unset = self.repo.run('summarize.py', str(job))
+        self.assertIn('Pass mark: not set yet', unset.stdout)
+        self.assertIn('SCORED     tests/orders  mean 0.75 (2/3 scored)', unset.stdout)
+        self.assertIn('Not scored cleanly', unset.stdout, 'reasons are shown without --details')
+        self.assertIn('runtime failure', unset.stdout)
+        self.assertIn('warning: tests/orders is not frozen', unset.stdout, 'warnings are named, not only counted')
+        self.assertEqual(unset.stdout.count('runner did not record the definitions'), 1, 'one note per run')
+        self.assertNotIn('original evaluator definitions are unavailable', unset.stdout)
+        self.assertIn('Judge usage: 2 call(s)', unset.stdout)
+        config = self.repo.relai / 'relai.toml'
+        config.write_text((config.read_text() if config.exists() else '') + '\n[scoring]\npass_mark = 0.8\n')
+        self.assertIn('FAIL       tests/orders', self.repo.run('summarize.py', str(job)).stdout)
+        config.write_text(config.read_text().replace('pass_mark = 0.8', 'pass_mark = 0.7'))
+        self.assertIn('PASS       tests/orders', self.repo.run('summarize.py', str(job)).stdout)
+
+    def test_judge_spend_counts_every_attempt_including_retries(self):
+        job = self.run_data('run', [1.0])
+        judges = next(job.glob('*/judges'))
+        (judges / 'explains.attempts.jsonl').write_text(
+            json.dumps({'error': 'bad verdict', 'cost_usd': 0.01}) + '\n' + json.dumps({'score': 1, 'cost_usd': 0.02}) + '\n')
+        out = self.repo.root / 's.json'
+        result = self.repo.run('summarize.py', str(job), '--json', str(out))
+        usage = json.loads(out.read_text())['run']['judge_usage']
+        self.assertEqual((usage['calls'], usage['cost_reported']), (2, 2))
+        self.assertAlmostEqual(usage['cost_usd'], 0.03)
+        self.assertIn('Judge usage: 2 call(s), $0.0300', result.stdout)
+
     def test_unequal_counts_keep_unavailable_spread_null(self):
         result, data = self.compare(self.run_data('before', [1.0]), self.run_data('after', [1.0, 1.0, 1.0]))
         row = data['comparison']['rows'][0]
@@ -88,7 +117,7 @@ class DescriptiveSummaryTest(unittest.TestCase):
         self.assertIsNone(data['run']['usage']['cost_usd'])
         self.assertIsNone(data['run']['usage']['n_output_tokens'])
         self.assertEqual(data['run']['usage_counts']['n_input_tokens'], 2)
-        self.assertIn('cost_usd not measured', result.stdout)
+        self.assertIn('cost not measured', result.stdout)
         self.assertNotIn('$0.0000', result.stdout)
 
     def test_changed_runner_and_test_versions_are_advisory_and_keep_numeric_delta(self):

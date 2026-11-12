@@ -26,7 +26,7 @@ updates and run `check_wiki.py` after managed wiki changes.
 - An ambiguity, or two sources that disagree, becomes an open question, not a requirement (see
   *Resolving an open question*).
 - When a requirement changes, judge each test that covers it (`covers` in its `task.toml`) as
-  *When a requirement changes* describes. Updating a frozen test follows the freeze rule.
+  *When a requirement changes* describes. Updating a frozen test follows the *Frozen tests* rule.
 
 ## Ask the user
 

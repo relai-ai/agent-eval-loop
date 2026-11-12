@@ -139,7 +139,16 @@ def main() -> int:
     except (OSError, json.JSONDecodeError) as exc:
         report.error(f"cannot read JSON: {exc}")
         return report.emit(f"trajectory {path}", args.json)
-    previous = json.loads(Path(args.previous).read_text(encoding="utf-8")) if args.previous else None
+    previous = None
+    if args.previous:
+        try:
+            previous = json.loads(Path(args.previous).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"error: cannot read --previous {args.previous}: {exc}", file=sys.stderr)
+            return 2
+        if not isinstance(previous, dict):
+            print(f"error: --previous {args.previous} is not a trajectory object", file=sys.stderr)
+            return 2
     check(doc, report, args.turns, previous)
     try:
         relai_dir = relai_root(args.relai_dir)

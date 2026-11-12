@@ -27,7 +27,7 @@ Goal: a clear, honest picture of how the agent behaves on the selected tests.
   files, never by exit status.
 - Use a representative prior trial, or a pilot when needed, to estimate batch duration and cost.
 - Never change the agent or the tests while measuring. If a test looks broken, say so; fixing it
-  is Build mode's job and follows the freeze rule.
+  is Build mode's job and follows the *Frozen tests* rule.
 - Report scored passes and failures, evaluator errors, runtime failures and unscored runs
   separately; an error or a failed trial is never scored as an agent failure, though when its
   permitted trajectory shows the agent's own code crashed, say so. For development failures,

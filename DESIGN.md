@@ -79,6 +79,7 @@ shaped these choices:
 | Benchmarks imported or wrapped, pinned by commit, and checked for fidelity against their own scorer | A reimplemented scorer that disagrees silently invalidates every result |
 | A benchmark's splits map to development, held-out and final, with a coverage record handing out new batches | Repeated keep-or-reject decisions on one set tune the agent to it; small budgets could play only a few cases per run |
 | A hardening ladder and compound tests, always as new tests | Passing tests stop teaching; behaviors that hold alone can fail together |
+| Decision records (scenario tables, grader previews, reviews, the improvement agreement, the loop contract) committed under `relai/records/`; raw runs and scratch stay in the uncommitted `work/` | Approvals and reviews kept in `work/` were invisible to teammates, while the committed board linked to them |
 | `changes.md`, with candidate runs kept under `work/candidates/` | Rejected changes and their lessons lived only in scratch notes |
 | Shared checkers preserve common guarantees; examples and integrations may be adapted in the project's language | Copied code is a maintained surface; focused verification preserves guarantees without mandating incidental implementation details |
 | A separate `coding-evals` skill for the coding agents a team uses, sharing the task format, freezing, reviews, judges and scoring | The other skills speak of "the agent in this repository"; a request about a coding agent in a repository with no agent matched none of them |

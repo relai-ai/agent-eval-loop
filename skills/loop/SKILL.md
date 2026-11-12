@@ -1,6 +1,6 @@
 ---
 name: loop
-description: Use to improve the AI agent in this repository continuously from traces, feedback and evaluations ("improve this agent from ./traces", "keep improving it as new traces come in", "run the improvement loop", "make it better and cheaper with as little of my time as possible"). Not for a one-off test run (use the eval skill) or a single fix (use the improve skill).
+description: Use to improve the AI agent in this repository continuously from traces, feedback and evaluations ("improve this agent from ./traces", "keep improving it as new traces come in", "run the improvement loop", "make it better and cheaper with as little of my time as possible"). Not for a one-off test run (use the eval skill) or a single fix (use the improve skill), and not for running a prompt on a schedule or polling.
 ---
 
 # Loop: learn from new traces, fix, repeat
@@ -65,16 +65,22 @@ stage decisions it covers. It is not approval to skip an uncovered consequential
 - **Scope:** what may change (prompts, tool descriptions, skills, memory or context
   construction, retry logic, agent code, model settings) and what is off-limits.
 - **Inputs:** the trace folder or stream to learn from, if any, the test suites in play, and any
-  benchmarks (with any agreed held-out sample and batch size per iteration).
+  benchmarks (with any agreed held-out sample and batch size per iteration). When traces will be
+  triaged by a model, the provider and model, and the user's authorization to send trace text to
+  it ([discover: trace-triage](../discover/references/trace-triage.md)); with that and the budget,
+  the loop runs triage beyond the pilot size (`--yes` for the example script).
 - **Length:** the most iterations to run, or "until there is nothing new"; and any experiment
   limit per iteration.
-- **Budget and evidence:** a ceiling for the loop and any per-iteration limits. Measurement effort
-  is chosen per decision ([eval: measure](../eval/references/measure.md)).
+- **Budget and evidence:** a ceiling for the loop and any per-iteration limits, covering agent
+  trials, judges and triage. Measurement effort is chosen per decision ([eval: measure](../eval/references/measure.md)).
 - **When to ask the user** (recommend: only these): user intent is genuinely ambiguous; two
   requirements conflict; a behavior is irreversible or safety-sensitive; a judge and the user's
   past verdicts disagree; a product-policy decision is needed. They are asked as `relai/README.md`
-  says ("When the user is asked"); everything else proceeds and appears in the digest. A user who wants to approve every scenario and change can choose supervised mode, which
-  retains those individual approval points.
+  says ("When the user is asked"); everything else proceeds and appears in the digest.
+- **Approvals:** `delegated` (default): fresh independent reviews stand in for scenario approval,
+  grader previews and task lists, as [delegated approvals](../start/template/README.md#working-with-the-user)
+  describe; or `supervised`: the user approves each scenario table, grader preview and kept change
+  individually. Inside the loop this setting answers the build skills' "how involved" question.
 - **Check-ins:** a short digest after every iteration (default), or only at the end.
 - **Watch mode** (optional): instead of stopping when nothing is new, re-check the trace source
   on a schedule the user sets up and start an iteration only when new traces or answers have
@@ -111,8 +117,8 @@ verification, and measurement changes go through the locked kernel.
    signals, harder rungs of tests the agent now passes. Questions the contract says to ask go to
    open questions or `feedback.md` and are asked together; the loop does not wait on them, it works on everything else.
 3. **Grow the tests.** Build the strongest proposals (the `eval` skill): realistic, both
-   directions, a fresh review standing in for scenario approval and grader preview when delegated in
-   autonomous mode, then freeze. Held-out tests are optional (the `eval` skill's Split rule).
+   directions, a fresh review standing in for scenario approval and grader preview when the contract's
+   approvals are `delegated`, then freeze. Held-out tests are optional (the `eval` skill's Split rule).
 4. **Establish starting evidence** for the objective and guardrails: reuse comparable
    incumbent runs or measure what is missing ([eval: measure](../eval/references/measure.md)). On
    benchmarks, use exact development selections (`benchmark.py batch --case-ids ...`) plus any

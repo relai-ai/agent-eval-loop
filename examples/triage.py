@@ -142,7 +142,9 @@ def load_input(path: Path) -> list[dict]:
     return rows
 
 
-PILOT = 20  # traces run triages without --yes (relai/README.md, Defaults: triage pilot)
+# Traces run triages without --yes. It mirrors relai/README.md, Defaults ("Triage pilot"); a project
+# that changes that default changes it here too, in its own copy of this script.
+PILOT = 20
 
 
 def model_config(relai_dir: Path) -> dict:

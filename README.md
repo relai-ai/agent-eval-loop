@@ -63,6 +63,21 @@ from the last six months, then measure how our coding agent does on them
 
 You can start at any skill without completing the full workflow.
 
+### First steps
+
+Not sure where to begin? Ask *"Use RELAI's start skill to look at this agent and suggest a first
+step."* It reads your repository and recommends one, without running your agent or spending on
+models. What each first request needs and leaves behind:
+
+| First request | Needs | Creates | Spends |
+| --- | --- | --- | --- |
+| `start` | nothing | a recommendation; `relai/` only if the next step needs it | your coding agent's usage only |
+| `discover` | your code, optionally traces | `relai/wiki/` (requirements, risks, open questions) | coding agent only, plus a cheap triage model for large trace sets if you approve it |
+| `trace-review` | your traces | a small review app in your project | coding agent only |
+| `eval` | Python 3.11+, a container engine and `uv` for Harbor (or your own runner), model keys | `relai/` with a harness, tests and results | agent and judge model calls, estimated before each run |
+| `improve`, `loop` | working evals (built on the way if missing) | candidate changes on a branch, records of what was tried | agent and judge runs within the budget you set |
+| `coding-evals` | Harbor, a container engine, access to your repositories | tasks under `relai/tests/` | building and health checks call no model; runs use your coding agent's plan or API |
+
 ## Installation
 
 RELAI supports Claude Code, Codex, and other coding agents. Native installs for Claude Code
@@ -154,6 +169,35 @@ access. `main` can contain unreleased changes; pin a tag where supported for a f
 Plugin updates do not replace existing project files in `relai/` or frozen tasks. Use the
 [project-copy policy](skills/start/template/docs/upgrades.md) to preserve adaptations and evidence.
 
+## Hooks
+
+The native Claude Code and Codex installs include optional hooks, active once the plugin is enabled
+(Codex asks you to trust them first). They do nothing outside a project with a `relai/` folder.
+Before an edit to a frozen test, Claude Code asks you; Codex cannot ask from a hook, so it warns the
+coding agent instead. After an edit under `relai/`, the project's checkers run and report problems
+to the agent. To turn them off, decline to trust them in Codex, or disable the plugin
+(`claude plugin disable relai@agent-eval-loop`); Claude Code's `disableAllHooks` setting also works
+but turns off every hook. The guarantees they surface still hold through the checkers.
+
+## Uninstalling
+
+| Installation | Uninstall |
+| --- | --- |
+| Claude Code plugin | `claude plugin uninstall relai@agent-eval-loop`, then optionally `claude plugin marketplace remove agent-eval-loop` |
+| Codex plugin | `codex plugin remove relai@agent-eval-loop` |
+| Skills CLI | Use the Skills CLI's remove command, or delete the seven RELAI skill folders it installed |
+| Manual copy | Delete the seven skill folders you copied, and `~/agent-eval-loop` |
+
+Commands were checked with Claude Code 2.1.322 and Codex CLI 0.167.1. Uninstalling leaves your
+projects' `relai/` folders untouched; they keep working without the plugin.
+
+**Removing RELAI from a project.** Remove candidate worktrees first (`git worktree list`, then
+`git worktree remove` for those under `relai/work/candidates/`, and `git worktree prune`), delete
+review branches you no longer want (`git branch --list`), then delete `relai/`. Keep
+`relai/records/`, `changes.md` and `decisions.md` elsewhere if you want the history of what was
+approved and tried. Container images built for tests can be removed with your engine's image
+commands.
+
 ## Why RELAI
 
 - **Evals are the hard part. RELAI builds them.** Evals come from traces, or are generated from what the agent must do and where it can break, including risks that never appeared as failed runs. You review them; you do not write them.
@@ -166,12 +210,12 @@ Plugin updates do not replace existing project files in `relai/` or frozen tasks
 
 | Step | What happens | What you decide |
 | --- | --- | --- |
-| **`start`** | Routes the request, initializes useful records when justified and shows relevant progress. | Where to begin when the goal is unclear. |
+| **`start`** | Finds the right starting skill for your request and sets up `relai/` only if the task needs it. | Where to begin when the goal is unclear. |
 | **`discover`** | Builds the **EvalsWiki** from code, documentation and traces: requirements, ranked risks and open questions. | Which risks matter; answers to open questions. |
 | **`trace-review`** | Builds or adapts a project-owned app for full traces, keyboard navigation, search, filters and persistent feedback. | Review verdicts and expected behavior. |
 | **`eval`** | Builds evals from traces, generates them from the wiki's risks or brings in an existing benchmark. Evals use Harbor tasks or suitable project-native equivalents, graded by code checks and LLM judges, then reviewed and frozen. | Which evals to build; whether the graders score the way you would. |
 | **`improve`** | Runs the agent against the evals and compares scoped changes against the recorded baseline for an agreed behavioral, cost or latency objective. | The objective, what may change and the budget. |
-| **`loop`** | Repeats discover → eval → improve when new traces, answers or tests arrive. | The goal, scope, budget and limits; then real ambiguity or safety calls. |
+| **`loop`** | Keeps learning and improving as new traces, answers or tests arrive, choosing which of discover, eval and improve each round needs. | The goal, scope, budget and limits; then real ambiguity or safety calls. |
 | **`coding-evals`** | Mines coding sessions, pull requests and git history for tasks any coding agent can run, measures the team's agent on them and, when asked, compares changes, setups or other agents. | Which repositories; which tasks to build; whether the checks score the way you would; what to compare, if anything. |
 
 When RELAI-managed state is useful, `relai/STATUS.md` shows the current request, relevant progress, what is waiting on you and the recommended next step.
@@ -265,7 +309,7 @@ The results are evidence on the tests you have, not proof that the agent is corr
 - spend against the approved budget;
 - iterations, observed results and the decisions still needed from you.
 
-Questions wait for a natural decision point: the end of `discover`, the first time LLM judges are scored or the summary of a loop iteration. Only a blocking safety call or conflicting requirement interrupts dependent work.
+Questions wait for a natural decision point: the end of `discover`; the start of an `eval` build, its scenario approval and grader preview; `coding-evals` scope, task and check approval and the budget before the first paid run; the first time LLM judges are scored; or a loop iteration's summary. You can hand build approvals to an independent review instead. Only a blocking safety call or conflicting requirement interrupts dependent work. The full list is in the [project contract](skills/start/template/README.md#working-with-the-user).
 
 ## Built to be inspected
 
@@ -331,9 +375,19 @@ An open question asks how the agent should behave in general. Your answer become
 </details>
 
 <details>
+<summary>How do I stop or pause a long run or a loop?</summary>
+
+Tell the coding agent to stop (or interrupt it). Progress is saved as it goes: finished trials,
+the loop's iterations and decisions are in `relai/`, so asking it to continue later resumes from
+there rather than starting over. A watch-mode loop runs on a schedule you set up with your host's
+scheduler or cron; remove that schedule to stop it for good.
+
+</details>
+
+<details>
 <summary>What does it cost?</summary>
 
-You pay for model calls from the agent, simulated users and judges. RELAI estimates the cost before a paid run, and the board tracks spend against the budget you set.
+You pay for model calls from the agent, simulated users and judges. RELAI estimates the cost before a paid run, and the board tracks spend against the budget you set. The coding agent running RELAI (Claude Code, Codex, …) also uses your plan or API tokens while it reads, builds and reviews; discovery and setup use only that, while eval runs add the agent's and judges' model calls.
 
 </details>
 
@@ -370,7 +424,7 @@ agent-eval-loop/
 └── README.md
 ```
 
-Once set up, the repository gets a `relai/` folder. Its contract is in `relai/README.md` (template: [skills/start/template/README.md](skills/start/template/README.md)).
+Workflows that need managed state add a `relai/` folder, holding only what they use: `discover` adds the wiki, `eval` the harness and tests, `improve` and `loop` their records; `trace-review` and direct fixes add none. Its contract is in `relai/README.md` (template: [skills/start/template/README.md](skills/start/template/README.md)).
 
 ## Contributing
 

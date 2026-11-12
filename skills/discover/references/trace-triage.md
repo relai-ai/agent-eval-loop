@@ -4,7 +4,8 @@ Use when exhaustive reading is not justified by the question, scale or budget. R
 project tooling or choose an approach that preserves trace references, coverage and failures.
 The optional [triage example](../../../examples/triage.py), with
 [judge.py](../../../examples/judge.py) beside it, can be copied to `relai/bin/` and adapted or
-replaced in the project's language. Its three lanes are a useful starting point, not mandatory
+replaced in the project's language (if `examples/` is not installed, fetch it as the project
+contract's *Checkers* section says). Its three lanes are a useful starting point, not mandatory
 categories:
 
 | Lane | What it is | Where it goes |
@@ -44,7 +45,8 @@ Redaction does not itself authorize external processing.
   `[judge]`. Provide policy using `--context-file`. `estimate --input traces.jsonl` estimates
   tokens (and dollars with `--price-in`/`--price-out`); `run --limit 20` runs a pilot; `run --yes`
   processes the remaining traces once the user has approved the cost (without `--yes`, a run larger
-  than the pilot stops before any call). Errors are recorded in `errors.jsonl`
+  than the pilot stops before any call). In a loop, the contract's triage authorization and budget
+  are that approval. Errors are recorded in `errors.jsonl`
   and retried by rerunning; they are not verdicts.
 - `--max-chars` bounds each trace's model input, keeping its head and tail with an omission
   marker. Treat these as partial views, disclose truncation, and inspect the full source before

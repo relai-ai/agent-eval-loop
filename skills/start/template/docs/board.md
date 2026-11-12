@@ -2,7 +2,22 @@
 
 When using managed state, update `STATUS.md` from recorded evidence for the current request.
 Link measurements to the revision they describe; exploratory candidate results are not current
-incumbent results. Candidate runs still count toward spend. Show relevant sections:
+incumbent results. Candidate runs still count toward spend.
+
+Keep it scannable. Always open with three short sections, in this order, then add the other
+sections below only when they have content:
+
+```markdown
+# RELAI status · <date>
+## Now
+<the current request and where it stands, in one or two lines>
+## Next action
+<the single most useful next step, or "Done">
+## Waiting on you
+<count and the top items, or "Nothing">
+```
+
+The sections:
 
 - **Current request and progress:** show the relevant capabilities (discovery, harness, tests,
   measurement, improvement) as ready, pending or not applicable. Judge readiness for the selected
@@ -40,3 +55,11 @@ incumbent results. Candidate runs still count toward spend. Show relevant sectio
   zero. Do not invent or duplicate a budget; show recent entries from `changes.md`.
 
 Lengths of history and the agreement threshold are in `../README.md`, Defaults.
+
+## Cleanup
+
+Mention cleanup when it is due, and do it only with the user's agreement: a rejected candidate's
+worktree under `work/candidates/<name>/` once `changes.md` records it (`git worktree remove`, then
+`git worktree prune`); run directories under `work/runs/` that no baseline or report still cites;
+and container images built for tests that are no longer used (the engine's image commands).
+Never delete `records/`, `changes.md`, `decisions.md` or runs a current claim relies on.

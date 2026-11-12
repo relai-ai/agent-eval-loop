@@ -1,6 +1,6 @@
 ---
 name: discover
-description: Use to learn what the AI agent in this repository must do and where it can fail - requirements, risks and open questions - from its code, prompts and docs, and from traces, transcripts or logs of real runs when there are any ("what could go wrong", "ingest these traces", "build the wiki", "record this requirement"). Also use to answer or resolve open questions and to review proposed risks.
+description: Use to learn what the AI agent (or LLM app, chatbot or pipeline) in this repository must do and where it can fail - requirements, risks and open questions - from its code, prompts and docs, and from traces, transcripts or logs of real runs when there are any ("what could go wrong with this agent", "why did this run fail", "ingest these traces", "build the wiki", "record this requirement for the agent"). Also use to answer or resolve open questions and to review proposed risks. Not for general code bugs outside an AI agent.
 ---
 
 # Discover requirements and risks

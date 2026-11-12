@@ -47,7 +47,8 @@ prerequisites for the selected runner and fix what fails.
 - Reuse a suitable project or benchmark runner; otherwise Harbor is the supported default.
   Record `[runner].kind` and `.isolation` with their reason. The plugin's `examples/` (two levels
   above this skill's folder) has a native runner to copy to `relai/bin/`; prefer project-native
-  adapters where practical.
+  adapters where practical. If `examples/` is not installed, see the project contract's
+  *Checkers* section for where to get it.
 - When Harbor cannot run here (no `uv`, no running container engine, or Harbor failing on this
   machine), say so plainly with the cause, and lay out the options with a recommendation: start or
   install a container engine Harbor supports (any Docker-compatible engine or Podman); a native

@@ -17,7 +17,7 @@ runner details are in `docs/`, read when the work touches them:
 
 | File | Read it when |
 | --- | --- |
-| `docs/files.md` | Writing or reading `relai.toml`, a test, scores, judges, mocks, the wiki, `feedback.md`, `changes.md` or the state under `work/` |
+| `docs/files.md` | Writing or reading `relai.toml`, a test, scores, judges, mocks, the wiki, `feedback.md`, `changes.md`, the decision records under `records/` or the state under `work/` |
 | `docs/harbor.md` | Running Harbor, or setting up a hosted runner for pull requests |
 | `docs/native.md` | Writing or using a native runner |
 | `docs/board.md` | Rewriting `STATUS.md` |
@@ -46,8 +46,10 @@ invoked) is the choice of whoever builds the tests.
 4. **Live source.** Files whose edits change the agent's behavior (`[target].live_paths` in `relai.toml`) reach
    each trial from the current source, never baked into an image.
 5. **Frozen tests.** A frozen test does not change silently: a change needs a reason (`freeze.py --reason`), a
-   line in `decisions.md`, and a fresh review. `freeze.py --begin-repair` records an agreed repair
-   as open, so editing hooks stop asking before each of its edits until it is re-frozen. Independent review uses a reviewer with fresh context;
+   line in `decisions.md`, and a fresh review. Once the user (or a covering agreement) has agreed
+   a repair and it is recorded in `decisions.md`, `freeze.py --begin-repair` marks it open, so
+   editing hooks stop asking before each of its edits until it is re-frozen. Never open a repair
+   to avoid a question. Independent review uses a reviewer with fresh context;
    review effort scales to the consequences, with proportional diff review for routine direct fixes.
 6. **Secrets.** Secret values use the project's credential mechanism or `relai/.env`, written by the user.
    Coding agents never read or print them; files refer to them by name. Executable helpers may
@@ -139,7 +141,7 @@ generic infrastructure without a concrete need.
 
 ## Checkers
 
-Shared tools implement the guarantees above. Use a suitable one directly; adaptation follows
+Shared tools implement the fixed rules above. Use a suitable one directly; adaptation follows
 [Adapting supplied implementations](#adapting-supplied-implementations). They are read-only
 except `freeze.py`, `benchmark.py` (which writes only `work/benchmarks/`) and explicitly requested
 summary exports. Python 3.11+, standard library; Harbor-based checks use `[harbor].version` through `uv`.
@@ -159,7 +161,10 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 Example scripts (a Harbor agent and launcher, a native runner, an API judge, a trace triager and
 a code-evaluator helper) live in the plugin's `examples/`. None is part of `relai/` until an
 integration chooses it; then it is copied, owned and adapted like any project code, or replaced
-by a project-native equivalent that meets the same contract.
+by a project-native equivalent that meets the same contract. Some installs (the Skills CLI, Gemini
+CLI or a manual copy of the skills) do not include `examples/`: then fetch the needed file from the
+plugin repository (github.com/relai-ai/agent-eval-loop) at the installed version, or write a
+project-native equivalent.
 
 ## Adapting supplied implementations
 
@@ -206,8 +211,12 @@ RELAI is something the user steers, not a black box.
   for the risk list, test scenarios, grader previews before freezing, and the improvement
   agreement. These are named decisions within independent workflows, not a sequence every task
   must complete. Ask only about what remains open; restate consequential changes after discussion.
-  When nothing says how involved the user wants to be, offer once to delegate scenario, grader and
-  check approvals to a fresh independent review, and record the answer.
+- **Delegated approvals.** The build approvals (an `eval` scenario table and grader preview; a
+  `coding-evals` task list and check preview) can be delegated to a fresh independent review.
+  When neither an agreement, a loop contract's approvals setting, nor `decisions.md` says how
+  involved the user wants to be, offer this once at the first build checkpoint and record the
+  answer in `decisions.md`. Wherever this guidance says "delegated", that record counts as much as
+  an agreement.
 - **Recommendation first.** Ask with the host's structured question tool when it has one (for
   example `AskUserQuestion` or `request_user_input`), otherwise in ordinary chat, your
   recommendation first. Pause only work that depends on the answer.
@@ -225,10 +234,10 @@ RELAI is something the user steers, not a black box.
   | Moment | What is asked |
   | --- | --- |
   | End of `discover` | The risk table, open questions, and feedback on the runs just read |
-  | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, and on first use the harness setup questions |
+  | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, how involved to be (delegated approvals), and on first use the harness setup questions |
   | `eval` scenario approval and grader preview | Approval of the scenario table (with the build's cost) and of the grader preview, in manageable subsets |
   | End of an `eval` run whose judges scored real trials for the first time, or after a rubric change | That run's judge checks, while the run is fresh, and the pass mark if it is unset |
-  | `coding-evals` scope and task selection | Unresolved scope and task selection, combined when ready; reuse existing authorization |
+  | `coding-evals` scope and task selection | Unresolved scope and task selection, combined when ready, and how involved to be (delegated approvals); reuse existing authorization |
   | `coding-evals` check preview before freezing | Scoring and coverage approval still needed, in manageable subsets; a delegated independent review may cover it |
   | Before the first paid `coding-evals` run | What to compare, if the request named a change or another agent, and the run budget |
   | End of the first `coding-evals` run that scored real trials | Its judge checks, and the pass mark if it is unset |
