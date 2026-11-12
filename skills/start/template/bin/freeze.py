@@ -11,8 +11,9 @@ Records each test's digest (every file except README.md) in relai/frozen.json, k
 path relative to relai/ (tests/<id>, benchmarks/<id>/cases/<case>), with a
 history of re-freezes and their reasons. Re-freezing a changed test requires --reason;
 record the same reason in relai/decisions.md and get a fresh review of the change.
---begin-repair records an agreed repair as open, so editing hooks stop asking before each edit of
-that test; re-freezing it (or freezing it unchanged) closes the repair.
+--begin-repair records a repair as open, so editing hooks stop asking before each edit of that
+test; re-freezing it (or freezing it unchanged) closes the repair. Run it only after the repair
+is agreed and recorded in relai/decisions.md, never to avoid asking.
 This script writes only relai/frozen.json.
 """
 
@@ -73,7 +74,7 @@ def main() -> int:
         if args.begin_repair:
             if not entry:
                 print(f"error: {key} is not frozen; there is nothing to repair", file=sys.stderr)
-                status = max(status, 1)
+                status = 2
                 continue
             entry["repair"] = {"reason": args.reason, "since": now}
             changed_state = True

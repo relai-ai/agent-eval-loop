@@ -22,6 +22,15 @@ class PluginTest(unittest.TestCase):
     def test_versions_agree(self):
         release.check(PLUGIN)
 
+    def test_decision_records_are_committed_and_scratch_is_not(self):
+        ignored = {line.strip().rstrip("/") for line in (TEMPLATE / "gitignore").read_text().splitlines() if line.strip()}
+        self.assertIn("work", ignored)
+        self.assertNotIn("records", ignored)
+        stale = [str(doc.relative_to(PLUGIN)) for doc in guidance()
+                 if re.search(r"work/(eval|reviews)/|work/improve/plan\.json|work/loop/state\.json", doc.read_text())
+                 and doc.name != "upgrades.md"]
+        self.assertEqual(stale, [], "decision records live under relai/records/")
+
     def test_referenced_files_exist(self):
         missing = []
         for doc in guidance():

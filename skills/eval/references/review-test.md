@@ -40,7 +40,8 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 10. **Previewed.** The grader preview (`relai/records/eval/<date>-grader-preview.md`: scores on
     synthetic pass and fail trajectories, and on real recorded traces where any exist) covers
     every evaluator and matches the evaluators to be frozen. The user approved it, or the
-    agreement delegates that decision to this independent review. Verify which applies.
+    decision is delegated to this independent review (by an agreement or a recorded choice in
+    `relai/decisions.md`). Verify which applies.
 
 Report each verdict, then findings: what is wrong, the evidence, and the change that would fix it,
 marked blocking or advisory. Write the report to `relai/records/reviews/test-<id>-<date>.md` if you

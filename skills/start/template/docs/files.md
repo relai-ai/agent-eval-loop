@@ -27,8 +27,8 @@ provider = "anthropic"       # or "openai", "openrouter", "openai-compatible" (m
 model = "claude-opus-5-5"     # required; no default
 effort = "medium"            # optional, Anthropic only
 
-[triage]                     # optional: the cheap model bin/triage.py uses on many traces
-provider = "openrouter"      # same keys as [judge]; required for triage.py (it never uses [judge])
+[triage]                     # optional table; needed only to run bin/triage.py (it never uses [judge])
+provider = "openrouter"      # same keys as [judge]: a cheap model, one call per trace
 model = "anthropic/claude-haiku-5.5"
 
 [runtime]
@@ -263,8 +263,9 @@ appends one JSON line per call to
 ## `frozen.json`
 
 Written only by `freeze.py`: each test's digest (all files except `README.md`), when it was
-frozen, and the reason for every re-freeze. `repair` (`reason`, `since`) marks an agreed repair
-in progress (`freeze.py --begin-repair`); re-freezing removes it. It changes no score's meaning:
+frozen, and the reason for every re-freeze. `repair` (`reason`, `since`) marks a repair in
+progress (`freeze.py --begin-repair`), run only after the repair is agreed and recorded in
+`decisions.md`; re-freezing removes it. It changes no score's meaning:
 only editing hooks read it, to stop asking before each edit of that test.
 
 ## `changes.md`
@@ -355,8 +356,9 @@ and keep protected assessment contents out. Raw runs, candidates and scratch sta
 
 ## `records/loop/state.json`
 
-`contract`: the loop's agreement (objective, guardrails, scope, inputs, length, budget, when to
-ask, check-ins, watch mode, delivery). When a monetary ceiling applies, record `budget_usd` and
+`contract`: the loop's agreement (objective, guardrails, scope, inputs including any triage
+provider and its data authorization, length, budget, when to ask, `approvals` (`delegated` or
+`supervised`), check-ins, watch mode, delivery). When a monetary ceiling applies, record `budget_usd` and
 `since` (the budget's ISO start time) in the contract. The board counts actual spend since that
 time, including delegated improvement work; per-iteration limits supplement the overall ceiling.
 `iterations`: one entry per iteration:

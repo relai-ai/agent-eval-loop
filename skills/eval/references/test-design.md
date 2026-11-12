@@ -114,7 +114,7 @@ what would make the probe invalid.
 Classify the request before editing: a correction of how the test checks (same evaluators,
 better verifier), an extension of the same behavior, a change of intent, or something unrelated.
 Unrelated work is a new test. Keep the test's id and every case the change does not touch, and
-follow the freeze rule.
+follow the *Frozen tests* rule.
 
 ### Tests on an earlier revision of code
 

@@ -44,7 +44,7 @@ fix. When the repository asks contributors to extend existing test files (its in
 or contributing docs say so), protecting them scores the expected change against the agent: put
 the existing test files in `restore` instead, and install the hidden tests at a new protected
 path no existing file uses (such as `tests/relai-hidden/`). Confirm that constraints allow legitimate solutions; changing the policy later changes the
-evaluation and follows the freeze rule.
+evaluation and follows the *Frozen tests* rule.
 
 ## What the verifier guards against
 
@@ -75,7 +75,7 @@ missing exact check), adapt a copy:
 - Rerun the plugin's verifier tests (`tests/test_coding_evals.py`, which replay the known
   attacks) against the adapted copy, and fix what fails before using it.
 - Every task in a comparison carries the same copy. Changing a frozen task's copy goes through
-  the freeze rule and changes what its earlier scores mean.
+  the *Frozen tests* rule and changes what its earlier scores mean.
 
 ## Safe process (shared evaluator)
 

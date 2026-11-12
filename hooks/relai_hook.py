@@ -114,8 +114,8 @@ def guard_frozen(event: dict, host: str) -> dict | None:
                       for key, entry in hits.items())
     rule = ("Changing a frozen test changes what its scores mean, so results before and after are no "
             "longer comparable. A justified repair needs a reason recorded with `freeze.py --reason`, a line "
-            "in relai/decisions.md and a fresh review (relai/README.md, Fixed rules: frozen tests). A low score "
-            "alone does not show the test is wrong. Once a repair is agreed, `freeze.py <test> --begin-repair "
+            "in relai/decisions.md and a fresh review (relai/README.md, Fixed rules: Frozen tests). A low score "
+            "alone does not show the test is wrong. Once a repair is agreed and recorded in relai/decisions.md, `freeze.py <test> --begin-repair "
             "--reason \"...\"` stops this check asking before each edit until the test is re-frozen.")
     if host == "codex":
         # Codex cannot ask the user from a hook, so the edit goes ahead and the agent is told.

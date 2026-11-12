@@ -12,7 +12,7 @@ says what full marks need.
   sees only `tests/`).
 - `check_task.py` passes, plus `--verifier` for Harbor or synthetic grading checks for native tests, and with API judges `relai/bin/judge.py --self-test`
   shows the judge can fail (or a synthetic violating example does so for a pure prohibition).
-- Every frozen test you changed went through the freeze rule (review: [review-test](review-test.md)).
+- Every frozen test you changed went through the *Frozen tests* rule (review: [review-test](review-test.md)).
 
 ## Rules
 

@@ -44,7 +44,8 @@ Redaction does not itself authorize external processing.
   `[judge]`. Provide policy using `--context-file`. `estimate --input traces.jsonl` estimates
   tokens (and dollars with `--price-in`/`--price-out`); `run --limit 20` runs a pilot; `run --yes`
   processes the remaining traces once the user has approved the cost (without `--yes`, a run larger
-  than the pilot stops before any call). Errors are recorded in `errors.jsonl`
+  than the pilot stops before any call). In a loop, the contract's triage authorization and budget
+  are that approval. Errors are recorded in `errors.jsonl`
   and retried by rerunning; they are not verdicts.
 - `--max-chars` bounds each trace's model input, keeping its head and tail with an omission
   marker. Treat these as partial views, disclose truncation, and inspect the full source before

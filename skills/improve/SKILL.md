@@ -106,7 +106,8 @@ suggested methods to the request while preserving authorization and honest evide
   the missing evidence supports a conclusion. Summarizer notices inform this judgment; successful
   execution of a comparison does not establish comparability.
 - Stop optimizing against a suspected bad test; investigate it through the `eval` skill separately,
-  record justified repairs and establish comparable measurements before resuming. A low score
+  record justified repairs under the *Frozen tests* rule (`relai/README.md`; `freeze.py
+  --begin-repair` once the repair is agreed) and establish comparable measurements before resuming. A low score
   alone does not establish a test defect. No change kept is a valid result.
 
 ## Choosing among candidates

@@ -30,7 +30,7 @@ drafted from the instruction files and contributing docs at hand, shown with the
 than in a round of their own. Mining review comments, other repositories and kinds of work suits
 a request to mine a repository or build a set. The agent's model, version and authentication wait
 for the first paid run. Adding standards to a shared evaluator later changes frozen tasks that
-carry it, under the freeze rule; new tasks pick it up.
+carry it, under the *Frozen tests* rule; new tasks pick it up.
 
 ## Find out first
 
@@ -114,7 +114,7 @@ Keep installed versions in the setup summary unless they affect the choice.
   [shared evaluators](../../eval/references/shared-evaluators.md)): `safe-process`,
   `honest-report`, and `review-ready`, whose rubric lists the approved standards ([checks](checks.md)), plus any check the team
   wants on every task. Each task copies them; changing one is a change to every frozen task that
-  carries it, under the freeze rule.
+  carries it, under the *Frozen tests* rule.
 
 Route by the artifact and execution required, not source location. Use coding-evals for
 agent-neutral coding tasks, including a custom coding agent developed here. Use the

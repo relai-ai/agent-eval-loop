@@ -10,7 +10,7 @@ runs. Reuse deterministic work only when it preserves the uncertainty being meas
 
 **Agent timeout.** Set `[agent].timeout_sec` at build for an agent doing the work, never from
 the reference fix, which runs instantly. When the measured trial of any version runs near it,
-raise it under the freeze rule before the run counts.
+raise it under the *Frozen tests* rule before the run counts.
 
 ## Running
 
@@ -43,7 +43,7 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   under the [discover skill](../../discover/SKILL.md)'s rules, citing the runs.
 - **Measurement defects**: distinguish pre-existing environment or fixture failures from
   breakage introduced by the agent. Preserve original runs and scores, identify affected checks
-  and claims, and follow the freeze rule for repairs and comparable reruns. Do not count affected
+  and claims, and follow the *Frozen tests* rule for repairs and comparable reruns. Do not count affected
   evidence as an agent failure or silently drop it from reported coverage; limit process
   judgments to what the trajectory supports ([safe process](checks.md#safe-process-shared-evaluator)).
 - **Contamination**: report separately the tasks whose fix was public before a model's training
@@ -97,7 +97,7 @@ confirm from the agent version's documentation or a trial's trajectory that it l
 variant's files: agents differ, and one that reads only its own file (such as `CLAUDE.md`) reaches
 `AGENTS.md` or shared skills only through an import or link. A variant the agent never reads
 measures nothing. Check these differences before comparing, run the same agent and attempts, and compare
-task by task. Adopting this verifier for frozen tasks follows the freeze rule; do not silently
+task by task. Adopting this verifier for frozen tasks follows the *Frozen tests* rule; do not silently
 rewrite user-owned copies or mix earlier scores with changed measurement.
 
 **Which parts help.** One variant per part left out (a section of an instruction file, a skill, a
@@ -114,7 +114,7 @@ unchanged.
 ## Maintenance
 
 - Recheck affected [validation](task-format.md#validation) when a base image or dependency source
-  may have moved; a task broken by an outside change is repaired or retired under the freeze rule.
+  may have moved; a task broken by an outside change is repaired or retired under the *Frozen tests* rule.
 - Add fresh tasks from recent work: newer fixes are less likely to be in training data.
 - Retire tasks that no longer separate anything only with the user's approval.
 - When an agent or model version changes, rerun at the new version; never mix versions under

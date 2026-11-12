@@ -40,7 +40,8 @@ filenames are not required.
 
 - **Harness ready** (first time only, [harness](references/harness.md); not needed when the only tests are
   a wrapped benchmark, whose own runner runs the agent).
-- **Scenarios approved:** the user, or an independent reviewer delegated by the agreement,
+- **Scenarios approved:** the user, or an independent reviewer when the approval is delegated
+  (by an agreement or a recorded choice in `decisions.md`),
   approved the scenario table below.
 - Each test is a task under `relai/tests/<id>/` (or a benchmark row) meeting
   `relai/docs/files.md`, with a `README.md` stating behavior, scenario, risk probed and each
@@ -61,7 +62,7 @@ filenames are not required.
 ## Rules
 
 - One test per behavior. Extend an existing test rather than near-duplicating it; a frozen test
-  changes only under the freeze rule.
+  changes only under the *Frozen tests* rule.
 - Hard but realistic: real data instances, the ambiguity and competing cues that make the
   behavior hard, a simulated user whose instructions hold only the user's goal and knowledge.
   Never put the answer, a diagnosis or a hint in the agent's input.
@@ -86,8 +87,8 @@ filenames are not required.
 
 ## Ask the user
 
-The user is asked at three points in a build: once at the start, at scenario approval and at
-the grader preview. Skip any
+The user is asked at up to three points in a build: once at the start, at scenario approval and
+at the grader preview (or once for both, when the user chose one sitting below). Skip any
 question that the request, `relai/decisions.md`, the wiki or an agreement already answers. At the
 start, ask together only what is still open:
 
@@ -99,18 +100,19 @@ start, ask together only what is still open:
   a release, comparing models or prompts, or seeing where the agent stands. It sets the split
   recommendation, attempts and spend.
 - On first use, the harness questions still open ([harness](references/harness.md), *Ask the user*).
-- **How involved to be**, when no agreement says: approve the scenarios and grader preview
-  yourself (recommended for the first build), or delegate both to a fresh independent review and
-  see the results with the build's report. For a build of one or two tests, the user may also
-  prefer one sitting: build first (building runs no agent), then show the scenario with its
-  grader preview together. Record the choice in `decisions.md`.
+- **How involved to be**, when nothing says
+  ([delegated approvals](../start/template/README.md#working-with-the-user)): approve the
+  scenarios and grader preview yourself (recommended for the first build), or delegate both to a
+  fresh independent review and see the results with the build's report. For a build of one or two
+  tests, the user may also choose one sitting: build first (building runs no agent), then show the
+  scenario with its grader preview together. Record the choice in `decisions.md`.
 
 Name any missing credential variable and the project's credential mechanism (or `relai/.env`)
 as an instruction, not a question. Reuse existing setup and continue work that does not need it.
 
 ## Approve the scenarios
 
-Unless an agreement already covers it, wait for a yes before building. Write each proposed
+Unless the approval is delegated or the user chose one sitting, wait for a yes before building. Write each proposed
 test's full design to `relai/records/eval/<date>-scenarios.md` ([test-design](references/test-design.md),
 *Proposing a test*). In chat, show one compact table, in the order you recommend building: the
 behavior, its source, the scenario in one line naming the real data and the trigger that makes
@@ -136,8 +138,8 @@ pure prohibition, preview an actual violation to show that check can fail.
 Summarize the rest per test in
 one line, such as "4 code checks scored as expected". Ask whether the current subset needs scoring
 changes or is missing anything the user cares about; separate independent choices as the shared
-guidance describes. Iterate until the answer is no, then review and freeze. When the agreement
-delegates this decision, the fresh test review stands in for the user. Build/freeze only the subset whose required decisions
+guidance describes. Iterate until the answer is no, then review and freeze. When this decision
+is delegated, the fresh test review stands in for the user. Build/freeze only the subset whose required decisions
 are resolved; do not treat partial review as approval of the remaining tests.
 
 ## Approach

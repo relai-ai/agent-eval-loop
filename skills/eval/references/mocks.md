@@ -14,7 +14,7 @@ can see what the agent tried to do.
 - Evaluators that grade side effects (a refund issued, an email sent) read the journal rather than
   the agent's claims.
 - The smoke test passes after the change, and any frozen test that gained a state file was
-  re-frozen under the freeze rule.
+  re-frozen under the *Frozen tests* rule.
 
 ## Rules
 
