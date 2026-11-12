@@ -99,6 +99,11 @@ start, ask together only what is still open:
   a release, comparing models or prompts, or seeing where the agent stands. It sets the split
   recommendation, attempts and spend.
 - On first use, the harness questions still open ([harness](references/harness.md), *Ask the user*).
+- **How involved to be**, when no agreement says: approve the scenarios and grader preview
+  yourself (recommended for the first build), or delegate both to a fresh independent review and
+  see the results with the build's report. For a build of one or two tests, the user may also
+  prefer one sitting: build first (building runs no agent), then show the scenario with its
+  grader preview together. Record the choice in `decisions.md`.
 
 Name any missing credential variable and the project's credential mechanism (or `relai/.env`)
 as an instruction, not a question. Reuse existing setup and continue work that does not need it.

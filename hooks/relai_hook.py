@@ -105,12 +105,18 @@ def guard_frozen(event: dict, host: str) -> dict | None:
             hits.setdefault(found[0], found[1])
     if not hits:
         return None
+    if all(entry.get("repair") for entry in hits.values()):
+        reasons = "; ".join(f"{key}: {entry['repair'].get('reason', '')}" for key, entry in hits.items())
+        context = (f"RELAI: editing a frozen test under an open repair ({reasons}). When done, re-freeze with "
+                   "`freeze.py --reason`, record it in relai/decisions.md and get a fresh review.")
+        return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": context}}
     tests = "; ".join(f"{key} (frozen {str(entry.get('frozen_at', '')).split('T')[0] or 'earlier'})"
                       for key, entry in hits.items())
     rule = ("Changing a frozen test changes what its scores mean, so results before and after are no "
             "longer comparable. A justified repair needs a reason recorded with `freeze.py --reason`, a line "
-            "in relai/decisions.md and a fresh review (relai/README.md, guarantee 5). A low score alone does "
-            "not show the test is wrong.")
+            "in relai/decisions.md and a fresh review (relai/README.md, Fixed rules: frozen tests). A low score "
+            "alone does not show the test is wrong. Once a repair is agreed, `freeze.py <test> --begin-repair "
+            "--reason \"...\"` stops this check asking before each edit until the test is re-frozen.")
     if host == "codex":
         # Codex cannot ask the user from a hook, so the edit goes ahead and the agent is told.
         context = (f"RELAI warning: this edit changes a frozen test: {tests} (relai/frozen.json). {rule} "
@@ -135,7 +141,8 @@ def run_checker(relai_dir: Path, script: str, *args: str) -> str | None:
         result = subprocess.run([sys.executable, str(checker), *args], capture_output=True, text=True,
                                 cwd=relai_dir.parent, timeout=CHECK_TIMEOUT_SEC)
     except subprocess.TimeoutExpired:
-        return None
+        command = " ".join(["python3", f"relai/bin/{script}", *args])
+        return f"`{command}` did not finish within {CHECK_TIMEOUT_SEC}s, so it was not checked; run it yourself."
     if result.returncode == 0:
         return None
     report = (result.stdout + result.stderr).strip()
@@ -163,8 +170,9 @@ def check_edit(event: dict, host: str) -> dict | None:
     reports = [r for r in (run_checker(*key) for key in checks) if r]
     if not reports:
         return None
-    context = (f"RELAI checkers found problems after editing {', '.join(edited)}. "
-               "Fix them, or say why they do not apply:\n\n" + "\n\n".join(reports))
+    context = (f"RELAI checkers report current problems in the test or wiki you edited ({', '.join(edited)}). "
+               "Some may predate this edit or belong to work still in progress; fix them before you finish, "
+               "or say why they do not apply:\n\n" + "\n\n".join(reports))
     return {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": context}}
 
 

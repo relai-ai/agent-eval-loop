@@ -113,7 +113,9 @@ setup files as its scope ([comparing](references/comparing.md)).
 Carry forward scope, budget and approvals from the request, `relai/decisions.md`, the wiki or an
 agreement. Combine unresolved scope and task selection in one checkpoint when the evidence is
 ready; ask about check previews once validation is ready, unless already covered or delegated.
-Approval of a task list alone does not approve unseen scoring. Present discovered facts first
+Approval of a task list alone does not approve unseen scoring. When no agreement says how
+involved the user wants to be, offer at the first checkpoint to delegate task-list and check
+approval to a fresh independent review, reporting the results afterwards; record the choice. Present discovered facts first
 ([scope](references/scope.md)); ask only about uncovered choices or material changes. What to
 compare and the run budget change the runs, not the tasks: ask them when the request raises them
 or before the first paid run, and keep building meanwhile. After the first run, show the

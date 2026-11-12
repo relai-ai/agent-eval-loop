@@ -263,7 +263,9 @@ appends one JSON line per call to
 ## `frozen.json`
 
 Written only by `freeze.py`: each test's digest (all files except `README.md`), when it was
-frozen, and the reason for every re-freeze.
+frozen, and the reason for every re-freeze. `repair` (`reason`, `since`) marks an agreed repair
+in progress (`freeze.py --begin-repair`); re-freezing removes it. It changes no score's meaning:
+only editing hooks read it, to stop asking before each edit of that test.
 
 ## `changes.md`
 

@@ -56,6 +56,23 @@ class GuardFrozenTest(HookBase):
         self.assertIsNone(self.hook("guard-frozen", self.repo.root / "src" / "agent.py"))
         self.assertIsNone(self.hook("guard-frozen", task / "task.toml", tool="Read"))
 
+    def test_an_open_repair_stops_asking_until_the_test_is_refrozen(self):
+        task = self.repo.task()
+        self.assertEqual(self.repo.run("freeze.py", str(task)).returncode, 0)
+        refused = self.repo.run("freeze.py", str(task), "--begin-repair")
+        self.assertNotEqual(refused.returncode, 0, "a repair needs a reason")
+        opened = self.repo.run("freeze.py", str(task), "--begin-repair", "--reason", "rubric typo")
+        self.assertEqual(opened.returncode, 0, opened.stderr)
+        self.assertIn("repair open", self.repo.run("freeze.py", "--check").stdout)
+        out = self.hook("guard-frozen", task / "tests" / "evaluate.py")["hookSpecificOutput"]
+        self.assertNotIn("permissionDecision", out)
+        self.assertIn("open repair", out["additionalContext"])
+        (task / "tests" / "evaluate.py").write_text((task / "tests" / "evaluate.py").read_text() + "\n# repaired\n")
+        self.assertEqual(self.repo.run("freeze.py", str(task), "--reason", "rubric typo").returncode, 0)
+        out = self.hook("guard-frozen", task / "tests" / "evaluate.py")["hookSpecificOutput"]
+        self.assertEqual(out["permissionDecision"], "ask", "re-freezing closes the repair")
+        self.assertIn("--begin-repair", out["permissionDecisionReason"])
+
     def test_frozen_benchmark_case(self):
         case = self.repo.relai / "benchmarks" / "bench" / "cases" / "c1"
         self.repo.write("relai/benchmarks/bench/cases/c1/task.toml", "[task]\nname = \"c1\"\n")
@@ -131,6 +148,25 @@ class CheckEditTest(HookBase):
         out = self.hook("check-edit", task / "task.toml")["hookSpecificOutput"]
         self.assertIn("check_wiki.py", out["additionalContext"])
         self.assertIn("no-such-page", out["additionalContext"])
+
+    def test_problems_are_not_blamed_on_the_edit_and_timeouts_are_reported(self):
+        task = self.repo.task()
+        (task / "task.toml").write_text((task / "task.toml").read_text().replace('type = "judge"', 'type = "code"'))
+        context = self.hook("check-edit", task / "task.toml")["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("may predate this edit", context)
+        sys.path.insert(0, str(HOOK.parent))
+        try:
+            import relai_hook
+        finally:
+            sys.path.pop(0)
+        self.repo.write("relai/bin/slow.py", "import time\ntime.sleep(5)\n")
+        original = relai_hook.CHECK_TIMEOUT_SEC
+        relai_hook.CHECK_TIMEOUT_SEC = 0.5
+        try:
+            report = relai_hook.run_checker(self.repo.relai, "slow.py")
+        finally:
+            relai_hook.CHECK_TIMEOUT_SEC = original
+        self.assertIn("did not finish", report)
 
     def test_silent_outside_relai(self):
         path = self.repo.write("src/agent.py", "x = 1\n")

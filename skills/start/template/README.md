@@ -46,7 +46,8 @@ invoked) is the choice of whoever builds the tests.
 4. Files whose edits change the agent's behavior (`[target].live_paths` in `relai.toml`) reach
    each trial from the current source, never baked into an image.
 5. A frozen test does not change silently: a change needs a reason (`freeze.py --reason`), a
-   line in `decisions.md`, and a fresh review. Independent review uses a reviewer with fresh context;
+   line in `decisions.md`, and a fresh review. `freeze.py --begin-repair` records an agreed repair
+   as open, so editing hooks stop asking before each of its edits until it is re-frozen. Independent review uses a reviewer with fresh context;
    review effort scales to the consequences, with proportional diff review for routine direct fixes.
 6. Secret values use the project's credential mechanism or `relai/.env`, written by the user.
    Coding agents never read or print them; files refer to them by name. Executable helpers may
@@ -202,6 +203,8 @@ RELAI is something the user steers, not a black box.
   for the risk list, test scenarios, grader previews before freezing, and the improvement
   agreement. These are named decisions within independent workflows, not a sequence every task
   must complete. Ask only about what remains open; restate consequential changes after discussion.
+  When nothing says how involved the user wants to be, offer once to delegate scenario, grader and
+  check approvals to a fresh independent review, and record the answer.
 - **Recommendation first.** Ask with the host's structured question tool when it has one (for
   example `AskUserQuestion` or `request_user_input`), otherwise in ordinary chat, your
   recommendation first. Pause only work that depends on the answer.
