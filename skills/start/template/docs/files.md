@@ -73,7 +73,7 @@ task_code = "private"        # where tasks (which hold source code) may live: "p
 id = "<label>"
 agent = "<Harbor agent name>"  # passed to `harbor run -a`
 model = "<provider/model>"     # passed as -m
-version = "<agent release>"    # the agent's own release, recorded at scope; a change is a measurement change
+version = "<agent release>"    # the agent's own release, recorded before the first paid run; a change is a measurement change
 auth = "subscription"          # or "api-key": how the agent authenticates in a trial
 env = ["<CREDENTIAL_NAME>"]    # names only; values in relai/.env, written by the user
 training_cutoff = "YYYY-MM"    # optional: for reporting tasks whose public fix predates it
@@ -130,7 +130,7 @@ above it declares:
 ```toml
 [agent]
 timeout_sec = 1800                   # required: Harbor has no default
-# network_mode = "no-network"        # optional: open by default; restrict when the fix can be found online
+# network_mode = "no-network"        # restricted by default when the fix can be found online, open otherwise
 
 [metadata.relai]
 agent_neutral = true
@@ -138,6 +138,7 @@ agent_neutral = true
 [metadata.relai.coding]
 source = "pr"                        # session, pr, history, injected, anchor or written
 origin = "acme/api#412"
+request = "verbatim"                 # or "symptom": the developer's own words, or a symptom written from a PR or commit
 repo = "api"                         # a key of [coding_evals].repos
 start_commit = "<sha>"               # the workspace starts here, with its ancestors only
 fix_commit = "<sha>"                 # the real fix, absent from the workspace

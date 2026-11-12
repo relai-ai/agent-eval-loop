@@ -216,9 +216,10 @@ RELAI is something the user steers, not a black box.
   | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, and on first use the harness setup questions |
   | `eval` scenario approval and grader preview | Approval of the scenario table (with the build's cost) and of the grader preview, in manageable subsets |
   | End of an `eval` run whose judges scored real trials for the first time, or after a rubric change | That run's judge checks, while the run is fresh, and the pass mark if it is unset |
-  | `coding-evals` scope and task selection | Unresolved scope, task selection and budget, combined when ready; reuse existing authorization |
+  | `coding-evals` scope and task selection | Unresolved scope and task selection, combined when ready; reuse existing authorization |
   | `coding-evals` check preview before freezing | Scoring and coverage approval still needed, in manageable subsets; a delegated independent review may cover it |
-  | End of the first `coding-evals` comparison that scored real trials | Its judge checks, and the pass mark if it is unset |
+  | Before the first paid `coding-evals` run | What to compare, if the request named a change or another agent, and the run budget |
+  | End of the first `coding-evals` run that scored real trials | Its judge checks, and the pass mark if it is unset |
   | Each `loop` iteration's digest | Everything pending; a blocking item is asked at once, and only it pauses the loop |
   | Whenever the user asks | Everything pending |
 

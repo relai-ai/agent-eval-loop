@@ -1,39 +1,45 @@
-# Comparing versions of the agent, setups and agents
+# Running: the baseline, then changes, setups and agents
 
 ## Before any paid run
 
-Every task is frozen and healthy. Measure one trial per version compared (its cost, or with a
+Every task is frozen and healthy. Measure one trial per version run (its cost, or with a
 subscription its plan usage and time), then follow "Cost before spend" in `relai/README.md`.
 Choose attempts for the decision, observed variability and budget; coding agents can vary between
 runs. Reuse deterministic work only when it preserves the uncertainty being measured.
 
+**Agent timeout.** Set `[agent].timeout_sec` at build for an agent doing the work, never from
+the reference fix, which runs instantly. When the measured trial of any version runs near it,
+raise it under the freeze rule before the run counts.
+
 ## Running
 
-The usual comparison is the agent as the team uses it now (the baseline) against one change: a
-model, a version, or a setup variant (below). Comparing other agents is optional and works the same way, with
-the extra care in *Comparing agents* below. Run each
+The first run measures the agent as the team uses it now: the baseline. On its own it says how the
+agent does on the team's work and what it gets wrong, and later runs reuse it. When the user asks,
+compare one change against it: a model, a version, or a setup variant (below). Comparing other
+agents works the same way, with the extra care in *Comparing agents* below. Run each
 version as `relai/docs/harbor.md` describes, with `-a <agent> -m <model>`, the agent's recorded
 version (the [Harbor notes](../../eval/references/harbor-notes.md) say how), its credential, each
 task's network setting, and each version's runs in their own directory under `relai/work/runs/`.
-Score the judges, then `summarize.py` each run and compare against the baseline with `--baseline`.
+Score the judges, then `summarize.py` each run; when comparing, pass the baseline with `--baseline`.
 
 ## Reading the results
 
 - **Solved** is the primary evaluator at full marks (its per-attempt scores in
-  `summarize.py --json`), per task, averaged over attempts; the pass rule over every recorded
-  check goes beside it. An agent can solve more and pass less (it fixes the bug but
+  `summarize.py --json`), per task, averaged over attempts; the mean over every recorded check
+  goes beside it, and the pass rule once `[scoring].pass_mark` is set. An agent can solve more and pass less (it fixes the bug but
   edits tests or skips verification). Show scored/attempted counts and missing-result reasons;
   unknown scores are not failures. Rerun missing evidence when useful and authorized, or limit
   the conclusion to what was recorded.
-- **Paired, task by task.** Compare the same tasks for both sides. A difference within the run's
+- **Paired, task by task**, when comparing. Compare the same tasks for both sides. A difference within the run's
   spread, or on few tasks, supports no claim either way.
 - **Per check**: how often each behavior held. Checks with errors were not recorded for that
   agent.
 - **By kind of work**: suggest routing only when a difference holds on several tasks of that kind.
-- **Tasks that separate them** are the most informative; review the ones nobody solves for
+- **Tasks that separate versions** are the most informative; review the ones nobody solves for
   fairness.
 - **Failure patterns**: which checks failed together. Read a few trajectories from each large
-  group and quote where the agent went wrong.
+  group and quote where the agent went wrong. Record a pattern the trajectories support as a risk
+  under the [discover skill](../../discover/SKILL.md)'s rules, citing the runs.
 - **Measurement defects**: distinguish pre-existing environment or fixture failures from
   breakage introduced by the agent. Preserve original runs and scores, identify affected checks
   and claims, and follow the freeze rule for repairs and comparable reruns. Do not count affected
@@ -58,8 +64,8 @@ differs between agents is what they read, what is recorded and what they cost.
   each agent with its **matched setup**: the same team guidance written into each agent's own
   files (`[[coding_evals.setups]]` with `agent`). Never one agent's setup against another bare.
 - **Same conditions.** The same frozen tasks, attempts, network setting and web-tool setting for
-  every agent. Set `[agent].timeout_sec` from the slowest compared agent's normal runs, not from
-  the reference fix; a timed-out run is graded and counts as that agent's result, so report
+  every agent, with `[agent].timeout_sec` covering the slowest compared agent's normal runs
+  (*Before any paid run*); a timed-out run is graded and counts as that agent's result, so report
   timeouts per agent.
 - **A fair basis.** The headline is the primary check's solved rate, which every agent and the
   oracle are scored on. Beside it, compare only the checks recorded for every agent compared, and

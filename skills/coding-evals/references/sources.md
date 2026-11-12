@@ -28,7 +28,7 @@ integrated PR commit as the fix. Confirm the range contains the intended changes
 start predates the fix; skip ambiguous ranges rather than guessing from the final commit alone.
 The request is the linked issue as its author wrote it; with no
 issue, write what a developer would have asked from the description's *what*, never its *how*,
-and show it with the task list. Its added or changed tests become hidden tests; its source changes are the
+mark it `request = "symptom"` and show it with the task list. Its added or changed tests become hidden tests; its source changes are the
 reference fix. Reverted pull requests make strong tasks: check what the revert says broke. Review
 comments feed the review-ready rubric ([checks](checks.md)).
 
@@ -38,7 +38,7 @@ Look for commits or merged pull requests that changed code and tests together, s
 one task, preferring bug fixes with a linked issue and recent ones, and spread across kinds of
 work and areas. Read each diff before proposing it: its tests must check behavior a user cares
 about, and a request must be writable as a symptom ("exporting an empty report crashes"), never
-the change.
+the change; a request taken from a linked issue is verbatim, one you write is `symptom`.
 
 ## Many sessions at once
 
