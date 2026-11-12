@@ -34,9 +34,7 @@
 
 ### 🤖 Agent applications and business workflows
 
-The agents you build and ship, whatever framework they use. RELAI builds evals from your traces,
-or generates them from the agent's code, docs and risks, then improves prompts, tools, workflow,
-memory or model, keeping a change only when the evals show it helped and the guardrails held.
+The agents you build and deploy, regardless of framework. RELAI creates evals from your agent's traces or generates them from its code, documentation, and potential risks. It then improves prompts, tools, workflows, memory, and model choices, keeping only changes that improve evaluation results while satisfying your guardrails.
 
 Open your agent's repository and ask:
 
@@ -54,8 +52,7 @@ optimize task success and cost
 ### 🏭 Coding agents and software factories
 
 The coding agents your team uses: Claude Code, Codex, OpenHands or your own setup of one.
-RELAI turns your coding sessions, pull requests and git history into tasks any coding agent
-can run, then shows whether a new model, CLAUDE.md, skill or agent actually helps on *your* code.
+RELAI turns coding sessions, pull requests, and Git history into reproducible evals that any coding agent can run. It then measures whether a new model, CLAUDE.md, skill, or agent configuration actually improves performance on *your* codebase.
 
 Open an eval project and ask:
 
