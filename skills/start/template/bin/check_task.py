@@ -5,7 +5,7 @@ Usage:
   python3 relai/bin/check_task.py relai/tests/<id> [more task dirs] [--verifier [--fixture DIR]] [--json]
 
 Harbor runs also check relai.toml [harbor]. With --cloud, check portability to the bundled hosted
-builder (fixed rule 8): each
+builder (relai/README.md, Fixed rules: Reproducible tasks): each
 FROM or COPY --from in its Dockerfiles names the harness image from [harbor.image], as the only FROM and
 the first instruction, or an image its registry serves without credentials (asked anonymously with HEAD
 requests, as a cloud builder would pull it), and no FROM reads a build argument. A FROM that pins a literal

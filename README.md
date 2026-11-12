@@ -245,9 +245,14 @@ An iteration begins with new traces, answers, tests or existing evidence. The co
 5. record   what was learned, results, fixes kept or rejected, and spend
 ```
 
-An experiment can investigate or collect evidence without producing a patch. Baseline reuse requires comparable source and measurement conditions. During an iteration, measurement meaning and relevant comparison conditions stay stable; budget and authorization remain binding. Supporting tooling can improve within the agreed scope. Changes to evaluation meaning, coverage or acceptance criteria need controlled repair and comparable evidence. The coding agent asks before broadening the assignment or resolving a consequential choice your agreement does not cover; a faster feedback runner alone does not establish a faster agent.
+In practice:
 
-The OSS workflow provides scoped evidence for comparison. It does not establish universal correctness or prove that every possible regression has been prevented.
+- **Not every iteration ships a change.** An experiment can just investigate or gather evidence.
+- **The yardstick holds still.** While an iteration runs, the tests, graders and run conditions do not change, so before and after numbers stay comparable. If a test itself turns out to be wrong, it is repaired openly, recorded, and the baseline is measured again.
+- **Your limits hold.** The agreed budget and scope apply throughout. The coding agent asks before going beyond them or making a consequential choice you have not covered.
+- **Faster tooling is not a faster agent.** Speeding up the test runner is reported separately from changes to the agent.
+
+The results are evidence on the tests you have, not proof that the agent is correct everywhere or that no regression is possible.
 
 ## You remain in control
 
@@ -280,6 +285,24 @@ Questions wait for a natural decision point: the end of `discover`, the first ti
 
 The generated `relai/README.md` lists the prerequisites for each runner (see the [bundled contract](skills/start/template/README.md)).
 
+## Glossary
+
+| Term | Meaning |
+| --- | --- |
+| **EvalsWiki** | The project's maintained notes in `relai/wiki/`: requirements, risks and open questions, each citing its evidence. |
+| **Eval / test** | One scenario that runs the real agent and scores what it did. Frozen before it is used for comparisons. |
+| **Frozen** | The test's files are fingerprinted, so any later change is visible and needs a recorded reason and review. |
+| **Development / held-out / final** | Tests whose runs may be read to diagnose failures; optional tests only scored, to check a change generalizes; a benchmark's test split, kept for the final report. |
+| **Agreement** | What you approved for improvement work: the objective, guardrails, scope, budget and how results are delivered. |
+| **Incumbent** | The current best version of the agent, starting as your code. A change replaces it only with evidence. |
+| **Locked kernel** | The parts of a loop that stay fixed while it runs (tests, graders, acceptance rule), so results stay comparable. |
+| **Agent-neutral task** | A coding task any coding agent can run, scored from the files it leaves rather than its tool logs. |
+| **Oracle / nop run** | Health checks for a coding task: the real fix must pass it and the untouched code must fail it. |
+| **ATIF** | The trajectory format Harbor records: messages, tool calls and results in order. |
+| **Triage lanes** | Groups of trace leads: needs your judgment, coverage gaps, weak signals. |
+
+The full definitions are in the [bundled contract](skills/start/template/README.md#terms).
+
 ## FAQ
 
 <details>
@@ -299,7 +322,11 @@ An open question asks how the agent should behave in general. Your answer become
 <details>
 <summary>Can coding-agent tasks leak our code?</summary>
 
-Each task holds the repository up to the commit where it starts. Tasks stay where you specify, private to the eval project by default. Quoted session text is redacted of secrets and personal data. Configured model providers receive relevant agent inputs, traces and trajectories for execution, judging and triage. Separately authorized hosted runners or builders may also receive source, tasks, logs and build material; local execution avoids that hosted transfer. The selected integration makes destinations and side effects explicit. Excerpts kept in the wiki are redacted; executable helpers read named credentials without exposing their values to the coding agent.
+- **Where tasks live:** each task holds your repository's history up to the commit where the task starts. Tasks stay where you choose, private to the eval project by default.
+- **What is redacted:** session text quoted in tasks and trace excerpts kept in the wiki have secrets and personal data removed.
+- **What model providers see:** the providers you configure receive what they need to run the agent, judge it and triage traces, including trajectories. The example judge and triage scripts remove only secret values before sending, not personal or customer data, and RELAI tells you before the first such call.
+- **Hosted runners:** only if you authorize one, it may also receive source, tasks, logs and build material. Running locally avoids that.
+- **Credentials:** helper scripts read the named keys themselves; the coding agent never sees their values.
 
 </details>
 
@@ -327,7 +354,7 @@ Yes. Tests run through Harbor or a native runner. Bundled checkers are standard-
 ## What's inside
 
 ```text
-relai/
+agent-eval-loop/
 ├── skills/
 │   ├── start/         # the relai/ template and checkers
 │   ├── discover/      # requirements, risks, open questions, trace triage

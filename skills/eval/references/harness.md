@@ -60,7 +60,7 @@ prerequisites for the selected runner and fix what fails.
   or replace the example for its API and credential mechanism. Preserve data authorization,
   credential redaction, score/error outputs and honest usage reporting; do not claim the shipped
   example implements a provider it does not.
-- Contain every trial (Fixed rule 3). Never run an uncontained agent as a workaround.
+- Contain every trial (`relai/README.md`, Fixed rules: *Containment*). Never run an uncontained agent as a workaround.
 - Integrate the configuration the repository presents as real use: what its README leads with,
   its defaults. Never a fixture that exists for its own tests. When several are plausible, ask.
 - Drive the agent through its real entrypoint and native lifecycle (a long-lived object, replayed

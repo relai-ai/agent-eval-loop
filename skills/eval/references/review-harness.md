@@ -50,7 +50,7 @@ or a trajectory step):
 7. **Output reaches evaluators.** What the agent produces (a reply, a file, a record) is visible
    to the evaluators, and the smoke test's evaluators check a real outcome rather than activity
    and could fail. The smoke test is not frozen, so a check loosened until it passes fails this.
-8. **Containment.** `[runner]` declares actual execution and isolation, and it meets Fixed rule 3,
+8. **Containment.** `[runner]` declares actual execution and isolation, and it meets the *Containment* rule (`relai/README.md`, Fixed rules),
    demonstrated by the integration rather than inferred from a config label. No secret appears in
    committed files.
 9. **Runner contract.** The declared implementation writes truthful causal records (ATIF when using

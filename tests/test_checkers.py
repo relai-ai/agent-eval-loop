@@ -541,7 +541,7 @@ context = "relai/harness"
 
 
 class CloudBuildTest(Base):
-    """Fixed rule 8 and relai.toml [harbor]. Registry lookups are answered here, never by the network."""
+    """The Reproducible tasks rule and relai.toml [harbor]. Registry lookups are answered here, never by the network."""
 
     PUBLIC = {"python:3.12-slim", "ghcr.io/astral-sh/uv:0.8.14"}
 

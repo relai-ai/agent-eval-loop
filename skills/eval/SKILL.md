@@ -130,8 +130,9 @@ feedback) to `relai/records/eval/<date>-grader-preview.md`. Size chat previews b
 subsets when needed while keeping the complete artifact and pending decisions visible. For the
 subset being approved, show every judge evaluator's rows and every score that differs from what
 its case should get (a failing case not scored low,
-a passing one below full marks, a missing required deliverable above the minimum). An empty
-reply may pass a pure prohibition; preview an actual violation to show that check can fail.
+a passing one below full marks, a missing required deliverable above the minimum; see
+[test-design](references/test-design.md#rules), *Missing deliverables and prohibitions*). For a
+pure prohibition, preview an actual violation to show that check can fail.
 Summarize the rest per test in
 one line, such as "4 code checks scored as expected". Ask whether the current subset needs scoring
 changes or is missing anything the user cares about; separate independent choices as the shared

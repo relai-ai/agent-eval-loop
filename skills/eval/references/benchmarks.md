@@ -78,7 +78,7 @@ the benchmark itself would, with its splits respected, and a small budget still 
   `error`, `cost_usd`, `trajectory`, `benchmark_commit`; see `summarize.py`). Keep the
   benchmark's own logs beside it. Map its error states to `runtime failure` or `evaluator error`,
   never to a score. Run it where the benchmark expects to run (its containers, its environment
-  variables by name), contained as Fixed rule 3 requires.
+  variables by name), contained as the *Containment* rule in `relai/README.md` requires.
 
 ## Fidelity first
 

@@ -28,34 +28,34 @@ runner details are in `docs/`, read when the work touches them:
 Everything else (how the agent starts, adapters, Dockerfiles, test design, how the runner is
 invoked) is the choice of whoever builds the tests.
 
-1. Every test uses the declared runner: Harbor at the release in `[harbor].version` (the supported
+1. **Declared runner.** Every test uses the declared runner: Harbor at the release in `[harbor].version` (the supported
    default), or a native
    project or benchmark runner meeting the shared trial contract (`docs/native.md`). Record the
    choice and reason.
-2. Each trial records the causal sequence of real model messages, tool calls and results, and
+2. **Recorded trials.** Each trial records the causal sequence of real model messages, tool calls and results, and
    each declared evaluator yields a score within its bounds plus feedback, or an explicit error.
    Project-native records may preserve this evidence in their own format. ATIF and the bundled
    trial layout are required when using integrations or checkers that consume them (`docs/native.md`). An
    agent-neutral coding task is scored from the workspace when a run has no trajectory (Harbor's
    oracle, or an agent it records without one); its evaluators that need one are "not recorded".
-3. Trials are contained. Containers are the default. Host execution needs explicit authorization
+3. **Containment.** Trials are contained. Containers are the default. Host execution needs explicit authorization
    (an existing agreement may cover it) and reviewed sandboxing or simulated tool boundaries that
    prevent access to hidden tests, graders, credentials, other trials and unrelated user files,
    and effects outside the trial. A process launcher, working directory or environment allowlist
    alone is not isolation, and the plugin's example native runner is not a sandbox.
-4. Files whose edits change the agent's behavior (`[target].live_paths` in `relai.toml`) reach
+4. **Live source.** Files whose edits change the agent's behavior (`[target].live_paths` in `relai.toml`) reach
    each trial from the current source, never baked into an image.
-5. A frozen test does not change silently: a change needs a reason (`freeze.py --reason`), a
+5. **Frozen tests.** A frozen test does not change silently: a change needs a reason (`freeze.py --reason`), a
    line in `decisions.md`, and a fresh review. `freeze.py --begin-repair` records an agreed repair
    as open, so editing hooks stop asking before each of its edits until it is re-frozen. Independent review uses a reviewer with fresh context;
    review effort scales to the consequences, with proportional diff review for routine direct fixes.
-6. Secret values use the project's credential mechanism or `relai/.env`, written by the user.
+6. **Secrets.** Secret values use the project's credential mechanism or `relai/.env`, written by the user.
    Coding agents never read or print them; files refer to them by name. Executable helpers may
    read the named credentials for authentication and redaction without exposing values to the agent.
-7. A mock replaces only a dependency's client boundary, never the agent, its model, or a
+7. **Mocks.** A mock replaces only a dependency's client boundary, never the agent, its model, or a
    tool's own logic. Its use needs authorization, which an existing agreement may cover
    (`decisions.md`).
-8. Tasks are reproducible in their selected execution environment using declared, authorized
+8. **Reproducible tasks.** Tasks are reproducible in their selected execution environment using declared, authorized
    dependencies. Hosted portability is required only when the work needs it. The bundled
    hosted-builder recipe has additional image and build constraints (`docs/harbor.md`); other
    integrations may demonstrate equivalent execution guarantees through their own infrastructure.
@@ -189,7 +189,7 @@ or printing the value.
   home directory), so keep mounted paths, including `TMPDIR` for the checkers, under the home
   directory. A task with a restricted network also needs the engine's image builder for Harbor's
   egress sidecar (`docker buildx` on a Docker CLI; the Harbor notes).
-- **Native:** the integration declares and checks its own runtime and containment (Fixed rule 3).
+- **Native:** the integration declares and checks its own runtime and containment (Fixed rules, *Containment*).
 - **When Harbor or a container engine is missing:** tell the user what is missing and the
   alternatives: start or install a supported engine, a native runner with authorized containment
   (`docs/native.md`), or a hosted runner (`docs/harbor.md`). Agent-neutral coding tasks need
