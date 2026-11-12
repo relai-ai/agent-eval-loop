@@ -7,12 +7,15 @@ Usage:
 Pages live in relai/wiki/{requirements,risks,open-questions}/<id>.md; a page's id is its
 file name. Checks: ids are lowercase slugs and unique across the three folders, each page
 starts with a '# ' title, local links resolve (missing attachments warn), and every id a test or
-benchmark lists in [metadata.relai].covers exists. Read-only.
+benchmark lists in [metadata.relai].covers exists. Managed wiki/attachments/**/*.json
+files must parse as UTF-8 JSON; this checks format, not evidence accuracy. Read-only.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -25,6 +28,55 @@ KINDS = ("requirements", "risks", "open-questions")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 LINK_RE = re.compile(r"\]\((<[^>]+>|[^)\s]+)(?:\s+[^)]*)?\)")
 RISK_FIELDS = ("mechanism", "trigger", "observable failure")
+
+
+def check_attachments(relai_dir: Path, report: Report) -> None:
+    """Parse managed JSON without following attachment symlinks or rewriting evidence."""
+    root = relai_dir / "wiki" / "attachments"
+    for folder in (root.parent, root):
+        if folder.is_symlink():
+            report.error(f"{folder.relative_to(relai_dir)}: attachment scan cannot follow a symlink")
+            return
+    if not root.exists():
+        return
+
+    def unreadable(exc: OSError) -> None:
+        path = Path(exc.filename) if exc.filename else root
+        report.error(f"{path.relative_to(relai_dir)}: cannot read attachments ({exc.strerror})")
+
+    class NonstandardConstantError(ValueError):
+        pass
+
+    def reject_constant(value: str) -> None:
+        raise NonstandardConstantError
+
+    for folder, dirs, files in os.walk(root, followlinks=False, onerror=unreadable):
+        for name in sorted(dirs):
+            path = Path(folder) / name
+            if path.is_symlink():
+                dirs.remove(name)
+                report.error(f"{path.relative_to(relai_dir)}: attachment scan cannot follow a symlink")
+        for name in sorted(files):
+            path = Path(folder) / name
+            if path.suffix.lower() != ".json":
+                continue
+            rel = path.relative_to(relai_dir)
+            if path.is_symlink():
+                report.error(f"{rel}: attachment scan cannot follow a symlink")
+                continue
+            try:
+                text = path.read_bytes().decode("utf-8")
+                json.loads(text, parse_constant=reject_constant)
+            except UnicodeDecodeError as exc:
+                report.error(f"{rel}: invalid UTF-8 at byte {exc.start}")
+            except json.JSONDecodeError as exc:
+                report.error(f"{rel}:{exc.lineno}:{exc.colno}: invalid JSON ({exc.msg})")
+            except NonstandardConstantError:
+                report.error(f"{rel}: invalid JSON (non-standard numeric constant)")
+            except ValueError:
+                report.error(f"{rel}: cannot parse JSON numeric value")
+            except OSError as exc:
+                report.error(f"{rel}: cannot read JSON ({exc.strerror})")
 
 
 def main() -> int:
@@ -72,6 +124,8 @@ def main() -> int:
                     emit(f"{rel}: link to {target} does not resolve")
         for other in sorted(p for p in folder.iterdir() if p.suffix != ".md" and not p.name.startswith(".")):
             report.warn(f"{other.relative_to(relai_dir)}: only .md pages belong in {kind}/")
+
+    check_attachments(relai_dir, report)
 
     for kind in ("tests", "benchmarks"):
         base = relai_dir / kind

@@ -10,6 +10,7 @@ Page rules are in [wiki rules](wiki-rules.md); trace safety, opt-outs and redact
 
 - Establish the selected source set and useful coverage with [trace auditing](trace-audit.md)
   or [scalable triage](trace-triage.md); reuse the project's inventory where suitable.
+  For substantial work use [adaptive investigation and blind-spot review](trace-investigation.md).
 - Keep the full finding inventory distinct from the priority shortlist. Repeated examples may
   strengthen an existing finding; do not let them crowd out other mechanisms, lower-priority
   findings or useful uncertainty. Keep unverified leads labelled in work records rather than
@@ -30,3 +31,18 @@ Page rules are in [wiki rules](wiki-rules.md); trace safety, opt-outs and redact
   how to design the evaluator.
 - Raise a risk's confidence or triggerability only for something concrete: a mechanism you can
   point to, a fragility, a near miss, inconsistent behavior across similar traces, or recurrence.
+
+## Validate exported evidence
+
+Redact structured values before serialization; text substitution over serialized JSON can break
+syntax or alter claim-bearing facts. Reopen the final exported artifact using its format parser
+and check representative claim-bearing passages against the read-only source. Preserve numeric
+values and relationships needed for the claim when permitted; otherwise omit or qualify the
+claim rather than silently corrupt the evidence. Keep aliases consistent within the cited batch
+and record their scope when cross-batch comparisons would otherwise imply shared identities.
+
+Run the existing managed `check_wiki.py` after wiki changes. It checks attachment JSON syntax
+as well as wiki links; it cannot certify redaction, factual fidelity or semantic support. Check
+those separately, including source references. When reusing an older local checker, inspect its
+capabilities and validate any uncovered format with an available parser; do not assume template
+updates have upgraded project-owned copies. Fix exports and rerun checks before handoff.

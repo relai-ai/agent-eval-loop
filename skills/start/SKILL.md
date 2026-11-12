@@ -35,9 +35,13 @@ paths refer to project artifacts, not files inside the plugin.
 - A README beginning `<!-- relai` identifies RELAI state. If an unrelated folder occupies `relai/`,
   explain the collision and ask how to resolve it. Do not move or overwrite it; another state root
   is not currently supported by these workflows.
-- When initialization is needed and authorized, copy [template/](template/) to the repository's
-  `relai/`, skipping caches, and rename `gitignore` to `.gitignore`. Explain what will be added;
-  ask only when existing instructions do not authorize it.
+- When initialization is needed and authorized, copy only the parts of [template/](template/)
+  needed for the selected workflow into the repository's `relai/`, including supporting contracts
+  and checker dependencies. Keep needed local references usable; references to optional stages
+  do not require initializing those stages. Skip caches and rename `gitignore` to `.gitignore`
+  when copied. Explain material additions; ask only when existing instructions do not authorize
+  them. Add other template assets when a concrete workflow needs them, rather than copying
+  unused harness or reporting infrastructure in advance.
 - Record the source of copied files in `relai/UPSTREAM.md` or existing project provenance,
   following the [project-copy upgrade policy](template/docs/upgrades.md). Apply that policy
   when upgrading existing copies; an installed plugin update does not replace project files.

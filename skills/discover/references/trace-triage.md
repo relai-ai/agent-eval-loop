@@ -20,10 +20,9 @@ Inventory the selected set and reuse available summaries or mechanical checks fr
 heuristics cannot establish that an unconfirmed action was unauthorized or that an unmatched
 number was invented. Do not build a generic audit-script suite as a prerequisite.
 
-Seek breadth beyond the first failure cluster: use relevant task types, policy obligations,
-tool workflows and outcome groups to find unexplored signals. Adapt checks and sampling as new
-mechanisms appear. Keep lower-priority findings and unresolved leads visible separately from
-the shortlist; a few compelling failures do not establish that discovery is complete.
+For substantial work, follow [adaptive investigation and deliberate blind-spot review](trace-investigation.md):
+use new mechanisms to revise checks and selection, including unflagged episodes inside familiar
+traces. Keep the finding inventory distinct from the shortlist.
 
 Choose a pilot and inspect its output against the source traces before scaling an unfamiliar
 method. Revise the method if it misjudges outcomes or invents signals. Supply relevant target
@@ -37,8 +36,9 @@ processing.
 ## If using the example
 
 - Normalize once to JSONL: `{"id", "trace": [{"role", "content", "tool_calls"?}, ...], "meta": {...}}`.
-  Keep stable ids so incremental runs skip completed traces. Keep the adapter and normalized
-  input under `relai/work/discover/<ingest-id>/`.
+  Keep stable ids so incremental runs skip completed traces. The example resumes by id only;
+  use a fresh ingest or adapt it when source content, policy or analysis assumptions change. Keep
+  the adapter and normalized input under `relai/work/discover/<ingest-id>/`.
 - The example reads `[triage]` in `relai.toml`, else `[judge]`. Provide policy using
   `--context-file`. `estimate --input traces.jsonl` estimates tokens and cost; `run --limit N`
   permits a pilot; `run` processes the remaining traces. Errors are recorded in `errors.jsonl`

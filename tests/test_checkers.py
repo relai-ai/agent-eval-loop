@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import unittest
 
@@ -179,6 +180,113 @@ class CheckTrajectoryTest(Base):
 
 
 class CheckWikiTest(Base):
+    def test_malformed_monetary_fragment_errors_without_printing_evidence(self):
+        path = self.repo.write("relai/wiki/attachments/refund.json",
+                               '{\n  "private-customer": "secret-customer",\n  "amount": 36.13.000000001\n}\n')
+        before = path.read_bytes()
+        result = self.repo.run("check_wiki.py", "--json")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        errors = json.loads(result.stdout)["errors"]
+        self.assertEqual(len(errors), 1)
+        self.assertIn("wiki/attachments/refund.json:3:18: invalid JSON", errors[0])
+        self.assertNotIn("secret-customer", result.stdout + result.stderr)
+        self.assertNotIn("36.13", result.stdout + result.stderr)
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_valid_attachment_values_and_aliases_are_not_rewritten(self):
+        path = self.repo.write("relai/wiki/attachments/export.json",
+                               '{ "amount": 36.13000000000001, "quoted": "36.13", '
+                               '"customer_alias": "CUSTOMER_001", "note": "uncertain" }\n')
+        before = path.read_bytes()
+        result = self.repo.run("check_wiki.py", "--json")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)["errors"], [])
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_nonstandard_json_constants_fail_without_printing_evidence(self):
+        for constant in ("NaN", "Infinity", "-Infinity"):
+            with self.subTest(constant=constant):
+                path = self.repo.write("relai/wiki/attachments/constants.json",
+                                       '{"private": "secret-customer", "amount": ' + constant + '}')
+                before = path.read_bytes()
+                result = self.repo.run("check_wiki.py", "--json")
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertEqual(json.loads(result.stdout)["errors"],
+                                 ["wiki/attachments/constants.json: invalid JSON (non-standard numeric constant)"])
+                self.assertNotIn("secret-customer", result.stdout + result.stderr)
+                self.assertEqual(path.read_bytes(), before)
+
+    def test_quoted_constants_and_large_json_numbers_remain_valid(self):
+        path = self.repo.write("relai/wiki/attachments/constants.json",
+                               '{"strings": ["NaN", "Infinity", "-Infinity"], "large_number": 1e999}')
+        before = path.read_bytes()
+        result = self.repo.run("check_wiki.py", "--json")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)["errors"], [])
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_nested_unlinked_json_and_invalid_utf8_are_checked(self):
+        self.repo.write("relai/wiki/attachments/deep/unlinked.json", '{"broken": }')
+        path = self.repo.write("relai/wiki/attachments/deep/encoding.json", "")
+        path.write_bytes(b'{"private": "\xff"}')
+        self.repo.write("relai/wiki/attachments/deep/notes.txt", "not JSON")
+        self.repo.write("relai/wiki/attachments/deep/stream.jsonl", "not JSON either")
+        result = self.repo.run("check_wiki.py", "--json")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        errors = json.loads(result.stdout)["errors"]
+        self.assertEqual(len(errors), 2)
+        self.assertTrue(any("deep/unlinked.json:1:12: invalid JSON" in error for error in errors))
+        self.assertTrue(any("deep/encoding.json: invalid UTF-8 at byte 13" in error for error in errors))
+        self.assertNotIn("private", result.stdout + result.stderr)
+
+    def test_unreadable_attachment_reports_filename_without_content(self):
+        path = self.repo.write("relai/wiki/attachments/private.json", '{"secret": "not-for-output"}')
+        path.chmod(0)
+        try:
+            if os.access(path, os.R_OK):
+                self.skipTest("current user can read permission-denied files")
+            result = self.repo.run("check_wiki.py", "--json")
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("wiki/attachments/private.json: cannot read JSON", result.stdout)
+            self.assertNotIn("not-for-output", result.stdout + result.stderr)
+        finally:
+            path.chmod(0o600)
+
+    def test_attachment_symlinks_are_not_followed(self):
+        outside = self.repo.write("outside/private.json", '{"secret-outside": }')
+        inside = self.repo.write("relai/wiki/attachments/valid.json", "{}")
+        root = inside.parent
+        try:
+            (root / "external.json").symlink_to(outside)
+            (root / "external-dir").symlink_to(outside.parent, target_is_directory=True)
+            (root / "internal.json").symlink_to(inside)
+            (root / "missing.json").symlink_to(outside.parent / "absent.json")
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks unavailable")
+        result = self.repo.run("check_wiki.py", "--json")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        errors = json.loads(result.stdout)["errors"]
+        self.assertEqual(len(errors), 4)
+        for name in ("external.json", "external-dir", "internal.json", "missing.json"):
+            self.assertTrue(any(f"attachments/{name}: attachment scan cannot follow a symlink" in e for e in errors))
+        self.assertNotIn("invalid JSON", result.stdout)
+        self.assertNotIn("secret-outside", result.stdout + result.stderr)
+
+    def test_symlinked_attachment_root_is_not_followed(self):
+        outside = self.repo.write("outside/private.json", '{"secret-outside": }')
+        root = self.repo.relai / "wiki" / "attachments"
+        root.mkdir(parents=True, exist_ok=True)
+        root.rmdir()
+        try:
+            root.symlink_to(outside.parent, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks unavailable")
+        result = self.repo.run("check_wiki.py", "--json")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)["errors"],
+                         ["wiki/attachments: attachment scan cannot follow a symlink"])
+        self.assertNotIn("secret-outside", result.stdout + result.stderr)
+
     def test_duplicate_ids_missing_titles_and_dangling_covers(self):
         self.repo.write("relai/wiki/requirements/refunds.md", "# Refunds\nFull refund within 30 days.\n")
         self.repo.write("relai/wiki/risks/refunds.md", "no title\n")
