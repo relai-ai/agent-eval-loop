@@ -30,6 +30,9 @@ without the plugin. Methods for the coding agent live in the skills.
 `main` is the update branch. A manual release trigger prepares and tests a release snapshot,
 then pushes the release commit and tag directly to `main` and publishes a GitHub release.
 The first release may use the existing manifest version; later releases bump it.
+Testing runs without release credentials. A separate publish job uses the protected `release`
+environment and a GitHub App installed only on this repository, and verifies that the reconstructed
+release tree matches the tested tree before creating a write token.
 Feature PRs do not bump versions.
 [RELEASING.md](RELEASING.md) defines that process; the [README](README.md#updating) covers updates.
 Project-owned copies have independent provenance and follow the template's
