@@ -57,8 +57,8 @@ RELAI turns coding sessions, pull requests, and Git history into reproducible ev
 Open an eval project and ask:
 
 ```text
-Use RELAI's coding-evals skill to mine ../api for tasks from the last six months,
-then compare our coding agents
+Use RELAI's coding-evals skill to mine my repo at {path-to-repo} for tasks
+from the last six months, then compare the coding agents I have available
 ```
 
 You can start at any skill without completing the full workflow.
