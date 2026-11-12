@@ -348,6 +348,12 @@ relai/
 
 Once set up, the repository gets a `relai/` folder. Its contract is in `relai/README.md` (template: [skills/start/template/README.md](skills/start/template/README.md)).
 
+## Early access
+
+RELAI is in early access. We're testing its effectiveness and refining the workflows, and
+we welcome feedback from real projects. Try a small workflow and share what worked or
+where you got stuck in [Discussions](https://github.com/relai-ai/agent-eval-loop/discussions).
+
 ## Contributing
 
 Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
