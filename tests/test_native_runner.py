@@ -82,9 +82,9 @@ class NativeRunnerTest(unittest.TestCase):
         self.assertIn("Runner: native", summary.stdout)
         self.assertIn("1 errored trial", summary.stdout)
         kept = self.runner(attempts="2")
-        self.assertIn("1 errored", kept.stdout)  # finished trials are kept, not rerun
+        self.assertIn("1 runtime failure", kept.stdout)  # finished trials are kept, not rerun
         retried = self.runner("--retry-failed", attempts="2")
-        self.assertIn("0 errored", retried.stdout)
+        self.assertIn("0 runtime failure", retried.stdout)
 
     def test_same_directory_names_in_different_places_get_their_own_trials(self):
         other = (self.repo.root / "evals" / "benchmarks" / "b" / "rows" / "orders").resolve()

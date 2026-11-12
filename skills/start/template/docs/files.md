@@ -276,6 +276,15 @@ targeted and checked; the before and after scores from comparable runs; the verd
 rejected, or left for review) with the reason. A rejected change stays recorded so nobody
 retries it blindly.
 
+## `decisions.md` and `UPSTREAM.md`
+
+`decisions.md` is one line per decision, newest last:
+`- 2026-11-12 · <the choice, in a sentence> · <asked: the user | assumed: the coding agent> · <source>`.
+The source links to where the detail lives (a feedback item such as `feedback.md#FB-2026-11-traces-07`,
+a wiki page, `records/eval/2026-11-12-scenarios.md`); link to it rather than copying the answer.
+`UPSTREAM.md` is one line per copied file or folder: its path here, the plugin path and version
+or commit it came from, and a short note of local adaptations.
+
 ## `feedback.md`
 
 Requests for the user's feedback on one specific run ("was this run right?") and judge checks.
@@ -288,7 +297,8 @@ It is not the place for general questions:
 | Lifetime | Durable knowledge, cited by tests | Closed once answered |
 
 A feedback answer that exposes a general ambiguity also opens a question; answering a question
-can settle pending feedback items. One `## ` item each:
+can settle pending feedback items. One `## ` item each, with an id `FB-<year>-<month>-<source>-<n>`
+(the source being the trace batch or run it came from) so other files can link to it:
 
 ```markdown
 ## FB-2026-11-traces-07: Should the agent have refunded the lost tablet?
@@ -361,7 +371,9 @@ provider and its data authorization, length, budget, when to ask, `approvals` (`
 `supervised`), check-ins, watch mode, delivery). When a monetary ceiling applies, record `budget_usd` and
 `since` (the budget's ISO start time) in the contract. The board counts actual spend since that
 time, including delegated improvement work; per-iteration limits supplement the overall ceiling.
-`iterations`: one entry per iteration:
+`iterations`: one entry per iteration. `n`, `started`, `trigger`, `verdict`, `reason` and
+`cost_usd` are required; the counts are optional summaries, filled when known (the authoritative
+records are `changes.md`, `decisions.md` and the runs):
 
 ```json
 {"n": 1, "started": "2026-11-10", "trigger": "new traces", "traces_triaged": 0, "wiki_updates": 0,

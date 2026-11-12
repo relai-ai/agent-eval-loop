@@ -29,7 +29,9 @@ warnings, not refusals. Available scores are retained; the caller judges compara
 Trajectory JSON notices inspect Harbor/native trial directories only; wrapped benchmark logs
 keep their native format and must be assessed through that benchmark's integration.
 Native results name runner and runner_id; wrapped rows may name runner_id when scoring changes.
-Output describes observations, not acceptance or confidence. --details prints full tables;
+By default it prints one line per test: PASS or FAIL against relai.toml [scoring].pass_mark when it
+is set (SCORED otherwise, NOT SCORED with no scored attempt), then named warnings and the reasons
+attempts were not scored. Output describes observations, not acceptance or confidence. --details prints full tables;
 --json always writes the complete evidence. observed_change is higher, lower, equal or
 not-comparable; numeric noise/se fields are reference estimates only.
 Writes nothing except --json.
@@ -46,10 +48,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (  # noqa: E402
-    declared_evaluators, dir_digest, relai_root, frozen_state, load_json, load_toml, normalized,
-    resolve_task_dir, test_key,
+    declared_evaluators, dir_digest, evals_config, relai_root, frozen_state, load_json, load_toml, normalized,
+    pass_mark, resolve_task_dir, test_key,
 )
 
+DEFINITIONS_UNAVAILABLE = "original evaluator definitions are unavailable"
+SHOWN = 5  # concise output lists at most this many warnings or problems, then says how many more
 STATUSES = ("scored", "evaluator error", "judges pending", "runtime failure", "unscored", "task not found")
 
 
@@ -196,7 +200,7 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
         base["evaluator_source"] = "current-task"
         if "evaluator_definitions" in result:
             warnings.append("recorded evaluator definitions are invalid; falling back to current task.toml")
-        warnings.append("original evaluator definitions are unavailable; scores use current task.toml evaluator types and bounds")
+        warnings.append(f"{DEFINITIONS_UNAVAILABLE}; scores use current task.toml evaluator types and bounds")
         evaluators = declared_evaluators(toml) if toml is not None else []
     rewards = ((result.get("verifier_result") or {}).get("rewards")) or {}
     feedback = read_json_dict(trial_dir / "verifier" / "feedback.json")
@@ -263,6 +267,34 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
             "score": score, "evaluators": outcomes}
 
 
+def judge_spend(trial_dir: Path) -> tuple[int, int, float]:
+    """Judge calls in a trial, how many reported a cost, and that cost (every attempt, including retries)."""
+    calls = reported = 0
+    cost = 0.0
+    folder = trial_dir / "judges"
+    if not folder.is_dir():
+        return 0, 0, 0.0
+    for latest in sorted(folder.glob("*.json")):
+        history = latest.with_suffix(".attempts.jsonl")
+        attempts = []
+        if history.is_file():
+            for line in history.read_text(encoding="utf-8", errors="replace").splitlines():
+                try:
+                    attempts.append(json.loads(line))
+                except ValueError:
+                    continue
+        else:
+            attempts = [read_json_dict(latest)]
+        for attempt in attempts:
+            if not isinstance(attempt, dict):
+                continue
+            calls += 1
+            if valid_number(attempt.get("cost_usd")):
+                reported += 1
+                cost += attempt["cost_usd"]
+    return calls, reported, cost
+
+
 def summarize(paths: list[Path], relai_dir: Path) -> dict:
     trials, jobs = find_results(paths)
     records = [trial_record(d, r, relai_dir) for d, r in trials] + wrapped_records(paths)
@@ -291,6 +323,15 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
                 usage_counts[key] += 1
     summary["usage"] = usage if any(usage_counts.values()) else None
     summary["usage_counts"] = usage_counts
+    calls = reported = 0
+    cost = 0.0
+    for rec in records:
+        if rec.get("dir"):
+            c, r, d = judge_spend(Path(rec["dir"]))
+            calls, reported, cost = calls + c, reported + r, cost + d
+    summary["judge_usage"] = {"calls": calls, "cost_reported": reported, "cost_usd": cost if reported else None}
+    summary["definitions_unavailable"] = sum(any(w.startswith(DEFINITIONS_UNAVAILABLE) for w in rec.get("warnings", []))
+                                             for rec in records)
 
     for name, entry in sorted(tests.items()):
         recs = entry["trials"]
@@ -356,27 +397,64 @@ def fmt(value) -> str:
     return "-" if value is None else f"{value:.2f}"
 
 
-def print_summary(summary: dict, label: str, details: bool = False) -> None:
+USAGE_LABELS = {"cost_usd": "cost", "n_input_tokens": "input tokens", "n_output_tokens": "output tokens",
+                "n_cache_tokens": "cache tokens"}
+
+
+def capped(lines: list[str], details: bool, more: str = "--details or JSON") -> list[str]:
+    if details or len(lines) <= SHOWN:
+        return lines
+    return lines[:SHOWN] + [f"... and {len(lines) - SHOWN} more ({more})"]
+
+
+def verdict(test: dict, mark) -> str:
+    if test["mean"] is None:
+        return "NOT SCORED"
+    if mark is None:
+        return "SCORED"
+    return "PASS" if test["mean"] >= mark else "FAIL"
+
+
+def print_summary(summary: dict, label: str, details: bool = False, mark=None) -> None:
     counts = summary["status_counts"]
     print(f"## {label}")
-    print("Runner: " + ", ".join(summary["runners"]))
+    print("Runner: " + ", ".join("native" if r == "native:native" else r for r in summary["runners"]))
     print(f"Trials: {summary['trials']} (" + ", ".join(f"{k} {v}" for k, v in counts.items() if v) + ")")
     for job in summary["jobs"]:
         if job.get("n_errored_trials"):
             print(f"Run {Path(job['dir']).name}: {job['n_errored_trials']} errored trial(s)")
     if summary["usage"]:
         reported = []
-        for key, value in summary["usage"].items():
-            shown = "not measured" if value is None else f"${value:.4f}" if key == "cost_usd" else str(value)
-            reported.append(f"{key} {shown} ({summary['usage_counts'][key]}/{summary['trials']} reported)")
+        for key in ("cost_usd", "n_input_tokens", "n_output_tokens", "n_cache_tokens"):
+            value = summary["usage"][key]
+            shown = "not measured" if value is None else f"${value:.4f}" if key == "cost_usd" else f"{value:,}"
+            reported.append(f"{USAGE_LABELS[key]} {shown} ({summary['usage_counts'][key]}/{summary['trials']} reported)")
         print("Agent usage: " + ", ".join(reported))
     else:
         print("Agent usage: not measured")
+    judges = summary.get("judge_usage") or {}
+    if judges.get("calls"):
+        cost = "cost not measured" if judges["cost_usd"] is None else f"${judges['cost_usd']:.4f}"
+        print(f"Judge usage: {judges['calls']} call(s), {cost} ({judges['cost_reported']}/{judges['calls']} reported)")
     notes_count = sum(len(t["notes"]) for t in summary["tests"].values())
     if notes_count:
         print(f"Scored attempts with runtime notes: {notes_count}; inspect --details or JSON.")
+    if summary.get("definitions_unavailable"):
+        print(f"Note: {summary['definitions_unavailable']} attempt(s) were scored with their test's current task.toml "
+              "evaluators, because the runner did not record the definitions it used (normal for Harbor runs).")
     print(f"Coverage: {len(summary['tests'])} test(s)")
     if not details:
+        print(f"Pass mark: {mark:.2f}" if mark is not None else
+              "Pass mark: not set yet, so no PASS or FAIL (choose it with the user; see the eval skill's measure guide)")
+        rows = [f"  {verdict(t, mark):<10} {name}  mean {fmt(t['mean'])} ({t['scored']}/{t['attempts']} scored)"
+                for name, t in summary["tests"].items()]
+        for line in rows if len(rows) <= 30 else rows[:30] + [f"  ... and {len(rows) - 30} more (--details)"]:
+            print(line)
+        problems = [f"  - {name} / {p}" for name, t in summary["tests"].items() for p in t["problems"]]
+        if problems:
+            print("Not scored cleanly (never count these as agent failures or passes):")
+            for line in capped(problems, details):
+                print(line)
         print("Full test/evaluator evidence: --details; complete machine-readable evidence: --json <path>.")
         return
     print()
@@ -439,7 +517,13 @@ def evidence_warnings(summary: dict) -> list[str]:
         if missing:
             warnings.append(f"{name}: test version identity is missing for {missing} attempt(s)")
         for trial in test["trials"]:
-            warnings.extend(f"{name} / {trial['trial']}: {warning}" for warning in trial.get("warnings", []))
+            warnings.extend(f"{name} / {trial['trial']}: {warning}" for warning in trial.get("warnings", [])
+                            if not warning.startswith(DEFINITIONS_UNAVAILABLE))
+        unavailable = sum(any(w.startswith(DEFINITIONS_UNAVAILABLE) for w in trial.get("warnings", []))
+                          for trial in test["trials"])
+        if unavailable:  # one entry per test, printed as a single note rather than a warning
+            warnings.append(f"{name}: {unavailable} attempt(s): {DEFINITIONS_UNAVAILABLE}; scores use current "
+                            "task.toml evaluator types and bounds")
     return warnings
 
 
@@ -469,17 +553,19 @@ def comparison_warnings(base: dict, cand: dict) -> list[str]:
         if b["runners"] != c["runners"]:
             warnings.append(f"{name}: different runners or measurement identities between runs")
         if b["checksums"] != c["checksums"]:
-            warnings.append(f"{name}: different test versions between runs")
+            warnings.append(f"{name}: different test versions between runs (Harbor's checksum also changes when only "
+                            "the test's README changed; `freeze.py --check` and the frozen history show whether "
+                            "the scored content did)")
     return warnings
 
 
 def print_warnings(warnings: list[str], label: str, details: bool) -> None:
+    warnings = [w for w in warnings if DEFINITIONS_UNAVAILABLE not in w]  # shown once as a note above
     if not warnings:
         return
-    print(f"{label}: {len(warnings)}; advisory, inspect --details or JSON.")
-    if details:
-        for warning in warnings:
-            print(f"warning: {warning}")
+    print(f"{label}: {len(warnings)} (advisory)")
+    for line in capped([f"warning: {warning}" for warning in warnings], details):
+        print(line)
 
 
 def observed_change(delta) -> str:
@@ -514,14 +600,20 @@ def print_comparison(comparison: dict, details: bool) -> None:
     print("Matched tests: " + ", ".join(f"{key} {value}" for key, value in counts.items()))
     total = comparison["overall"]
     if total:
-        print(f"Overall, paired over {total['tests']} tests: observed mean delta {total['mean_delta']:+.3f} "
-              f"({total['observed_change']}); across-test s.e. reference {fmt(total['se'])}")
+        print(f"Overall, paired over {total['tests']} tests: the candidate scored higher on {total['higher']} and "
+              f"lower on {total['lower']}; average change {total['mean_delta']:+.3f}.")
+        fewest = min((min(r["baseline_scored"], r["candidate_scored"]) for r in comparison["rows"]
+                      if r["delta"] is not None), default=0)
+        if fewest <= 2:
+            print(f"Some tests have only {fewest} scored attempt(s) on a side; a difference that size can be chance.")
+        if details:
+            print(f"Paired mean delta over {total['tests']} tests: mean delta {total['mean_delta']:+.3f} "
+                  f"({total['observed_change']}); standard error across tests {fmt(total['se'])}")
     for key in ("baseline only", "candidate only"):
         if comparison[key]:
             print(f"{key}: " + (", ".join(comparison[key]) if details else f"{len(comparison[key])} test(s)"))
-    print("Observed spread, including zero spread, does not establish confidence, equivalence, or improvement. "
-          "Differences are reported even when measurement conditions differ. "
-          "Use the warnings, agreed objective, sampling and guardrails to judge the evidence.")
+    print("These are observations: a difference does not establish confidence, equivalence, or improvement "
+          "on its own. Check the warnings, sampling and guardrails before drawing a conclusion.")
 
 
 def main() -> int:
@@ -537,7 +629,11 @@ def main() -> int:
     if not cand["trials"]:
         print("error: no Harbor/native trials or relai-results.jsonl found under the given directories", file=sys.stderr)
         return 2
-    print_summary(cand, "Run" if not args.baseline else "Candidate", args.details)
+    try:
+        mark = pass_mark(evals_config(relai_dir))
+    except (ValueError, OSError):
+        mark = None
+    print_summary(cand, "Run" if not args.baseline else "Candidate", args.details, mark)
     output = {"run": cand}
     status = 1 if cand["status_counts"]["task not found"] else 0
     output["warnings"] = {"candidate": frozen_warnings(relai_dir, cand) + evidence_warnings(cand)}
@@ -545,7 +641,7 @@ def main() -> int:
     if args.baseline:
         base = summarize([Path(p) for p in args.baseline], relai_dir)
         print()
-        print_summary(base, "Baseline", args.details)
+        print_summary(base, "Baseline", args.details, mark)
         output["warnings"]["baseline"] = frozen_warnings(relai_dir, base) + evidence_warnings(base)
         print_warnings(output["warnings"]["baseline"], "Baseline integrity warnings", args.details)
         comparison = compare(base, cand)
