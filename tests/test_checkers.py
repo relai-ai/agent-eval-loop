@@ -149,6 +149,13 @@ class CheckTrajectoryTest(Base):
         path.write_text(json.dumps(doc))
         return self.repo.run("check_trajectory.py", str(path), "--no-harbor", *args)
 
+    def test_an_unreadable_previous_snapshot_is_a_usage_error(self):
+        doc = trajectory([{"source": "user", "message": "a"}, {"source": "agent", "message": "b"}])
+        result = self.check(doc, "--previous", str(self.repo.root / "missing.json"))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("cannot read --previous", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
     def test_answered_turns_pass(self):
         doc = trajectory([{"source": "user", "message": "a"}, {"source": "agent", "message": "b"},
                           {"source": "user", "message": "c"}, {"source": "agent", "message": "d"}])
@@ -364,11 +371,19 @@ class FreezeTest(Base):
         (task / "tests" / "judge.md").write_text("changed\n")
         refused = self.repo.run("freeze.py", str(task))
         self.assertEqual(refused.returncode, 1)
-        self.assertIn("needs --reason", refused.stdout)
+        self.assertIn("needs --reason", refused.stderr)
         self.assertIn("CHANGED", self.repo.run("freeze.py", "--check").stdout)
         self.assertEqual(self.repo.run("freeze.py", str(task), "--reason", "rubric typo").returncode, 0)
         state = json.loads((self.repo.relai / "frozen.json").read_text())
         self.assertEqual([h["reason"] for h in state["tests"]["tests/orders"]["history"]], ["first freeze", "rubric typo"])
+
+    def test_errors_go_to_stderr_with_exit_2(self):
+        missing = self.repo.run("freeze.py", str(self.repo.root / "no-such-test"))
+        self.assertEqual(missing.returncode, 2)
+        self.assertIn("has no task.toml", missing.stderr)
+        self.assertEqual(missing.stdout, "")
+        self.repo.write("relai/wiki/requirements/ok.md", "# OK\n")
+        self.assertEqual(self.repo.run("check_wiki.py", str(self.repo.relai)).returncode, 0, "takes the relai dir positionally")
 
     def test_readme_edits_do_not_unfreeze(self):
         task = self.repo.task()
@@ -541,7 +556,7 @@ context = "relai/harness"
 
 
 class CloudBuildTest(Base):
-    """Fixed rule 8 and relai.toml [harbor]. Registry lookups are answered here, never by the network."""
+    """The Reproducible tasks rule and relai.toml [harbor]. Registry lookups are answered here, never by the network."""
 
     PUBLIC = {"python:3.12-slim", "ghcr.io/astral-sh/uv:0.8.14"}
 

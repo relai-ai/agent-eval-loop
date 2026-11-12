@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -147,6 +148,58 @@ class ReleaseTest(unittest.TestCase):
         self.assertEqual(self.git("rev-parse", "main"), second_source)
         self.assertEqual(json.loads(self.git("show", "main:plugin.json"))["version"], first["version"])
 
+    def test_first_release_can_use_current_manifest_version_without_metadata_changes(self):
+        before = self.snapshot()
+        first = self.prepare(self.current)
+        self.assertEqual(first["version"], self.current)
+        self.assertEqual(first["source_sha"], self.source)
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(self.git("diff", "--name-only", self.source, first["sha"]), "")
+        self.assertEqual(self.git("rev-parse", "HEAD^"), self.source)
+        self.assertEqual(self.git("rev-parse", "main"), self.source)
+        self.assertEqual(self.git("status", "--porcelain"), "")
+        self.git("tag", f"v{self.current}")
+        with self.assertRaisesRegex(ValueError, "already exists"):
+            self.prepare(self.current)
+        next_release = self.prepare()
+        self.assertEqual(next_release["version"], self.target)
+
+    def reconstruct(self, version, tested_tree):
+        output = Path(self.temp.name) / "snapshot-output"
+        step = self.workflow_step("Prepare verified release snapshot").replace(
+            "python scripts/release.py", f"{shlex.quote(sys.executable)} scripts/release.py")
+        env = {**os.environ, "VERSION": version, "TESTED_TREE": tested_tree,
+               "GITHUB_OUTPUT": str(output), "GIT_COMMITTER_DATE": "2001-01-01T00:00:00Z"}
+        result = subprocess.run(["bash", "-c", "set -e\n" + step], cwd=self.root,
+                                env=env, capture_output=True, text=True)
+        return result, dict(line.split("=", 1) for line in output.read_text().splitlines())
+
+    @unittest.skipUnless(shutil.which("bash"), "snapshot integration needs bash")
+    def test_publish_reconstructs_the_tested_files_with_a_new_commit_timestamp(self):
+        for version in (self.current, self.target):
+            with self.subTest(version=version):
+                self.git("checkout", "-q", "--detach", self.source)
+                tested = self.prepare(version)
+                tree = self.git("rev-parse", "HEAD^{tree}")
+                self.git("checkout", "-q", "--detach", self.source)
+                result, snapshot = self.reconstruct(version, tree)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotEqual(snapshot["sha"], tested["sha"])
+                self.assertEqual(snapshot["source_sha"], self.source)
+                self.assertEqual(snapshot["version"], version)
+                self.assertEqual(self.git("diff", "--name-only", tested["sha"], snapshot["sha"]), "")
+
+    @unittest.skipUnless(shutil.which("bash"), "snapshot integration needs bash")
+    def test_publish_rejects_a_tree_different_from_the_tested_files(self):
+        self.prepare(self.current)
+        tree = self.git("rev-parse", "HEAD^{tree}")
+        self.git("checkout", "-q", "--detach", self.source)
+        (self.root / "unexpected.txt").write_text("untested change\n")
+        self.commit()
+        result, _ = self.reconstruct(self.current, tree)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.git("tag", "--list"), "")
+
     def test_prepare_rejects_existing_tag_dirty_checkout_and_old_versions(self):
         before = self.snapshot()
         self.git("tag", f"v{self.target}")
@@ -159,6 +212,9 @@ class ReleaseTest(unittest.TestCase):
             self.prepare()
         self.git("checkout", "--", "CHANGELOG.md")
         with self.assertRaisesRegex(ValueError, "greater than"):
+            self.prepare("0.0.0")
+        self.git("tag", "v0.0.1")
+        with self.assertRaisesRegex(ValueError, "greater than"):
             self.prepare(self.current)
         self.assertEqual(before, self.snapshot())
 
@@ -170,9 +226,9 @@ class ReleaseTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "greater than"):
             self.prepare(self.target)
 
-    def assert_publication(self, early_access):
+    def assert_publication(self, early_access, target=None):
         self.remote()
-        snapshot = self.prepare()
+        snapshot = self.prepare(target)
         result = self.publisher(snapshot, early_access)
         self.assertEqual(result.returncode, 0, result.stderr)
         refs = self.git("ls-remote", "origin")
@@ -193,7 +249,7 @@ class ReleaseTest(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("bash"), "publication integration needs bash")
     def test_publication_can_create_a_regular_release(self):
-        self.assert_publication("false")
+        self.assert_publication("false", self.current)
 
     @unittest.skipUnless(shutil.which("bash"), "publication integration needs bash")
     def test_rejected_branch_update_does_not_leave_a_remote_tag(self):

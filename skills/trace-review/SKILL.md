@@ -1,6 +1,6 @@
 ---
 name: trace-review
-description: Build or adapt a project-owned UI app for reviewing agent traces, with full interactions, keyboard navigation, search, filters and persistent human feedback. Use when the user wants a trace viewer or review app; use discover for trace analysis without app building.
+description: Build or adapt a project-owned UI app for reviewing agent traces, with full interactions, keyboard navigation, search, filters and persistent human feedback ("build a trace viewer", "let me label traces by hand", "a review app for these runs"). Use when the user wants a trace viewer or review app; use discover for trace analysis without app building.
 ---
 
 # Build a trace review app

@@ -5,8 +5,8 @@ evidence guarantees in `../README.md`. The layout below, including an ATIF traje
 interoperability with the bundled consumers; it is not required for every native integration.
 
 For that interoperability, a native runner writes what a Harbor job writes, as far as the checkers read it, so
-`summarize.py`, `check_trajectory.py` and the judges work unchanged. Containment follows Fixed
-rule 3 in `../README.md`. Per run directory:
+`summarize.py`, `check_trajectory.py` and the judges work unchanged. Containment follows the
+*Containment* rule in `../README.md` (Fixed rules). Per run directory:
 
 - `result.json` for the run: `{"n_total_trials", "stats": {"n_errored_trials",
   "n_completed_trials"}, "runner": "native", "runner_id", "runner_command", "batches": [{"git_head",

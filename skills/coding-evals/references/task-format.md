@@ -36,8 +36,8 @@ relai/tests/<id>/
    Resolve source and bundle paths from the stated build context; never change the source
    repository. The full history up to the start is what agents see in real use, so do not
    shorten it to save space without the user's agreement, recorded as a measurement choice.
-   Every task repeats a similar copy: check one bundle's size and multiply by the planned tasks
-   before building many. When that is too much for where tasks live, a large public repository
+   Every task repeats a similar copy: check one bundle's size, multiply by the planned tasks, and
+   show that estimate and where the tasks will live with the task table, before building. When that is too much for where tasks live, a large public repository
    can be fetched in the Dockerfile at the start commit instead, or the tasks can live in a
    separate repository ([scope](scope.md), *The repository*). The start commit must not hold the
    eval project itself (`relai/`), which `check_task.py` refuses.
@@ -118,12 +118,14 @@ layout/toolchain and verify that tests genuinely execute, including a failing co
 not protect against an agent modifying the interpreter or the entire toolchain; keep the existing
 scope/integrity checks and protect other command-steering inputs relevant to the repository.
 
-When the execution engine is unavailable, useful preparation can still proceed in disposable
+When the execution engine is unavailable, tell the user what is missing and the options
+(`relai/README.md`, Prerequisites); useful preparation can still proceed in disposable
 copies: clone the bundle with its explicit branch, check that the fix is absent, apply the
 reference solution in one copy, leave a no-fix control in another, and exercise the original
 verifier's local hooks (`RELAI_WORKSPACE`, `RELAI_LOGS`, `RELAI_PARAMS`). Use absolute paths for
 those hooks and separate logs per control. Run `verify.py` with trusted verifier imports and
-`-I -S -B`; **never run `tests/test.sh` on the host**, because its cleanup assumes a task container.
+`-I -S -B`; **never run `tests/test.sh` on the host**, because its cleanup stops every other process
+(it refuses when it can tell it is not in a task container, but do not rely on that).
 Exercise the evaluator-validity probe above where possible. Local preparation does
 not establish image build, dependency access, containment or Harbor health: leave those pending.
 

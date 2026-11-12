@@ -67,7 +67,11 @@ class EvalsAgent(BaseAgent):
             if value is not None:
                 env[name] = value
         sim_key_env = self._option("RELAI_USER_SIM_KEY_ENV")
-        if sim_key_env and (value := self._extra_env.get(sim_key_env) or os.environ.get(sim_key_env)):
+        if sim_key_env:
+            value = self._extra_env.get(sim_key_env) or os.environ.get(sim_key_env)
+            if not value:
+                raise ValueError(f"RELAI_USER_SIM_KEY_ENV names {sim_key_env}, which is not set in Harbor's "
+                                 "environment; set it (or pass it with --ae) so the simulated user can call its model")
             env["RELAI_USER_SIM_KEY"] = value  # the launcher keeps this from the adapter
 
         result = await environment.exec(

@@ -49,7 +49,8 @@ setup files as its scope ([comparing](references/comparing.md)).
   and `review-ready` evaluators exist under `relai/evaluators/`, with the approved standards and
   never-do's in the `review-ready` rubric; the answers are in `decisions.md`.
 - **Build:**
-  - **Task list approved:** the user, or an independent reviewer the agreement delegates to,
+  - **Task list approved:** the user, or an independent reviewer when the approval is delegated
+    (by an agreement or a recorded choice in `decisions.md`),
     approved the task list below.
   - Each task is under `relai/tests/<id>/` in the agent-neutral format, with a `README.md` stating
     source, behavior, evaluators, known failures and contamination; `check_task.py` passes.
@@ -106,18 +107,23 @@ setup files as its scope ([comparing](references/comparing.md)).
   compared bare or each with a matched setup, never one with
   its setup against another without ([comparing](references/comparing.md), *Comparing agents*). Report differences as observations (`relai/README.md`, Terms).
 - **Never shape a task to an agent.** A task no version solves, or whose instruction cannot be
-  followed, is a suspected test problem: say why and ask before changing it under the freeze rule.
+  followed, is a suspected test problem: say why and ask before changing it under the *Frozen tests* rule.
 
 ## Ask the user
 
 Carry forward scope, budget and approvals from the request, `relai/decisions.md`, the wiki or an
 agreement. Combine unresolved scope and task selection in one checkpoint when the evidence is
 ready; ask about check previews once validation is ready, unless already covered or delegated.
-Approval of a task list alone does not approve unseen scoring. Present discovered facts first
+Approval of a task list alone does not approve unseen scoring. When nothing says how
+involved the user wants to be, offer at the first checkpoint to delegate task-list and check
+approval to a fresh independent review, reporting the results afterwards
+([delegated approvals](../start/template/README.md#working-with-the-user)); record the choice in
+`decisions.md`. Present discovered facts first
 ([scope](references/scope.md)); ask only about uncovered choices or material changes. What to
 compare and the run budget change the runs, not the tasks: ask them when the request raises them
 or before the first paid run, and keep building meanwhile. After the first run, show the
-real-trial judge checks. Name credentials to add to `relai/.env` as instructions and continue work
+real-trial judge checks. Name the credentials needed as instructions (export them, use the team's secrets tool, or add them
+to `relai/.env`) and continue work
 that does not need them.
 
 Long steps (image builds, health runs, trials) stay visible: say what is running, how far along it
@@ -143,8 +149,8 @@ outside frozen task contents.
 **Before building**, record the source, developer's request, kind and area, start/fix commits
 and fix date, contamination and network setting, intended checks and their source-backed lesson,
 and validity risks, including what the fix's tests pin ([sources](references/sources.md), *Read
-the fix's tests*). Show a compact task table (source, request, what failing looks like), with
-real failures and corrections first. State that building and health checks call no model, and
+the fix's tests*). Show a compact task table (source, request, what failing looks like) and the
+estimated disk use, with real failures and corrections first. State that building and health checks call no model, and
 estimate trial cost or plan usage and time, with tasks × versions × attempts, as information.
 Unless already authorized, obtain task selection approval before building; run budget is
 approved before the first paid run.
@@ -157,7 +163,7 @@ unexpected control score; summarize expected scores per task. Following the shar
 coverage choices still needing approval, in manageable subsets. Resolve defects and obtain a
 fresh independent [review](references/review-coding-task.md), then freeze only the approved,
 validated subset. A delegated reviewer can cover preview approval and independent review in one
-pass when the agreement authorizes both; unresolved tasks stay pending.
+pass when both are delegated; unresolved tasks stay pending.
 
 ## After the first run
 

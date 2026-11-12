@@ -681,6 +681,17 @@ class CodingEvalsTest(unittest.TestCase):
         self.verify(task, ws)
 
 
+class VerifierHostGuardTest(unittest.TestCase):
+    def test_test_sh_refuses_outside_a_task_container(self):
+        if Path("/tests/verify.py").exists():
+            self.skipTest("this machine looks like a task container")
+        with tempfile.TemporaryDirectory() as tmp:
+            result = subprocess.run(["bash", str(VERIFIER / "test.sh")], cwd=tmp, capture_output=True,
+                                    text=True, timeout=60)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("refusing to run", result.stderr)
+
+
 class SummarizeWithoutTrajectoryTest(unittest.TestCase):
     def test_agent_neutral_task_scores_without_a_trajectory_and_others_do_not(self):
         project = Repo()
@@ -739,12 +750,12 @@ class JudgeInputsTest(unittest.TestCase):
             judge.post = lambda url, headers, body: calls.append(body) or {
                 "stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 1, "feedback": "fine"}'}]}
             project.write("relai/.env", "ANTHROPIC_API_KEY=sk-ant-test-0123456789abcdefghij\n")
-            result = judge.judge_one({}, project.relai, task, ev, None, {}, trial)
+            result = judge.judge_one({"model": "synthetic"}, project.relai, task, ev, None, {}, trial)
             self.assertEqual(result["score"], 1)
             self.assertIn("Diff of everything", calls[0]["messages"][0]["content"])
-            missing = judge.judge_one({}, project.relai, task, {**ev, "inputs": ["trajectory"]}, None, {}, trial)
+            missing = judge.judge_one({"model": "synthetic"}, project.relai, task, {**ev, "inputs": ["trajectory"]}, None, {}, trial)
             self.assertIn("no ATIF trajectory", missing["error"])
-            missing = judge.judge_one({}, project.relai, task, {**ev, "inputs": ["verifier/facts.json"]}, None, {}, trial)
+            missing = judge.judge_one({"model": "synthetic"}, project.relai, task, {**ev, "inputs": ["verifier/facts.json"]}, None, {}, trial)
             self.assertIn("facts.json is missing", missing["error"])
         finally:
             project.close()

@@ -37,11 +37,12 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 9. **Both directions.** When the behavior is one an improvement could overcorrect (escalating,
    refusing, asking, searching, calling a tool), a test exists, or is proposed, where doing it is
    the right answer, so an agent that never does it cannot pass every test.
-10. **Previewed.** The grader preview (`relai/work/eval/<date>-grader-preview.md`: scores on
+10. **Previewed.** The grader preview (`relai/records/eval/<date>-grader-preview.md`: scores on
     synthetic pass and fail trajectories, and on real recorded traces where any exist) covers
     every evaluator and matches the evaluators to be frozen. The user approved it, or the
-    agreement delegates that decision to this independent review. Verify which applies.
+    decision is delegated to this independent review (by an agreement or a recorded choice in
+    `relai/decisions.md`). Verify which applies.
 
 Report each verdict, then findings: what is wrong, the evidence, and the change that would fix it,
-marked blocking or advisory. Write the report to `relai/work/reviews/test-<id>-<date>.md` if you
+marked blocking or advisory. Write the report to `relai/records/reviews/test-<id>-<date>.md` if you
 can write files; otherwise return it.

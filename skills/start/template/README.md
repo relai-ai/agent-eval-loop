@@ -17,7 +17,7 @@ runner details are in `docs/`, read when the work touches them:
 
 | File | Read it when |
 | --- | --- |
-| `docs/files.md` | Writing or reading `relai.toml`, a test, scores, judges, mocks, the wiki, `feedback.md`, `changes.md` or the state under `work/` |
+| `docs/files.md` | Writing or reading `relai.toml`, a test, scores, judges, mocks, the wiki, `feedback.md`, `changes.md`, the decision records under `records/` or the state under `work/` |
 | `docs/harbor.md` | Running Harbor, or setting up a hosted runner for pull requests |
 | `docs/native.md` | Writing or using a native runner |
 | `docs/board.md` | Rewriting `STATUS.md` |
@@ -28,33 +28,36 @@ runner details are in `docs/`, read when the work touches them:
 Everything else (how the agent starts, adapters, Dockerfiles, test design, how the runner is
 invoked) is the choice of whoever builds the tests.
 
-1. Every test uses the declared runner: Harbor at the release in `[harbor].version` (the supported
+1. **Declared runner.** Every test uses the declared runner: Harbor at the release in `[harbor].version` (the supported
    default), or a native
    project or benchmark runner meeting the shared trial contract (`docs/native.md`). Record the
    choice and reason.
-2. Each trial records the causal sequence of real model messages, tool calls and results, and
+2. **Recorded trials.** Each trial records the causal sequence of real model messages, tool calls and results, and
    each declared evaluator yields a score within its bounds plus feedback, or an explicit error.
    Project-native records may preserve this evidence in their own format. ATIF and the bundled
    trial layout are required when using integrations or checkers that consume them (`docs/native.md`). An
    agent-neutral coding task is scored from the workspace when a run has no trajectory (Harbor's
    oracle, or an agent it records without one); its evaluators that need one are "not recorded".
-3. Trials are contained. Containers are the default. Host execution needs explicit authorization
+3. **Containment.** Trials are contained. Containers are the default. Host execution needs explicit authorization
    (an existing agreement may cover it) and reviewed sandboxing or simulated tool boundaries that
    prevent access to hidden tests, graders, credentials, other trials and unrelated user files,
    and effects outside the trial. A process launcher, working directory or environment allowlist
    alone is not isolation, and the plugin's example native runner is not a sandbox.
-4. Files whose edits change the agent's behavior (`[target].live_paths` in `relai.toml`) reach
+4. **Live source.** Files whose edits change the agent's behavior (`[target].live_paths` in `relai.toml`) reach
    each trial from the current source, never baked into an image.
-5. A frozen test does not change silently: a change needs a reason (`freeze.py --reason`), a
-   line in `decisions.md`, and a fresh review. Independent review uses a reviewer with fresh context;
+5. **Frozen tests.** A frozen test does not change silently: a change needs a reason (`freeze.py --reason`), a
+   line in `decisions.md`, and a fresh review. Once the user (or a covering agreement) has agreed
+   a repair and it is recorded in `decisions.md`, `freeze.py --begin-repair` marks it open, so
+   editing hooks stop asking before each of its edits until it is re-frozen. Never open a repair
+   to avoid a question. Independent review uses a reviewer with fresh context;
    review effort scales to the consequences, with proportional diff review for routine direct fixes.
-6. Secret values use the project's credential mechanism or `relai/.env`, written by the user.
+6. **Secrets.** Secret values use the project's credential mechanism or `relai/.env`, written by the user.
    Coding agents never read or print them; files refer to them by name. Executable helpers may
    read the named credentials for authentication and redaction without exposing values to the agent.
-7. A mock replaces only a dependency's client boundary, never the agent, its model, or a
+7. **Mocks.** A mock replaces only a dependency's client boundary, never the agent, its model, or a
    tool's own logic. Its use needs authorization, which an existing agreement may cover
    (`decisions.md`).
-8. Tasks are reproducible in their selected execution environment using declared, authorized
+8. **Reproducible tasks.** Tasks are reproducible in their selected execution environment using declared, authorized
    dependencies. Hosted portability is required only when the work needs it. The bundled
    hosted-builder recipe has additional image and build constraints (`docs/harbor.md`); other
    integrations may demonstrate equivalent execution guarantees through their own infrastructure.
@@ -81,8 +84,8 @@ invoked) is the choice of whoever builds the tests.
   is not a win, an equal mean is not equivalence or absence of harm, and a stronger claim needs
   its own justified method.
 - **Agreement.** The objective, guardrails, scope, budget, check-ins and delivery for improvement
-  work: the user's existing instructions, an improvement agreement (`work/improve/plan.json`), or
-  a loop contract (`work/loop/state.json`). The **objective** is the measure that must improve
+  work: the user's existing instructions, an improvement agreement (`records/improve/plan.json`), or
+  a loop contract (`records/loop/state.json`). The **objective** is the measure that must improve
   (behavioral success, cost or latency); **guardrails** are the other measures a change must
   keep within agreed bounds. During a loop its contract is the active agreement, including
   covered improvement work; otherwise use the current improvement agreement. Do not create
@@ -132,29 +135,36 @@ generic infrastructure without a concrete need.
 | `evaluators/<id>/` | Criteria shared across tests | yes |
 | `setups/<id>/` | A team's setup for coding agents, laid out as in a repository root (the `coding-evals` skill) | yes |
 | `frozen.json` | Digests of frozen tests (written by `freeze.py`) | yes |
+| `records/` | Decision records teammates need: scenario tables and grader previews (`eval/`), fresh reviews (`reviews/`), the improvement agreement and lessons (`improve/`), the loop contract and iterations (`loop/`) | yes |
 | `.env` | Secret values | never |
-| `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `improve/`, `loop/`, `benchmarks/<id>/ledger.json`, `reviews/`, scratch | never |
+| `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `improve/state.json` (resume checkpoint), `benchmarks/<id>/ledger.json`, scratch | never |
 
 ## Checkers
 
-Shared tools implement the guarantees above. Use a suitable one directly; adaptation follows
+Shared tools implement the fixed rules above. Use a suitable one directly; adaptation follows
 [Adapting supplied implementations](#adapting-supplied-implementations). They are read-only
 except `freeze.py`, `benchmark.py` (which writes only `work/benchmarks/`) and explicitly requested
 summary exports. Python 3.11+, standard library; Harbor-based checks use `[harbor].version` through `uv`.
+Exit status: 0 nothing wrong, 1 findings (including a changed frozen test), 2 a usage or
+environment error; errors go to stderr. `--json` prints machine-readable output on stdout, except
+`summarize.py --json <path>`, which also writes the full evidence to that file.
 
 | Command | Use it |
 | --- | --- |
 | `python3 relai/bin/check_task.py relai/tests/<id> [--cloud] [--verifier [--fixture DIR]]` | After writing or changing a test. `--cloud` additionally checks the bundled hosted-builder recipe; local checks do not require anonymous public images. `--verifier` (Harbor only) runs the verifier in the local container engine on a synthetic normal and empty-reply trajectory; `--fixture DIR` adds files to `/logs/agent` |
 | `python3 relai/bin/check_trajectory.py <trajectory.json> [--turns N]` | On a trajectory from a trial |
-| `python3 relai/bin/check_wiki.py` | After changing the wiki or a test's `covers`; checks managed attachment JSON syntax, not factual fidelity |
+| `python3 relai/bin/check_wiki.py [relai]` | After changing the wiki or a test's `covers`; checks managed attachment JSON syntax, not factual fidelity |
 | `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | After a run; concise by default, `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`) and descriptive `noise`/`se` |
-| `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run |
+| `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run; `--reason` to re-freeze a change, `--begin-repair --reason` to open an agreed repair, `--check` to report |
 | `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer |
 
 Example scripts (a Harbor agent and launcher, a native runner, an API judge, a trace triager and
 a code-evaluator helper) live in the plugin's `examples/`. None is part of `relai/` until an
 integration chooses it; then it is copied, owned and adapted like any project code, or replaced
-by a project-native equivalent that meets the same contract.
+by a project-native equivalent that meets the same contract. Some installs (the Skills CLI, Gemini
+CLI or a manual copy of the skills) do not include `examples/`: then fetch the needed file from the
+plugin repository (github.com/relai-ai/agent-eval-loop) at the installed version, or write a
+project-native equivalent.
 
 ## Adapting supplied implementations
 
@@ -187,7 +197,11 @@ or printing the value.
   home directory), so keep mounted paths, including `TMPDIR` for the checkers, under the home
   directory. A task with a restricted network also needs the engine's image builder for Harbor's
   egress sidecar (`docker buildx` on a Docker CLI; the Harbor notes).
-- **Native:** the integration declares and checks its own runtime and containment (Fixed rule 3).
+- **Native:** the integration declares and checks its own runtime and containment (Fixed rules, *Containment*).
+- **When Harbor or a container engine is missing:** tell the user what is missing and the
+  alternatives: start or install a supported engine, a native runner with authorized containment
+  (`docs/native.md`), or a hosted runner (`docs/harbor.md`). Agent-neutral coding tasks need
+  Harbor-compatible execution, locally or hosted.
 
 ## Working with the user
 
@@ -197,9 +211,15 @@ RELAI is something the user steers, not a black box.
   for the risk list, test scenarios, grader previews before freezing, and the improvement
   agreement. These are named decisions within independent workflows, not a sequence every task
   must complete. Ask only about what remains open; restate consequential changes after discussion.
-- **Recommendation first.** Ask with the host's question tool (`AskUserQuestion` in Claude Code,
-  `request_user_input` in Codex when available, or another available question tool or ordinary chat),
-  your recommendation first. Pause only work that depends on the answer.
+- **Delegated approvals.** The build approvals (an `eval` scenario table and grader preview; a
+  `coding-evals` task list and check preview) can be delegated to a fresh independent review.
+  When neither an agreement, a loop contract's approvals setting, nor `decisions.md` says how
+  involved the user wants to be, offer this once at the first build checkpoint and record the
+  answer in `decisions.md`. Wherever this guidance says "delegated", that record counts as much as
+  an agreement.
+- **Recommendation first.** Ask with the host's structured question tool when it has one (for
+  example `AskUserQuestion` or `request_user_input`), otherwise in ordinary chat, your
+  recommendation first. Pause only work that depends on the answer.
   Never ask the user to edit a file to answer. Append every answer to `decisions.md`, and every
   consequential choice you made yourself as an assumption.
 - **Clear questions.** State the decision and why it matters in the user's terms; explain
@@ -214,10 +234,10 @@ RELAI is something the user steers, not a black box.
   | Moment | What is asked |
   | --- | --- |
   | End of `discover` | The risk table, open questions, and feedback on the runs just read |
-  | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, and on first use the harness setup questions |
+  | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, how involved to be (delegated approvals), and on first use the harness setup questions |
   | `eval` scenario approval and grader preview | Approval of the scenario table (with the build's cost) and of the grader preview, in manageable subsets |
   | End of an `eval` run whose judges scored real trials for the first time, or after a rubric change | That run's judge checks, while the run is fresh, and the pass mark if it is unset |
-  | `coding-evals` scope and task selection | Unresolved scope and task selection, combined when ready; reuse existing authorization |
+  | `coding-evals` scope and task selection | Unresolved scope and task selection, combined when ready, and how involved to be (delegated approvals); reuse existing authorization |
   | `coding-evals` check preview before freezing | Scoring and coverage approval still needed, in manageable subsets; a delegated independent review may cover it |
   | Before the first paid `coding-evals` run | What to compare, if the request named a change or another agent, and the run budget |
   | End of the first `coding-evals` run that scored real trials | Its judge checks, and the pass mark if it is unset |

@@ -14,14 +14,14 @@ can see what the agent tried to do.
 - Evaluators that grade side effects (a refund issued, an email sent) read the journal rather than
   the agent's claims.
 - The smoke test passes after the change, and any frozen test that gained a state file was
-  re-frozen under the freeze rule.
+  re-frozen under the *Frozen tests* rule.
 
 ## Rules
 
 - Prefer running the real dependency inside the trial (the project's own compose file, image or
   seed data) over mocking it.
 - Mock at the client boundary (a base URL, an MCP server command, the client function) through the
-  project's own configuration (Fixed rule 7).
+  project's own configuration (`relai/README.md`, Fixed rules: *Mocks*).
 - Side effects must stay within authorized, isolated test dependencies or sandbox accounts.
   Mock actions when a real dependency cannot meet those containment and authorization guarantees;
   reachability alone does not authorize a production action.

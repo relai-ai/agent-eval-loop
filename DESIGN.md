@@ -27,8 +27,12 @@ must stay true, and asks the user wherever a choice is theirs.
 Contracts the user's repository depends on live in the template, so `relai/` stays usable
 without the plugin. Methods for the coding agent live in the skills.
 
-`main` is the update branch. A manual release trigger versions and tests its selected revision,
-then pushes the version bump and tag directly to `main` and publishes a GitHub release.
+`main` is the update branch. A manual release trigger prepares and tests a release snapshot,
+then pushes the release commit and tag directly to `main` and publishes a GitHub release.
+The first release may use the existing manifest version; later releases bump it.
+Testing runs without release credentials. A separate publish job uses the protected `release`
+environment and a GitHub App installed only on this repository, and verifies that the reconstructed
+release tree matches the tested tree before creating a write token.
 Feature PRs do not bump versions.
 [RELEASING.md](RELEASING.md) defines that process; the [README](README.md#updating) covers updates.
 Project-owned copies have independent provenance and follow the template's
@@ -75,6 +79,7 @@ shaped these choices:
 | Benchmarks imported or wrapped, pinned by commit, and checked for fidelity against their own scorer | A reimplemented scorer that disagrees silently invalidates every result |
 | A benchmark's splits map to development, held-out and final, with a coverage record handing out new batches | Repeated keep-or-reject decisions on one set tune the agent to it; small budgets could play only a few cases per run |
 | A hardening ladder and compound tests, always as new tests | Passing tests stop teaching; behaviors that hold alone can fail together |
+| Decision records (scenario tables, grader previews, reviews, the improvement agreement, the loop contract) committed under `relai/records/`; raw runs and scratch stay in the uncommitted `work/` | Approvals and reviews kept in `work/` were invisible to teammates, while the committed board linked to them |
 | `changes.md`, with candidate runs kept under `work/candidates/` | Rejected changes and their lessons lived only in scratch notes |
 | Shared checkers preserve common guarantees; examples and integrations may be adapted in the project's language | Copied code is a maintained surface; focused verification preserves guarantees without mandating incidental implementation details |
 | A separate `coding-evals` skill for the coding agents a team uses, sharing the task format, freezing, reviews, judges and scoring | The other skills speak of "the agent in this repository"; a request about a coding agent in a repository with no agent matched none of them |

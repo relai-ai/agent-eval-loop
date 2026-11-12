@@ -238,17 +238,29 @@ def main() -> int:
         parser.error("trial directories must not be symlinks")
     clash = conflicts(jobs, out, cwd, meta["runner_command"], args.runner_id)
     if clash:
-        print(f"error: {', '.join(clash)} was run with a different command or test version, or runner identity; use a new --out",
-              file=sys.stderr)
+        shown = ", ".join(clash[:3]) + (f" and {len(clash) - 3} more" if len(clash) > 3 else "")
+        print(f"error: {len(clash)} trial(s) in {out} ({shown}) were run with a different command or test version, "
+              "or runner identity; use a new --out", file=sys.stderr)
         return 2
     cancelled = threading.Event()
+    lock, finished = threading.Lock(), [0]
+
+    def one(job) -> dict:
+        result = run_trial(job[0], job[1], out, command, cwd, args.timeout, env, args.retry_failed, meta, cancelled)
+        with lock:
+            finished[0] += 1
+            outcome = "runtime failure" if failed(result) else "finished"
+            print(f"[{finished[0]}/{len(jobs)}] {result.get('trial_name', job[0].name)}: {outcome}", flush=True)
+        return result
+
     with ThreadPoolExecutor(max_workers=max(1, args.concurrency)) as pool:
         try:
-            results = list(pool.map(lambda job: run_trial(job[0], job[1], out, command, cwd, args.timeout, env,
-                                                          args.retry_failed, meta, cancelled), jobs))
+            results = list(pool.map(one, jobs))
         except KeyboardInterrupt:
             cancelled.set()
-            raise
+            print(f"\ninterrupted: finished trials are kept in {out}; rerun the same command to resume "
+                  "(add --retry-failed to redo runtime failures)", file=sys.stderr)
+            return 130
     trials = [read_json(p) for p in sorted(out.glob("*/result.json"))]
     trials = [t for t in trials if isinstance(t, dict) and "trial_name" in t]
     errored = sum(1 for t in trials if failed(t))
@@ -258,8 +270,9 @@ def main() -> int:
                "stats": {"n_errored_trials": errored, "n_completed_trials": len(trials) - errored},
                "batches": (previous.get("batches") or []) + [meta]}
     (out / "result.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    print(f"{len(results)} trial(s) this batch; {len(trials)} in {out}: {len(trials) - errored} completed, "
-          f"{errored} errored. Summarize with: python3 relai/bin/summarize.py {out}")
+    print(f"{len(results)} trial(s) this batch; {len(trials)} in {out}: {len(trials) - errored} finished, "
+          f"{errored} runtime failure(s) (scoring is summarize's job). Summarize with: "
+          f"python3 relai/bin/summarize.py {out}")
     return 0
 
 

@@ -8,7 +8,7 @@
     {
       "name": "relai",
       "source": "./",
-      "description": "Eval-driven improvement for AI agents."
+      "description": "Eval-driven improvement for AI agents. Needs Python 3.11+; running evals needs a container engine (or your own runner) and model access."
     }
   ]
 }

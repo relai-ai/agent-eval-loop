@@ -10,6 +10,10 @@ from a hook (its PreToolUse supports only allow or deny), so there the edit goes
 agent is warned instead. check-edit runs the project's own checkers on the edited test or wiki
 page and passes any problems back to the agent.
 
+guard-frozen needs only the standard library of any Python 3; check-edit runs the checkers, which need
+Python 3.11+. On an older `python3`, check-edit says so once per project (it leaves a marker in
+relai/work/) instead of failing silently.
+
 Hooks are a convenience for hosts that support them. The guarantees they serve live in the
 project's relai/README.md and its checkers, which work without them. Both hooks do nothing
 outside a RELAI project, and fail open: an unexpected error never blocks the user's work.
@@ -101,12 +105,18 @@ def guard_frozen(event: dict, host: str) -> dict | None:
             hits.setdefault(found[0], found[1])
     if not hits:
         return None
+    if all(entry.get("repair") for entry in hits.values()):
+        reasons = "; ".join(f"{key}: {entry['repair'].get('reason', '')}" for key, entry in hits.items())
+        context = (f"RELAI: editing a frozen test under an open repair ({reasons}). When done, re-freeze with "
+                   "`freeze.py --reason`, record it in relai/decisions.md and get a fresh review.")
+        return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": context}}
     tests = "; ".join(f"{key} (frozen {str(entry.get('frozen_at', '')).split('T')[0] or 'earlier'})"
                       for key, entry in hits.items())
     rule = ("Changing a frozen test changes what its scores mean, so results before and after are no "
             "longer comparable. A justified repair needs a reason recorded with `freeze.py --reason`, a line "
-            "in relai/decisions.md and a fresh review (relai/README.md, guarantee 5). A low score alone does "
-            "not show the test is wrong.")
+            "in relai/decisions.md and a fresh review (relai/README.md, Fixed rules: Frozen tests). A low score "
+            "alone does not show the test is wrong. Once a repair is agreed and recorded in relai/decisions.md, `freeze.py <test> --begin-repair "
+            "--reason \"...\"` stops this check asking before each edit until the test is re-frozen.")
     if host == "codex":
         # Codex cannot ask the user from a hook, so the edit goes ahead and the agent is told.
         context = (f"RELAI warning: this edit changes a frozen test: {tests} (relai/frozen.json). {rule} "
@@ -131,7 +141,8 @@ def run_checker(relai_dir: Path, script: str, *args: str) -> str | None:
         result = subprocess.run([sys.executable, str(checker), *args], capture_output=True, text=True,
                                 cwd=relai_dir.parent, timeout=CHECK_TIMEOUT_SEC)
     except subprocess.TimeoutExpired:
-        return None
+        command = " ".join(["python3", f"relai/bin/{script}", *args])
+        return f"`{command}` did not finish within {CHECK_TIMEOUT_SEC}s, so it was not checked; run it yourself."
     if result.returncode == 0:
         return None
     report = (result.stdout + result.stderr).strip()
@@ -159,9 +170,31 @@ def check_edit(event: dict, host: str) -> dict | None:
     reports = [r for r in (run_checker(*key) for key in checks) if r]
     if not reports:
         return None
-    context = (f"RELAI checkers found problems after editing {', '.join(edited)}. "
-               "Fix them, or say why they do not apply:\n\n" + "\n\n".join(reports))
+    context = (f"RELAI checkers report current problems in the test or wiki you edited ({', '.join(edited)}). "
+               "Some may predate this edit or belong to work still in progress; fix them before you finish, "
+               "or say why they do not apply:\n\n" + "\n\n".join(reports))
     return {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": context}}
+
+
+def old_python_notice(event: dict, host: str) -> dict | None:
+    """Once per RELAI project: the checkers cannot run on this python3, so say so rather than stay silent."""
+    for path in edited_paths(event):
+        relai_dir = relai_dir_of(path)
+        if not relai_dir:
+            continue
+        marker = relai_dir / "work" / ".hook-python-notice"
+        if marker.exists():
+            return None
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(f"{sys.executable} {sys.version.split()[0]}\n", encoding="utf-8")
+        found = ".".join(map(str, sys.version_info[:3]))
+        message = (f"RELAI: the hook's python3 is {found}, and the checkers need Python 3.11+, so edits under relai/ "
+                   "are not checked automatically (frozen tests are still guarded). Put Python 3.11+ first on PATH "
+                   "as python3, or run relai/bin's checkers yourself with a newer Python. This notice is shown once "
+                   "(delete relai/work/.hook-python-notice to see it again).")
+        return {"systemMessage": message,
+                "hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": message}}
+    return None
 
 
 HOOKS = {"guard-frozen": guard_frozen, "check-edit": check_edit}
@@ -176,10 +209,11 @@ def main() -> int:
     if len(args) != 1 or args[0] not in HOOKS:
         print(__doc__, file=sys.stderr)
         return 0
-    if sys.version_info < (3, 11):
-        return 0  # the checkers need Python 3.11+; stay silent rather than report a bogus failure
+    hook = HOOKS[args[0]]
+    if hook is check_edit and sys.version_info < (3, 11):
+        hook = old_python_notice  # the checkers need Python 3.11+; tell the user once instead of failing
     try:
-        output = HOOKS[args[0]](json.load(sys.stdin), host)
+        output = hook(json.load(sys.stdin), host)
     except Exception:  # fail open: a hook must never block work because of its own error
         return 0
     if output:

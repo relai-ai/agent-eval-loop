@@ -1,6 +1,6 @@
 ---
 name: improve
-description: Use to fix agent code, improve the AI agent against its evaluations, reduce cost or latency while preserving behavior, or check a change for regressions ("fix this crash", "make the agent pass X", "make it cheaper", "did this change break anything"). For an ongoing loop that also learns from new traces, use the loop skill. To only run evaluations, use the eval skill.
+description: Use to fix the AI agent's code, improve the agent (or LLM app, chatbot or pipeline) against its evaluations, compare prompts, models or settings for it, reduce its cost or latency while preserving behavior, or check a change to it for regressions ("fix this crash in the agent", "make the agent pass X", "compare these two prompts for the agent", "does this change help the agent", "make it cheaper", "did this change break the agent"). Not for general code bugs outside an AI agent. For an ongoing loop that also learns from new traces, use the loop skill. To only run evaluations, use the eval skill.
 ---
 
 # Improve the agent
@@ -47,7 +47,7 @@ measured-improvement agreement, settle before editing:
 - **Check-ins and delivery:** rounds or stopping rule; a branch or worktree for review by
   default, or the user's working tree if already authorized.
 
-For managed measured work, record the agreement in `relai/work/improve/plan.json` (`relai/docs/files.md`),
+For managed measured work, record the agreement in `relai/records/improve/plan.json` (`relai/docs/files.md`),
 or use the covering loop contract. Existing project records may serve the same purpose when they
 preserve the agreement and evidence. Record consequential user choices alongside that agreement.
 Tell the user when the authorized budget is exhausted, and ask before exceeding it.
@@ -106,7 +106,8 @@ suggested methods to the request while preserving authorization and honest evide
   the missing evidence supports a conclusion. Summarizer notices inform this judgment; successful
   execution of a comparison does not establish comparability.
 - Stop optimizing against a suspected bad test; investigate it through the `eval` skill separately,
-  record justified repairs and establish comparable measurements before resuming. A low score
+  record justified repairs under the *Frozen tests* rule (`relai/README.md`; `freeze.py
+  --begin-repair` once the repair is agreed) and establish comparable measurements before resuming. A low score
   alone does not establish a test defect. No change kept is a valid result.
 
 ## Choosing among candidates

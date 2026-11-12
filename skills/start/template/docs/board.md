@@ -2,7 +2,22 @@
 
 When using managed state, update `STATUS.md` from recorded evidence for the current request.
 Link measurements to the revision they describe; exploratory candidate results are not current
-incumbent results. Candidate runs still count toward spend. Show relevant sections:
+incumbent results. Candidate runs still count toward spend.
+
+Keep it scannable. Always open with three short sections, in this order, then add the other
+sections below only when they have content:
+
+```markdown
+# RELAI status · <date>
+## Now
+<the current request and where it stands, in one or two lines>
+## Next action
+<the single most useful next step, or "Done">
+## Waiting on you
+<count and the top items, or "Nothing">
+```
+
+The sections:
 
 - **Current request and progress:** show the relevant capabilities (discovery, harness, tests,
   measurement, improvement) as ready, pending or not applicable. Judge readiness for the selected
@@ -24,7 +39,7 @@ incumbent results. Candidate runs still count toward spend. Show relevant sectio
   cost per case and fidelity, never case by case. Coverage spans history; performance summaries
   identify their contributing revision. Mixed or unknown revisions retain counts and a notice
   rather than a combined assessment mean.
-- **The loop** (from `work/loop/state.json`), if it ran: iterations and what started each,
+- **The loop** (from `records/loop/state.json`), if it ran: iterations and what started each,
   verified fixes kept of candidates tried, experiment rounds, regressions prevented, tests added,
   held-out score first to last, the user's decisions and loop spend.
 - **Coding evals** (agent-neutral tasks), if any: tasks by kind and source, which are healthy
@@ -34,9 +49,17 @@ incumbent results. Candidate runs still count toward spend. Show relevant sectio
   its next step is building tasks, then health, freezing and comparing.
 - **Judges:** each judge's agreement with the user's judge checks (`feedback.md`).
 - **Spend** as runtimes reported it (agent trials including candidates, judges, triage), never
-  estimated. Use the active agreement: `work/loop/state.json`'s contract during a loop, otherwise
-  `work/improve/plan.json`. Show the applicable ceiling and actual consumption since its `since`
+  estimated. Use the active agreement: `records/loop/state.json`'s contract during a loop, otherwise
+  `records/improve/plan.json`. Show the applicable ceiling and actual consumption since its `since`
   time, including candidates and delegated work. Missing resource measurements are unknown, not
   zero. Do not invent or duplicate a budget; show recent entries from `changes.md`.
 
 Lengths of history and the agreement threshold are in `../README.md`, Defaults.
+
+## Cleanup
+
+Mention cleanup when it is due, and do it only with the user's agreement: a rejected candidate's
+worktree under `work/candidates/<name>/` once `changes.md` records it (`git worktree remove`, then
+`git worktree prune`); run directories under `work/runs/` that no baseline or report still cites;
+and container images built for tests that are no longer used (the engine's image commands).
+Never delete `records/`, `changes.md`, `decisions.md` or runs a current claim relies on.

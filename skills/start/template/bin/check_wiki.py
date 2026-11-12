@@ -2,7 +2,7 @@
 """Check the RELAI wiki in relai/wiki/ and the pages tests cite.
 
 Usage:
-  python3 relai/bin/check_wiki.py [--relai-dir relai] [--json]
+  python3 relai/bin/check_wiki.py [relai] [--json]
 
 Pages live in relai/wiki/{requirements,risks,open-questions}/<id>.md; a page's id is its
 file name. Checks: ids are lowercase slugs and unique across the three folders, each page
@@ -81,10 +81,11 @@ def check_attachments(relai_dir: Path, report: Report) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--relai-dir")
-    parser.add_argument("--json", action="store_true")
+    parser.add_argument("relai_dir_arg", nargs="?", metavar="RELAI_DIR", help="the relai/ directory (default: inferred)")
+    parser.add_argument("--relai-dir", help="same as RELAI_DIR")
+    parser.add_argument("--json", action="store_true", help="machine-readable output on stdout")
     args = parser.parse_args()
-    relai_dir = relai_root(args.relai_dir)
+    relai_dir = relai_root(args.relai_dir or args.relai_dir_arg)
     wiki = relai_dir / "wiki"
     report = Report()
     pages: dict[str, Path] = {}

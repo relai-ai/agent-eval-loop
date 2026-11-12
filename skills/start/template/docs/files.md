@@ -24,11 +24,11 @@ mode = "api"                 # "api" (bin/judge.py, copied from the plugin) or "
 provider = "anthropic"       # or "openai", "openrouter", "openai-compatible" (model required)
 # base_url = "http://localhost:4000/v1"   # openai-compatible only (LiteLLM, vLLM, ...)
 # api_key_env = "LITELLM_API_KEY"         # openai-compatible only: the key's variable name
-model = "claude-opus-5-5"
+model = "claude-opus-5-5"     # required; no default
 effort = "medium"            # optional, Anthropic only
 
-[triage]                     # optional: the cheap model bin/triage.py uses on many traces
-provider = "openrouter"      # same keys as [judge]; without this table triage uses [judge]
+[triage]                     # optional table; needed only to run bin/triage.py (it never uses [judge])
+provider = "openrouter"      # same keys as [judge]: a cheap model, one call per trace
 model = "anthropic/claude-haiku-5.5"
 
 [runtime]
@@ -75,7 +75,7 @@ agent = "<Harbor agent name>"  # passed to `harbor run -a`
 model = "<provider/model>"     # passed as -m
 version = "<agent release>"    # the agent's own release, recorded before the first paid run; a change is a measurement change
 auth = "subscription"          # or "api-key": how the agent authenticates in a trial
-env = ["<CREDENTIAL_NAME>"]    # names only; values in relai/.env, written by the user
+env = ["<CREDENTIAL_NAME>"]    # names only; values exported, from a secrets tool, or in relai/.env (written by the user)
 training_cutoff = "YYYY-MM"    # optional: for reporting tasks whose public fix predates it
 baseline = true                # the version other runs are compared against
 
@@ -263,7 +263,10 @@ appends one JSON line per call to
 ## `frozen.json`
 
 Written only by `freeze.py`: each test's digest (all files except `README.md`), when it was
-frozen, and the reason for every re-freeze.
+frozen, and the reason for every re-freeze. `repair` (`reason`, `since`) marks a repair in
+progress (`freeze.py --begin-repair`), run only after the repair is agreed and recorded in
+`decisions.md`; re-freezing removes it. It changes no score's meaning:
+only editing hooks read it, to stop asking before each edit of that test.
 
 ## `changes.md`
 
@@ -272,6 +275,15 @@ where the change lives (branch, commit or worktree); the diagnosis it acted on; 
 targeted and checked; the before and after scores from comparable runs; the verdict (kept,
 rejected, or left for review) with the reason. A rejected change stays recorded so nobody
 retries it blindly.
+
+## `decisions.md` and `UPSTREAM.md`
+
+`decisions.md` is one line per decision, newest last:
+`- 2026-11-12 · <the choice, in a sentence> · <asked: the user | assumed: the coding agent> · <source>`.
+The source links to where the detail lives (a feedback item such as `feedback.md#FB-2026-11-traces-07`,
+a wiki page, `records/eval/2026-11-12-scenarios.md`); link to it rather than copying the answer.
+`UPSTREAM.md` is one line per copied file or folder: its path here, the plugin path and version
+or commit it came from, and a short note of local adaptations.
 
 ## `feedback.md`
 
@@ -285,7 +297,8 @@ It is not the place for general questions:
 | Lifetime | Durable knowledge, cited by tests | Closed once answered |
 
 A feedback answer that exposes a general ambiguity also opens a question; answering a question
-can settle pending feedback items. One `## ` item each:
+can settle pending feedback items. One `## ` item each, with an id `FB-<year>-<month>-<source>-<n>`
+(the source being the trace batch or run it came from) so other files can link to it:
 
 ```markdown
 ## FB-2026-11-traces-07: Should the agent have refunded the lost tablet?
@@ -334,22 +347,33 @@ Evidence: src/agent/prompts/refunds.md:12; attachments/ingest-2026-11/42.json
 `Status` is one of `proposed`, `admitted`, `confirmed`, `refined`, `rejected` or `retired`.
 Ratings are `low`, `medium`, `high` or `critical`. `Threatens` lists requirement ids.
 
-## `work/improve/`
+## `records/`
 
-- `plan.json`: the improvement agreement (README, Terms): objective, guardrails and their bounds,
+Committed decision records, so teammates can see what was approved and reviewed:
+`eval/<date>-scenarios.md` and `eval/<date>-grader-preview.md` (eval builds), `reviews/` (fresh
+reviews of harnesses, tests, coding tasks and changes), `improve/` and `loop/` below. Keep them
+short and redacted like wiki excerpts: link to runs and traces rather than copying their content,
+and keep protected assessment contents out. Raw runs, candidates and scratch stay in `work/`.
+
+## `records/improve/` and `work/improve/`
+
+- `records/improve/plan.json`: the improvement agreement (README, Terms): objective, guardrails and their bounds,
   scope, the selection rule when several candidates compete, `budget_usd` and `since` (an ISO
   date; the board counts spend from it). During a loop, use its contract instead of duplicating
   covered agreement or budget fields here.
-- `state.json`: active experiment work, as a checkpoint for resuming.
-- `notes.md`: evidence-backed lessons, updated rather than appended.
+- `work/improve/state.json`: active experiment work, as a checkpoint for resuming.
+- `records/improve/notes.md`: evidence-backed lessons, updated rather than appended.
 
-## `work/loop/state.json`
+## `records/loop/state.json`
 
-`contract`: the loop's agreement (objective, guardrails, scope, inputs, length, budget, when to
-ask, check-ins, watch mode, delivery). When a monetary ceiling applies, record `budget_usd` and
+`contract`: the loop's agreement (objective, guardrails, scope, inputs including any triage
+provider and its data authorization, length, budget, when to ask, `approvals` (`delegated` or
+`supervised`), check-ins, watch mode, delivery). When a monetary ceiling applies, record `budget_usd` and
 `since` (the budget's ISO start time) in the contract. The board counts actual spend since that
 time, including delegated improvement work; per-iteration limits supplement the overall ceiling.
-`iterations`: one entry per iteration:
+`iterations`: one entry per iteration. `n`, `started`, `trigger`, `verdict`, `reason` and
+`cost_usd` are required; the counts are optional summaries, filled when known (the authoritative
+records are `changes.md`, `decisions.md` and the runs):
 
 ```json
 {"n": 1, "started": "2026-11-10", "trigger": "new traces", "traces_triaged": 0, "wiki_updates": 0,

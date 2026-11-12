@@ -17,13 +17,19 @@ each turn the launcher checks that the trajectory gained a user step and an agen
 Scenario file:
   {"turns": ["first message", "second message"]}                       fixed turns
   {"user": {"instructions": "You are a customer who ...", "max_turns": 6,
-            "opening": "optional first message", "model": "anthropic:claude-opus-5-5"}}
+            "opening": "optional first message", "model": "anthropic:<model id>"}}
                                                                         a model plays the user
-A simulated user needs its key in RELAI_USER_SIM_KEY. The model prefix picks the API:
+A simulated user needs "model" (no default: choose it deliberately) and its key in RELAI_USER_SIM_KEY.
+The model prefix picks the API:
 anthropic:, openai:, openrouter:, or compatible: (any OpenAI-compatible server at
 RELAI_USER_SIM_BASE_URL, for example LiteLLM). The launcher removes that key, and every name
 listed in RELAI_HIDE_ENV, from the adapter's environment. Note the trade-off: the key still enters the container; a host-side
 relay keeps it out if that matters for the agent under test.
+
+Exit status: 0 every turn recorded; 2 a configuration problem (scenario, simulated-user model or
+key); 3 the adapter failed (exited, sent nothing, or sent something other than {"reply": ...});
+4 the trajectory gained no new user and agent step on some turn; 5 the simulated user's model
+API failed.
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ import signal
 import subprocess
 import sys
 import threading
+import urllib.error
 import urllib.request
 
 DONE = "###DONE###"
@@ -62,7 +69,10 @@ def post_json(url: str, headers: dict, body: dict, timeout: int = 300) -> dict:
 
 def simulated_user_turn(spec: dict, history: list, key: str) -> tuple[str, bool]:
     """Ask a model for the simulated user's next message. Roles are swapped: the model plays the user."""
-    provider, _, model = spec.get("model", "anthropic:claude-opus-5-5").partition(":")
+    if not spec.get("model"):
+        raise RuntimeError('the simulated user needs "model" in the scenario, such as "anthropic:<model id>"; '
+                           "there is no default")
+    provider, _, model = spec["model"].partition(":")
     system = (spec["instructions"] + f"\n\nYou are the user in this conversation, not the assistant. Write only your "
               f"next message. When your goal is met or the conversation should end, reply with exactly {DONE}.")
     turns = [{"role": "assistant" if m["role"] == "user" else "user", "content": m["content"]} for m in history]
@@ -97,14 +107,29 @@ def main() -> int:
     parser.add_argument("--trajectory", required=True)
     parser.add_argument("--adapter", required=True, help="shell command that starts the adapter")
     args = parser.parse_args()
-    with open(args.scenario, encoding="utf-8") as handle:
-        scenario = json.load(handle)
+    try:
+        with open(args.scenario, encoding="utf-8") as handle:
+            scenario = json.load(handle)
+    except (OSError, ValueError) as exc:
+        log(f"cannot read the scenario file {args.scenario}: {exc}")
+        return 2
+    if not isinstance(scenario, dict):
+        log(f"the scenario file {args.scenario} must hold a JSON object with 'turns' or 'user'")
+        return 2
 
     sim_key = os.environ.get("RELAI_USER_SIM_KEY", "")
     hidden = {n for n in os.environ.get("RELAI_HIDE_ENV", "").split(",") if n} | {"RELAI_USER_SIM_KEY", "RELAI_HIDE_ENV"}
     child_env = {k: v for k, v in os.environ.items() if k not in hidden}
     child_env["RELAI_TRAJECTORY_PATH"] = args.trajectory
 
+    user = scenario.get("user")
+    if isinstance(user, dict) and not user.get("model"):
+        log('the simulated user needs "model" in the scenario, such as "anthropic:<model id>"; there is no default')
+        return 2
+    if isinstance(user, dict) and not sim_key and not (user.get("opening") and int(user.get("max_turns", 6)) <= 1):
+        log("the simulated user needs its model key in RELAI_USER_SIM_KEY (with the example Harbor agent, set "
+            "RELAI_USER_SIM_KEY_ENV to the name of the variable that holds it)")
+        return 2
     adapter = subprocess.Popen(args.adapter, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                stderr=None, text=True, bufsize=1, env=child_env, start_new_session=True)
     history: list[dict] = []
@@ -121,7 +146,15 @@ def main() -> int:
                 if turn == 0 and user_spec.get("opening"):
                     message, done = user_spec["opening"], False
                 else:
-                    message, done = simulated_user_turn(user_spec, history, sim_key)
+                    try:
+                        message, done = simulated_user_turn(user_spec, history, sim_key)
+                    except urllib.error.HTTPError as exc:
+                        log(f"turn {turn}: the simulated user's model API ({user_spec['model'].partition(':')[0]}) "
+                            f"returned HTTP {exc.code}; check its key and model id")
+                        return 5
+                    except (urllib.error.URLError, TimeoutError, RuntimeError) as exc:
+                        log(f"turn {turn}: the simulated user failed: {exc}")
+                        return 5
                 if done:
                     break
             else:

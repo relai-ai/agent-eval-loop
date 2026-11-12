@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import relai_root  # noqa: E402
+from _common import fail, relai_root  # noqa: E402
 
 ROLES = ("development", "held-out", "final")
 DEFAULT_MAP = {"train": "development", "training": "development", "dev": "held-out", "val": "held-out",
@@ -57,7 +57,7 @@ def ledger_path(relai_dir: Path, bench: str) -> Path:
 def load(relai_dir: Path, bench: str) -> dict:
     path = ledger_path(relai_dir, bench)
     if not path.is_file():
-        raise SystemExit(f"error: no coverage record for {bench!r}; run `benchmark.py init {bench} ...` first")
+        fail(f"no coverage record for {bench!r}; run `benchmark.py init {bench} ...` first")
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -89,7 +89,7 @@ def parse_map(text: str | None) -> dict:
     for part in filter(None, (text or "").split(",")):
         name, _, role = part.partition("=")
         if role.strip() not in ROLES:
-            raise SystemExit(f"error: --map role must be one of {', '.join(ROLES)}, got {role!r}")
+            fail(f"--map role must be one of {', '.join(ROLES)}, got {role!r}")
         mapping[name.strip().lower()] = role.strip()
     return mapping
 
@@ -97,7 +97,7 @@ def parse_map(text: str | None) -> dict:
 def init(args, relai_dir: Path) -> int:
     if ledger_path(relai_dir, args.id).is_file():
         print(f"error: {args.id} already has a coverage record; a new benchmark version gets a new id "
-              "(for example <name>-<commit>) so runs on different versions are never compared")
+              "(for example <name>-<commit>) so runs on different versions are never compared", file=sys.stderr)
         return 2
     mapping, rng = parse_map(args.map), random.Random(args.seed)
     cases: dict[str, dict] = {}
@@ -107,19 +107,19 @@ def init(args, relai_dir: Path) -> int:
         row = json.loads(line)
         source_id = str(row.get("id") or "")
         if not source_id:
-            raise SystemExit(f"error: line {n} has no id")
+            fail(f"line {n} has no id")
         cid = SAFE.sub("_", source_id)
         if cid in cases:
-            raise SystemExit(f"error: duplicate case id {cid!r} (line {n})")
+            fail(f"duplicate case id {cid!r} (line {n})")
         split = str(row.get("split") or "").strip()
         role = mapping.get(split.lower()) if split else None
         if split and role is None:
-            raise SystemExit(f"error: unknown split {split!r} on line {n}; map it with --map {split}=<role>")
+            fail(f"unknown split {split!r} on line {n}; map it with --map {split}=<role>")
         cases[cid] = {"split": split or None, "role": role, "category": row.get("category"), "plays": []}
         if cid != source_id:
             cases[cid]["source_id"] = source_id
     if not cases:
-        raise SystemExit("error: no cases")
+        fail("no cases")
     notes = []
     unsplit = [c for c, v in cases.items() if v["role"] is None]
     if unsplit and len(unsplit) == len(cases) and args.derive_splits:
@@ -133,7 +133,7 @@ def init(args, relai_dir: Path) -> int:
             cases[cid]["role"] = "development"
         notes.append("no splits given: all cases remain development; no independent assessment")
     elif unsplit:
-        raise SystemExit(f"error: {len(unsplit)} case(s) have no split while others do; give every case a split")
+        fail(f"{len(unsplit)} case(s) have no split while others do; give every case a split")
     if args.derive_splits and not any(v["role"] == "held-out" for v in cases.values()):
         dev = balanced([c for c, v in cases.items() if v["role"] == "development"], cases, rng)
         for cid in dev[: max(1, round(0.2 * len(dev)))] if dev else []:
@@ -166,14 +166,14 @@ def batch(args, relai_dir: Path) -> int:
     if args.case_ids is not None:
         chosen = args.case_ids
         if len(chosen) != len(set(chosen)):
-            raise SystemExit("error: duplicate case ids")
+            fail("duplicate case ids")
         invalid = [cid for cid in chosen if cid not in cases or cases[cid]["role"] != "development"]
         if invalid:
-            raise SystemExit("error: case ids must name development cases: " + ", ".join(invalid))
+            fail("case ids must name development cases: " + ", ".join(invalid))
     else:
         n = args.n
         if n < 1:
-            raise SystemExit("error: --n must be positive")
+            fail("--n must be positive")
         rng = random.Random(f"{ledger['seed']}-{len(ledger['batches'])}")
         unplayed = balanced([c for c in dev if not cases[c]["plays"]], cases, rng)
         failed = [c for c in dev if latest(cases[c]) and latest(cases[c])["score"] is not None and latest(cases[c])["score"] < 1.0]
@@ -223,14 +223,14 @@ def record(args, relai_dir: Path) -> int:
     ledger = load(relai_dir, args.id)
     found, problems = results(relai_dir, args.id, args.runs, ledger)
     for p in problems:
-        print(f"error: {p}")
+        print(f"error: {p}", file=sys.stderr)
     if problems:
         return 2
     wrong = sorted({c for t in found.values() if str(t["task_path"]).startswith("wrapped:") for c in t["checksums"]}
                    - {ledger["commit"]})
     if wrong:
         print(f"error: results come from benchmark commit(s) {', '.join(wrong)}, not {ledger['commit']}; "
-              "a different version is a different benchmark")
+              "a different version is a different benchmark", file=sys.stderr)
         return 2
     run_name, final_scores, unknown, unscored = Path(args.runs[0]).name, [], [], 0
     for cid, test in sorted(found.items()):

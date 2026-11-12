@@ -86,7 +86,7 @@ class SplitTest(unittest.TestCase):
     def test_unsafe_ids_are_sanitized_and_a_second_init_is_refused(self):
         self.assertEqual(self.init([{"id": "repo/issue#1", "split": "train"}, {"id": "b", "split": "test"}]).returncode, 0)
         self.assertEqual(ledger(self.repo)["cases"]["repo_issue_1"]["source_id"], "repo/issue#1")
-        self.assertIn("new benchmark version gets a new id", self.init([{"id": "z"}]).stdout)
+        self.assertIn("new benchmark version gets a new id", self.init([{"id": "z"}]).stderr)
 
     def test_original_wrapped_case_ids_round_trip_record_and_fidelity(self):
         self.assertEqual(self.init([{"id": "repo/issue#1", "split": "train"},
@@ -166,7 +166,7 @@ class SamplingAndRecordTest(unittest.TestCase):
         run = wrapped_run(self.repo, "r1", [("d0", "train", "scored", 1.0)], commit="zzz9999")
         out = self.repo.run("benchmark.py", "record", "bx", run, "--agent", "main@1")
         self.assertEqual(out.returncode, 2)
-        self.assertIn("different version is a different benchmark", out.stdout)
+        self.assertIn("different version is a different benchmark", out.stderr)
 
     def test_errors_are_not_scores_and_final_runs_are_counted(self):
         run = wrapped_run(self.repo, "r1", [("d0", "train", "runtime failure", None), ("f0", "test", "scored", 0.5)])

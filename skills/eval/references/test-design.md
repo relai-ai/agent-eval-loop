@@ -10,8 +10,10 @@ How to design each test for the `eval` skill, whose Rules bind; this adds the me
   trace or value itself is the point.
 - From a failed run plus feedback: keep the original input faithful and put the lesson in the
   evaluators.
-- Score whole turns, not just the last message. A required deliverable the agent did not produce
-  scores the minimum; a pure prohibition is met by doing nothing.
+- Score whole turns, not just the last message.
+- **Missing deliverables and prohibitions** (the one home of this rule): a required deliverable the
+  agent did not produce scores the minimum. A pure prohibition is met by doing nothing, so an empty
+  reply may pass it; show it can fail on a synthetic violating example instead.
 - When the recording lacks the structure a check reads, let the check raise (an error), never
   score it as zero.
 - Use a simulated user (a model playing the user) when the behavior depends on how a user
@@ -112,7 +114,7 @@ what would make the probe invalid.
 Classify the request before editing: a correction of how the test checks (same evaluators,
 better verifier), an extension of the same behavior, a change of intent, or something unrelated.
 Unrelated work is a new test. Keep the test's id and every case the change does not touch, and
-follow the freeze rule.
+follow the *Frozen tests* rule.
 
 ### Tests on an earlier revision of code
 

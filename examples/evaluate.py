@@ -10,9 +10,9 @@ Example tests/check.py, run by tests/test.sh as `cd /tests && python3 check.py`:
 
     from evaluate import Results, load_trajectory, turns, tool_calls
 
-    results = Results()
-    trajectory = load_trajectory()
+    results = Results(["looks-up-order"])   # every code evaluator this script must score
     with results.check("looks-up-order"):
+        trajectory = load_trajectory()       # inside the check: a missing file is an error, not a crash
         calls = [c for c in tool_calls(trajectory) if c["function_name"] == "get_order_details"]
         ok = bool(calls)
         results.score("looks-up-order", 1.0 if ok else 0.0,
@@ -20,7 +20,8 @@ Example tests/check.py, run by tests/test.sh as `cd /tests && python3 check.py`:
     results.write()
 
 A check that raises becomes an error for that evaluator, not a zero: a crash says nothing
-about the agent. Score the agent's real failures as low scores, with feedback that says what
+about the agent. Pass the expected evaluator ids to Results so that write() records an explicit
+error for any of them the script never scored, instead of a missing score. Score the agent's real failures as low scores, with feedback that says what
 full marks need.
 """
 
@@ -75,7 +76,8 @@ def tool_calls(trajectory: dict) -> list[dict]:
 
 
 class Results:
-    def __init__(self) -> None:
+    def __init__(self, expected: list[str] | None = None) -> None:
+        self.expected = list(expected or [])
         self.rewards: dict[str, float] = {}
         self.feedback: dict[str, str] = {}
         self.errors: dict[str, str] = {}
@@ -99,6 +101,9 @@ class Results:
             self.errors[evaluator_id] = traceback.format_exc(limit=3)[-1500:]
 
     def write(self, directory: Path = VERIFIER) -> None:
+        for evaluator_id in self.expected:
+            if evaluator_id not in self.rewards and evaluator_id not in self.errors:
+                self.errors[evaluator_id] = "the check never ran: the script did not score this evaluator"
         directory.mkdir(parents=True, exist_ok=True)
         (directory / "reward.json").write_text(json.dumps(self.rewards))
         (directory / "feedback.json").write_text(json.dumps(self.feedback))
