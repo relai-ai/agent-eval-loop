@@ -107,7 +107,7 @@ changes, and qualify improvement claims with the attempts, costs, uncertainty, a
 
 Feature PRs do not bump versions. Describe behavior and project-copy migrations in the PR;
 GitHub generates release notes from the merged work. The manually triggered Release workflow
-bumps and tests a snapshot of `main`, then pushes the version bump directly to `main` with a tag and
+prepares and tests a snapshot of `main`, then pushes the release commit directly to `main` with a tag and
 GitHub release. See [RELEASING.md](RELEASING.md) for that process.
 User update instructions are in the [README](README.md#updating).
 

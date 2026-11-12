@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'New version (X.Y.Z); leave blank for the next patch'
+        description: 'Version (X.Y.Z); first release may use the manifest version; blank for next patch'
         required: false
         type: string
       prerelease:
         description: Mark the GitHub release as early access
         type: boolean
-        default: true
+        default: false
       project_copy_notes:
         description: 'Migration steps for project copies, if any (included in release notes)'
         required: false
@@ -24,10 +24,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Bump, test, and publish
+  prepare:
+    name: Prepare and test
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      version: ${{ steps.snapshot.outputs.version }}
+      tree: ${{ steps.snapshot.outputs.tree }}
     steps:
       - name: Require main
         run: test "$GITHUB_REF" = refs/heads/main
@@ -49,9 +52,10 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          git config user.name 'relai-release-bot[bot]'
-          git config user.email 'relai-release-bot[bot]@users.noreply.github.com'
+          git config user.name 'relai-agent-eval-loop-release[bot]'
+          git config user.email 'relai-agent-eval-loop-release[bot]@users.noreply.github.com'
           python scripts/release.py prepare "$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
 
       - name: Install uv
         run: python -m pip install uv
@@ -62,12 +66,43 @@ jobs:
       - name: Run tests on the release snapshot
         run: uv run --locked python .github/scripts/run_tests.py
 
+  publish:
+    name: Publish approved release
+    needs: prepare
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    steps:
+      - name: Check out the selected main revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Prepare verified release snapshot
+        id: snapshot
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TESTED_TREE: ${{ needs.prepare.outputs.tree }}
+        run: |
+          git config user.name 'relai-agent-eval-loop-release[bot]'
+          git config user.email 'relai-agent-eval-loop-release[bot]@users.noreply.github.com'
+          python scripts/release.py prepare "$VERSION" >> "$GITHUB_OUTPUT"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$TESTED_TREE"
+
       - name: Create release bot token
         id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
-          client-id: ${{ secrets.RELAI_RELEASE_BOT_CLIENT_ID }}
-          private-key: ${{ secrets.RELAI_RELEASE_BOT_PRIVATE_KEY }}
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           repositories: ${{ github.event.repository.name }}
           permission-contents: write
 

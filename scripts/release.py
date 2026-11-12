@@ -95,21 +95,27 @@ def git(root: Path, *args: str) -> str:
 
 
 def prepare(root: Path, requested: str | None = None) -> dict[str, str]:
-    """Build a local version-bump commit from the selected main revision."""
+    """Build a local release commit, allowing the initial manifest version once."""
     if git(root, "status", "--porcelain", "--untracked-files=no"):
         raise ValueError("prepare requires a clean tracked checkout")
     source = git(root, "rev-parse", "HEAD")
     current = check(root)
     target = requested or next_version(current)
-    if version_tuple(target) <= version_tuple(current):
-        raise ValueError(f"release version must be greater than {current}")
+    target_parts = version_tuple(target)
+    current_parts = version_tuple(current)
     tag = subprocess.run(["git", "show-ref", "--verify", "--quiet", f"refs/tags/v{target}"], cwd=root)
     if tag.returncode == 0:
         raise ValueError(f"tag v{target} already exists")
     if tag.returncode != 1:
         raise ValueError("cannot check existing release tags")
-    with redirect_stdout(sys.stderr):
-        bump(root, target)
+    release_tags = [tag for tag in git(root, "tag", "--list", "v*").splitlines()
+                    if re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag)]
+    if target_parts < current_parts or (target_parts == current_parts and release_tags):
+        raise ValueError(f"release version must be greater than {current}; "
+                         "only the first release may use the current manifest version")
+    if target != current:
+        with redirect_stdout(sys.stderr):
+            bump(root, target)
     git(root, "add", "--", *VERSION_FILES)
     tree = git(root, "write-tree")
     parents = ["-p", source]
