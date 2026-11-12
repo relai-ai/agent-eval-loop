@@ -5,8 +5,8 @@
   python3 relai/bin/judge.py --self-test relai/tests/<id>
 
 For every Harbor or native trial under the given directories, it reads the task's
-[[metadata.relai.evaluators]] with type = "judge", sends the rubric and the redacted
-trajectory to the model in relai.toml [judge], and writes
+[[metadata.relai.evaluators]] with type = "judge", sends the rubric and the
+trajectory (secret values removed) to the model in relai.toml [judge], and writes
 <trial>/judges/<evaluator-id>.json = {"score", "feedback", "model", "judge": "api"}
 or {"error": "..."}. A judge sees what its evaluator's `inputs` lists (default ["trajectory"]):
 "trajectory", "instruction" (the task's instruction.md), or "verifier/<file>" (a file the verifier wrote
@@ -23,15 +23,19 @@ judge gives it full marks (a judge that cannot fail is not measuring anything), 
 task sets [metadata.relai].prohibition = true.
 
 Keys: ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY or the variable [judge].api_key_env names,
-from the environment or relai/.env. The script
+from the environment (exported, or set by your secrets tool) or relai/.env. The script
 reads the value to call the API and never prints it. The judge runs on the host, so the key
 never enters a container.
+
+Data sent: the judge's inputs go to the configured provider. Only the values of declared secret
+variables are replaced before sending; everything else, including any personal or customer data
+in the trajectory, is sent as recorded. Tell the user what goes where before the first paid call.
 
 relai.toml:
   [judge]
   mode = "api"                # or "subagent": a fresh coding-agent subagent writes the same files
   provider = "anthropic"      # or "openai", "openrouter", "openai-compatible" (+ base_url, api_key_env)
-  model = "claude-opus-5-5"   # required for every provider but anthropic
+  model = "<model id>"        # required: choose it deliberately, there is no default
 """
 
 from __future__ import annotations
@@ -76,7 +80,8 @@ SCHEMA = {"type": "object", "properties": {"score": {"type": "number"}, "feedbac
 def api_key(name: str, relai_dir: Path) -> str:
     value = os.environ.get(name) or secret_values(relai_dir).get(name)
     if not value:
-        raise SystemExit(f"error: {name} is not set; add it to relai/.env (the script never prints it)")
+        raise SystemExit(f"error: {name} is not set; export it, set it with your secrets tool, or add it to "
+                         "relai/.env (the script never prints it)")
     return value
 
 
@@ -150,7 +155,7 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
             url, key_name = base.rstrip("/") + "/chat/completions", config.get("api_key_env", "OPENAI_API_KEY")
         else:
             sys.exit(f"error: unknown [judge].provider {provider!r}; use anthropic, openai, openrouter or openai-compatible")
-        model = config.get("model") or sys.exit(f"error: set [judge].model in relai.toml for {provider}")
+        model = config.get("model") or sys.exit(MISSING_MODEL)
         body = {"model": model, "messages": [{"role": "system", "content": system},
                                              {"role": "user", "content": prompt}],
                 "response_format": {"type": "json_schema",
@@ -165,7 +170,7 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
         if message.get("refusal"):
             raise RuntimeError(f"the judge model refused: {message['refusal']}")
         return json.loads(message.get("content") or "{}"), data.get("model", model), data.get("usage") or {}
-    model = config.get("model", "claude-opus-5-5")
+    model = config.get("model") or sys.exit(MISSING_MODEL)
     # Claude Opus 5.5 rejects forced tool use, so the JSON shape comes from structured output.
     # fallbacks="default" re-runs a policy-declined request on a suitable model in the same call.
     data = post("https://api.anthropic.com/v1/messages",
@@ -184,6 +189,10 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
     return json.loads(text or "{}"), data.get("model", model), data.get("usage") or {}
 
 
+MISSING_MODEL = ("error: set model in relai.toml's [judge] table (or [triage] for triage.py); there is no "
+                 "default, so choose one deliberately: judging needs a capable model, triage a cheap one")
+
+
 INPUT_LIMIT = 60_000  # characters per input other than the trajectory; longer ones are cut in the middle, and the judge is told
 
 
@@ -196,7 +205,7 @@ def clip(text: str) -> str:
 
 def judge_inputs(ev: dict, task: Path, trial_dir: Path | None, trajectory: dict | None, secrets: dict,
                  synthetic: bool = False) -> str:
-    """The text of each input the evaluator lists, redacted. Raises ValueError when one is missing."""
+    """The text of each input the evaluator lists, with secret values removed. Raises ValueError when one is missing."""
     names = ev.get("inputs") or ["trajectory"]
     parts = []
     for name in names:

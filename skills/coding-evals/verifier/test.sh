@@ -8,6 +8,16 @@
 #  3. run verify.py isolated: -I -S (no PYTHON* variables, user or site packages), /tests last on
 #     the path, so nothing planted there stands in for a standard module.
 # Scores go in /logs/verifier/reward.json; a low score is not a failed script.
+# Step 1 would stop the host's own processes, so refuse anywhere but a task container: no /proc, a
+# host init system as PID 1, or no /tests/verify.py.
+init=$(cat /proc/1/comm 2>/dev/null)
+case "$init" in
+  ""|systemd|init|launchd|upstart|openrc-init|runit)
+    echo "test.sh: refusing to run: this is not a task container (PID 1 is '${init:-unknown}'), and its" \
+         "cleanup stops every other process. Run the task through Harbor, or run verify.py directly." >&2
+    exit 2 ;;
+esac
+[ -f /tests/verify.py ] || { echo "test.sh: refusing to run: /tests/verify.py is missing (not a task container)" >&2; exit 2; }
 field() { sed -e 's/^.*) //' "/proc/$1/stat" 2>/dev/null | cut -d' ' -f"$2"; }  # 2 = parent, 20 = start time
 keep=" 1 $$ "
 pid=$$

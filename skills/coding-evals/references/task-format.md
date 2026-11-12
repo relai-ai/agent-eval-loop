@@ -123,7 +123,8 @@ copies: clone the bundle with its explicit branch, check that the fix is absent,
 reference solution in one copy, leave a no-fix control in another, and exercise the original
 verifier's local hooks (`RELAI_WORKSPACE`, `RELAI_LOGS`, `RELAI_PARAMS`). Use absolute paths for
 those hooks and separate logs per control. Run `verify.py` with trusted verifier imports and
-`-I -S -B`; **never run `tests/test.sh` on the host**, because its cleanup assumes a task container.
+`-I -S -B`; **never run `tests/test.sh` on the host**, because its cleanup stops every other process
+(it refuses when it can tell it is not in a task container, but do not rely on that).
 Exercise the evaluator-validity probe above where possible. Local preparation does
 not establish image build, dependency access, containment or Harbor health: leave those pending.
 

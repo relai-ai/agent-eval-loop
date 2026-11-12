@@ -85,7 +85,10 @@ choices in a useful batch at the start of
 the `eval` skill, and ask what only comes up later (mocks, prompts) together when it comes up:
 
 - How judges should run: a coding-agent subagent or an existing suitable provider integration.
-  Establish what leaves the environment and which authorization covers it. The example judge's
+  Establish what leaves the environment and which authorization covers it, and tell the user in
+  plain terms before the first API-judged trial: which provider receives the trajectories, and
+  that the example judge removes only declared secret values, not personal or customer data. Name
+  the judge model with the user; the example has no default. The example judge's
   implemented providers are listed in `relai/docs/files.md`; other APIs may use an adapted or
   project-native judge meeting the same output contract. The example hosted runner uses API
   judging; another integration must demonstrate its own execution and credential setup.

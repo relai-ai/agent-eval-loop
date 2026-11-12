@@ -10,6 +10,10 @@ from a hook (its PreToolUse supports only allow or deny), so there the edit goes
 agent is warned instead. check-edit runs the project's own checkers on the edited test or wiki
 page and passes any problems back to the agent.
 
+guard-frozen needs only the standard library of any Python 3; check-edit runs the checkers, which need
+Python 3.11+. On an older `python3`, check-edit says so once per project (it leaves a marker in
+relai/work/) instead of failing silently.
+
 Hooks are a convenience for hosts that support them. The guarantees they serve live in the
 project's relai/README.md and its checkers, which work without them. Both hooks do nothing
 outside a RELAI project, and fail open: an unexpected error never blocks the user's work.
@@ -164,6 +168,27 @@ def check_edit(event: dict, host: str) -> dict | None:
     return {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": context}}
 
 
+def old_python_notice(event: dict, host: str) -> dict | None:
+    """Once per RELAI project: the checkers cannot run on this python3, so say so rather than stay silent."""
+    for path in edited_paths(event):
+        relai_dir = relai_dir_of(path)
+        if not relai_dir:
+            continue
+        marker = relai_dir / "work" / ".hook-python-notice"
+        if marker.exists():
+            return None
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(f"{sys.executable} {sys.version.split()[0]}\n", encoding="utf-8")
+        found = ".".join(map(str, sys.version_info[:3]))
+        message = (f"RELAI: the hook's python3 is {found}, and the checkers need Python 3.11+, so edits under relai/ "
+                   "are not checked automatically (frozen tests are still guarded). Put Python 3.11+ first on PATH "
+                   "as python3, or run relai/bin's checkers yourself with a newer Python. This notice is shown once "
+                   "(delete relai/work/.hook-python-notice to see it again).")
+        return {"systemMessage": message,
+                "hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": message}}
+    return None
+
+
 HOOKS = {"guard-frozen": guard_frozen, "check-edit": check_edit}
 
 
@@ -176,10 +201,11 @@ def main() -> int:
     if len(args) != 1 or args[0] not in HOOKS:
         print(__doc__, file=sys.stderr)
         return 0
-    if sys.version_info < (3, 11):
-        return 0  # the checkers need Python 3.11+; stay silent rather than report a bogus failure
+    hook = HOOKS[args[0]]
+    if hook is check_edit and sys.version_info < (3, 11):
+        hook = old_python_notice  # the checkers need Python 3.11+; tell the user once instead of failing
     try:
-        output = HOOKS[args[0]](json.load(sys.stdin), host)
+        output = hook(json.load(sys.stdin), host)
     except Exception:  # fail open: a hook must never block work because of its own error
         return 0
     if output:

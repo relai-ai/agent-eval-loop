@@ -77,6 +77,7 @@ class JudgeTest(unittest.TestCase):
         self.ev = {"id": "explains", "type": "judge", "rubric": "tests/judge.md", "criterion": "c",
                    "min_score": 0.0, "max_score": 1.0}
         self.repo.write("relai/.env", "ANTHROPIC_API_KEY=sk-ant-test-0123456789abcdefghij\n")
+        self.repo.write("relai/relai.toml", '[judge]\nmodel = "synthetic"\n')
 
     def tearDown(self) -> None:
         self.repo.close()
@@ -90,6 +91,15 @@ class JudgeTest(unittest.TestCase):
         self.judge.post = post
         return calls
 
+    def test_a_missing_model_is_an_error_not_a_silent_default(self):
+        calls = self.fake({})
+        traj = trajectory([{"source": "user", "message": "hi"}, {"source": "agent", "message": "ok"}])
+        for config in ({}, {"provider": "openai"}):
+            with self.subTest(config=config), self.assertRaises(SystemExit) as raised:
+                self.judge.judge_one(config, self.repo.relai, self.task, self.ev, traj, {})
+            self.assertIn("there is no default", str(raised.exception))
+        self.assertEqual(calls, [])
+
     def test_anthropic_request_shape_and_valid_score(self):
         calls = self.fake({"stop_reason": "end_turn", "model": "claude-opus-5-5",
                            "content": [{"type": "thinking", "thinking": ""},
@@ -97,7 +107,7 @@ class JudgeTest(unittest.TestCase):
         traj = trajectory([{"source": "user", "message": "token sk-ant-test-0123456789abcdefghij"},
                            {"source": "agent", "message": "ok"}])
         secrets = {"ANTHROPIC_API_KEY": "sk-ant-test-0123456789abcdefghij"}
-        result = self.judge.judge_one({}, self.repo.relai, self.task, self.ev, traj, secrets)
+        result = self.judge.judge_one({"model": "claude-opus-5-5"}, self.repo.relai, self.task, self.ev, traj, secrets)
         self.assertEqual(result["score"], 0.5)
         url, headers, body = calls[0]
         self.assertIn("anthropic.com", url)
@@ -110,9 +120,9 @@ class JudgeTest(unittest.TestCase):
 
     def test_out_of_bounds_score_and_refusal_are_errors(self):
         self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 3, "feedback": "x"}'}]})
-        self.assertIn("outside", self.judge.judge_one({}, self.repo.relai, self.task, self.ev, trajectory([]), {})["error"])
+        self.assertIn("outside", self.judge.judge_one({"model": "synthetic"}, self.repo.relai, self.task, self.ev, trajectory([]), {})["error"])
         self.fake({"stop_reason": "refusal", "content": []})
-        self.assertIn("declined", self.judge.judge_one({}, self.repo.relai, self.task, self.ev, trajectory([]), {})["error"])
+        self.assertIn("declined", self.judge.judge_one({"model": "synthetic"}, self.repo.relai, self.task, self.ev, trajectory([]), {})["error"])
 
     def test_invalid_verdicts_retain_usage_and_retry_history(self):
         run = self.repo.relai / "work/runs/synthetic"
@@ -344,6 +354,11 @@ class OutboundRedactionTest(unittest.TestCase):
             model = "synthetic"
             base_url = "https://offline.invalid/v1"
             api_key_env = "AUDIT_PROVIDER_KEY"
+            [triage]
+            provider = "openai-compatible"
+            model = "synthetic"
+            base_url = "https://offline.invalid/v1"
+            api_key_env = "AUDIT_PROVIDER_KEY"
         ''')
         # Exercise the transport's HTTP-body diagnostic, then its real callers and writers.
         self.judge = load("judge")
@@ -458,6 +473,37 @@ class TriageTest(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.repo.close()
+
+    def test_triage_needs_its_own_model_and_never_falls_back_to_the_judge(self):
+        self.repo.write("relai/relai.toml", '[judge]\nprovider = "anthropic"\nmodel = "capable"\n')
+        triage = load("triage")
+        with self.assertRaises(SystemExit) as raised:
+            triage.model_config(self.repo.relai)
+        self.assertIn("[triage]", str(raised.exception))
+        self.assertIn("does not fall back to [judge]", str(raised.exception))
+
+    def test_a_run_larger_than_the_pilot_needs_yes_and_makes_no_call_without_it(self):
+        self.repo.write("relai/relai.toml", '[triage]\nprovider = "openrouter"\nmodel = "cheap"\n')
+        rows = [json.dumps({"id": f"t{i}", "trace": "hello"}) for i in range(25)]
+        self.repo.write("traces.jsonl", "\n".join(rows) + "\n")
+        triage = load("triage")
+        triage.judge = load("judge")
+        args = SimpleNamespace(input=str(self.repo.root / "traces.jsonl"), ingest="gate", limit=0,
+                               concurrency=1, max_chars=1000, context_file=None, yes=False)
+        stderr = io.StringIO()
+        with patch.object(triage.judge, "call_model_full", side_effect=AssertionError("no call without --yes")), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(stderr):
+            self.assertEqual(triage.cmd_run(args, self.repo.relai), 2)
+        self.assertIn("--yes", stderr.getvalue())
+        self.assertIn("--limit 20", stderr.getvalue())
+        args.limit = 20  # the pilot runs without --yes
+        with patch.object(triage.judge, "call_model_full", return_value=({"outcome": "success"}, "cheap", {})), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(triage.cmd_run(args, self.repo.relai), 0)
+        args.limit, args.yes = 0, True
+        with patch.object(triage.judge, "call_model_full", return_value=({"outcome": "success"}, "cheap", {})), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(triage.cmd_run(args, self.repo.relai), 0)
 
     def test_all_errors_in_first_batch_report_and_retry_without_a_verdict_file(self):
         self.repo.write("relai/relai.toml", '[triage]\nprovider = "openrouter"\nmodel = "cheap"\n')
