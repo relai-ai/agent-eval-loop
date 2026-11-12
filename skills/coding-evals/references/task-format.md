@@ -12,7 +12,7 @@ update an existing task, and frozen copies follow controlled repair.
 relai/tests/<id>/
 ├── task.toml            # [agent].timeout_sec, [verifier].timeout_sec, [metadata.relai] with agent_neutral = true and [metadata.relai.coding]
 ├── instruction.md       # the developer's request (redacted)
-├── README.md            # source, behavior, evaluators, known failures, contamination, network, agent instruction files at the start, health
+├── README.md            # "Evidence" (source, request origin, behavior, evaluators, known failures, contamination, network, agent instruction files at the start, validation and health) and "Author notes" (design reasoning, validity risks)
 ├── environment/
 │   ├── Dockerfile       # authorized base image, toolchain, the repository at the start commit, the leak guard
 │   └── repo.bundle      # the start commit and its ancestors only
@@ -43,7 +43,8 @@ relai/tests/<id>/
    lockfile, and the leak guard `RUN ! git -C /app cat-file -e <fix commit>`. Never install a
    later release of the project itself.
 4. **Request.** `instruction.md`: the developer's words, redacted, with no file names, diagnosis
-   or approach they did not give.
+   or approach they did not give; or, when they left none, a symptom written from the source
+   (`request = "symptom"`, [sources](sources.md)).
 5. **Reference fix.** `git diff <start> <fix>` over the source files, without the test files that
    become hidden tests, applied by `solution/solve.sh`.
 6. **Hidden tests.** The fix's added or changed tests in `tests/hidden/`, mapped in
@@ -118,10 +119,15 @@ from before later edits or test-generated files as validation of the final artif
 
 ## The network and web tools
 
-The network is open by default, as in real use. A task whose fix can be found online (a public
-repository, a published release of the project that contains the fix) can be gamed by fetching
-it: offer to restrict such tasks, record the user's choice in the task's README, and say in the
-report which tasks ran open. To restrict, set `[agent] network_mode = "no-network"`, or
+A task whose fix can be found online (a public repository, a published release of the project
+that contains the fix) can be gamed by fetching it, and reading trajectories catches only some of
+that, so such tasks run restricted by default; the rest run open, as in real use, since a
+container cannot reach a private fix. State the default once per project at the scope checkpoint
+rather than asking; the user may choose open, for a project or a task. Record the setting in each
+task's README and say in the report which tasks ran open. Dependencies are already installed in
+the image, so restricting rarely breaks a task; the agent-environment
+[validation](#validation), run with the task's network setting, shows it. `check_task.py` flags
+only `public = true` with an open network; a fix in a published release is yours to spot. To restrict, set `[agent] network_mode = "no-network"`, or
 `"allowlist"` with `allowed_hosts` for a dependency mirror; Harbor lets an installed agent reach
 its model host (the [Harbor notes](../../eval/references/harbor-notes.md)). Server-side web tools
 run at the model provider, past any network limit; restricting the network also switches them off

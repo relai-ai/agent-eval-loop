@@ -58,7 +58,7 @@ Open an eval project and ask:
 
 ```text
 Use RELAI's coding-evals skill to mine my repo at {path-to-repo} for tasks
-from the last six months, then compare the coding agents I have available
+from the last six months, then measure how our coding agent does on them
 ```
 
 You can start at any skill without completing the full workflow.
@@ -172,7 +172,7 @@ Plugin updates do not replace existing project files in `relai/` or frozen tasks
 | **`eval`** | Builds evals from traces, generates them from the wiki's risks or brings in an existing benchmark. Evals use Harbor tasks or suitable project-native equivalents, graded by code checks and LLM judges, then reviewed and frozen. | Which evals to build; whether the graders score the way you would. |
 | **`improve`** | Runs the agent against the evals and compares scoped changes against the recorded baseline for an agreed behavioral, cost or latency objective. | The objective, what may change and the budget. |
 | **`loop`** | Repeats discover → eval → improve when new traces, answers or tests arrive. | The goal, scope, budget and limits; then real ambiguity or safety calls. |
-| **`coding-evals`** | Mines coding sessions, pull requests and git history for tasks any coding agent can run, then compares agents and setups on them. | Which agents and repositories; which tasks to build; whether the checks score the way you would. |
+| **`coding-evals`** | Mines coding sessions, pull requests and git history for tasks any coding agent can run, measures the team's agent on them and, when asked, compares changes, setups or other agents. | Which repositories; which tasks to build; whether the checks score the way you would; what to compare, if anything. |
 
 When RELAI-managed state is useful, `relai/STATUS.md` shows the current request, relevant progress, what is waiting on you and the recommended next step.
 

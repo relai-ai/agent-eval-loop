@@ -250,9 +250,12 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
     timeout = agent.get("timeout_sec")
     if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
         report.error("[agent].timeout_sec is missing: Harbor has no default, so an agent that never stops runs forever")
+    if coding.get("request") not in ("verbatim", "symptom"):
+        report.note('[metadata.relai.coding].request should say where instruction.md came from: "verbatim" (the '
+                    'developer\'s words) or "symptom" (written from the source); the reviewer checks them differently')
     if coding.get("public") is True and agent.get("network_mode") in (None, "public"):
-        report.note("the fix is public and the agent's network is open, so an agent could fetch it; fine if the "
-                    "user chose an open network (record it in the README), otherwise restrict [agent].network_mode")
+        report.note("the fix is public and the agent's network is open, so an agent could fetch it; the default "
+                    "is to restrict [agent].network_mode, fine if the user chose open (record it in the README)")
     if not (task / "solution" / "solve.sh").is_file():
         report.error("solution/solve.sh is missing: the reference fix that shows the task can be solved")
 
