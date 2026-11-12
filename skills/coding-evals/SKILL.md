@@ -14,8 +14,9 @@ Here the agent under test is the coding agent the team uses, which Harbor instal
 version and setup the team uses. Often there is one such agent, and the first question is how it
 does on the team's work; that run is the baseline. A later question may be whether a change helps:
 a new model or version, an edit to its instruction files, a skill or hook. Comparing changes or
-other agents is optional; never assume it. The **eval project** holds `relai/`: by default this
-repository ([scope](references/scope.md), *The repository*). Task source can come from this or
+other agents is optional; never assume it. The **eval project** holds `relai/`: the source
+repository or a separate one, chosen from the situation ([scope](references/scope.md), *The
+repository*). Task source can come from this or
 other scoped repositories, and reaches each task's workspace only up to its starting commit.
 
 Goal: tasks from the team's real work that any coding agent can run, that a correct fix passes

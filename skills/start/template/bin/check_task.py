@@ -205,8 +205,29 @@ SHA_RE = re.compile(r"^[0-9a-f]{7,64}$")
 LEAK_MIN_BYTES = 20  # smaller files (an empty __init__.py) match by chance
 
 
-def bundle_contents(bundle: Path, commits: list[str]) -> tuple[list[str], list[str]]:
-    """(present, heads): which of these commits a clone of the bundle contains, and the bundle's heads."""
+BUNDLE_NOTE_BYTES = 100 * 1024 * 1024  # adjustable: when a task's history is worth a look at the eval project's size
+
+
+def nested_eval_state(clone: Path, head: str) -> tuple[list[str], list[str]]:
+    """(eval dirs, bundles) in the head's tree: RELAI state and git bundles the workspace would carry."""
+    listed = subprocess.run(["git", "-C", str(clone), "ls-tree", "-r", "--name-only", head],
+                            capture_output=True, text=True)
+    paths = listed.stdout.splitlines()
+    eval_dirs = []
+    for path in paths:
+        if path == "README.md" or path.endswith("/README.md"):
+            parent = path[: -len("README.md")]
+            if f"{parent}bin/check_task.py" in paths:
+                text = subprocess.run(["git", "-C", str(clone), "cat-file", "-p", f"{head}:{path}"],
+                                      capture_output=True, text=True).stdout
+                if text.lstrip().startswith("<!-- relai"):
+                    eval_dirs.append(parent.rstrip("/") or ".")
+    return eval_dirs, [p for p in paths if p.endswith(".bundle")]
+
+
+def bundle_contents(bundle: Path, commits: list[str]) -> tuple[list[str], list[str], list[str], list[str]]:
+    """(present, heads, eval dirs, bundles): which of these commits a clone of the bundle contains, its heads,
+    and any RELAI state or git bundles in the heads' trees."""
     listed = subprocess.run(["git", "bundle", "list-heads", str(bundle)], capture_output=True, text=True)
     heads = [line.split()[0] for line in listed.stdout.splitlines() if line.strip()]
     with tempfile.TemporaryDirectory(prefix="relai-bundle-check-") as tmp:
@@ -216,7 +237,12 @@ def bundle_contents(bundle: Path, commits: list[str]) -> tuple[list[str], list[s
             raise ValueError(f"cannot clone the bundle: {ran.stderr.strip()[-300:]}")
         present = [c for c in commits if subprocess.run(
             ["git", "-C", str(clone), "cat-file", "-e", f"{c}^{{commit}}"], capture_output=True).returncode == 0]
-    return present, heads
+        eval_dirs, bundles = [], []
+        for head in heads:
+            found = nested_eval_state(clone, head)
+            eval_dirs += [d for d in found[0] if d not in eval_dirs]
+            bundles += [b for b in found[1] if b not in bundles]
+    return present, heads, eval_dirs, bundles
 
 
 def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> None:
@@ -343,10 +369,20 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
             report.note(f"git is not on PATH, so {bundle.name} was not checked for the fix commit")
             continue
         try:
-            present, heads = bundle_contents(bundle, [fix] if fix else [])
+            present, heads, eval_dirs, nested = bundle_contents(bundle, [fix] if fix else [])
         except ValueError as exc:
             report.error(f"{bundle.name}: {exc}")
             continue
+        if eval_dirs:
+            report.error(f"{bundle.name}'s start commit holds RELAI state ({', '.join(eval_dirs)}): the workspace "
+                         "would carry other tasks' hidden tests, reference fixes and setups; start before that "
+                         "state was committed, or keep the eval project in another repository or folder")
+        elif nested:
+            report.note(f"{bundle.name}'s start commit holds git bundles ({', '.join(nested[:3])}): each task "
+                        "built later carries them again; check they are not other tasks' history")
+        if bundle.stat().st_size > BUNDLE_NOTE_BYTES:
+            report.note(f"{bundle.name} is {bundle.stat().st_size // (1024 * 1024)} MB and every task from this "
+                        "repository carries a similar copy; see the coding-evals skill on where tasks live")
         if present:
             report.error(f"{bundle.name} contains the fix commit {fix[:10]}: the agent could read the answer from history")
         if isinstance(start, str) and not any(h.startswith(start) for h in heads):  # heads are full ids

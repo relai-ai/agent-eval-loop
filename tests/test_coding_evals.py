@@ -82,6 +82,7 @@ agent_neutral = true
 [metadata.relai.coding]
 source = "history"
 origin = "commit {fix_short}"
+request = "symptom"
 repo = "calc"
 start_commit = "{start}"
 fix_commit = "{fix}"
@@ -260,6 +261,21 @@ class CodingEvalsTest(unittest.TestCase):
         for expected in ("is a copy of tests/hidden/test_mean.py", "contains the fix commit", "leak guard",
                          "shares the agent's container", "could fetch it", "solution/solve.sh is missing"):
             self.assertIn(expected, out)
+
+    def test_a_start_commit_holding_the_eval_project_is_an_error(self):
+        # the eval project lives in the source repository, and a later task starts after relai/ was committed
+        repo = self.src["repo"]
+        (repo / "relai" / "bin").mkdir(parents=True)
+        (repo / "relai" / "README.md").write_text("<!-- relai project contract -->\n# RELAI\n")
+        (repo / "relai" / "bin" / "check_task.py").write_text("# checker\n")
+        (repo / "relai" / "tests" / "old" / "environment").mkdir(parents=True)
+        (repo / "relai" / "tests" / "old" / "environment" / "repo.bundle").write_bytes(b"bundle")
+        sh(repo, "git", "add", "-A")
+        sh(repo, "git", "commit", "-qm", "Add evals")
+        self.src = {**self.src, "start": sh(repo, "git", "rev-parse", "HEAD")}
+        task = fill_task(self.project, self.src, self.bundle())
+        out = self.check(task).stdout
+        self.assertIn("holds RELAI state (relai)", out)
 
     def test_protect_refuses_hidden_tests_outside_the_protected_area(self):
         task = fill_task(self.project, self.src, self.bundle())

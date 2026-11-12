@@ -2,13 +2,24 @@
 
 ## The repository
 
-By default `relai/` in the repository the tasks come from, as with other evals, set up with the
-[start skill](../../start/SKILL.md). There, keep `relai/tests/` out of the repository's own test
-collection and CI (hidden tests are copies of its tests). Each task commits a `repo.bundle` of
-the history up to its start, and the freeze digest covers it, so measure one before proposing
-many. Recommend a separate repository (private when tasks hold private code) when tasks come
-from several repositories, task code must not sit beside product code, or the bundles would make
-this one heavy. It needs no
+`relai/` in the repository the tasks come from, or in a separate repository or a folder outside
+the source repository, set up
+with the [start skill](../../start/SKILL.md). Neither is the default; choose from what you found:
+
+- **The source repository** suits tasks from it alone, with modest history, owned with the code.
+  Keep `relai/tests/` out of its own test collection and CI (hidden tests are copies of its
+  tests). Tasks must start before `relai/` was committed, or the workspace would carry other
+  tasks' hidden tests, fixes and bundles (`check_task.py` refuses such a bundle); fresh tasks from
+  recent work then need a separate place.
+- **A separate repository or outside folder** suits tasks from several repositories, an eval set owned or
+  shared apart from the code, tasks that must stay away from the agents and CI working on the
+  product, a public product repository with private task code, or history too large to repeat
+  in it. Make it private when tasks hold private code.
+
+Each task carries the history up to its start ([task-format](task-format.md), step 2), so size
+one bundle before proposing many. When the facts point one way, state the choice and why in a
+line with the findings; when they do not, or the choice matters, ask at the scope checkpoint
+with a recommendation. It needs no
 application-agent harness: Harbor installs supported coding agents. A custom coding agent needs
 a suitable installer/adapter that executes the real agent and preserves the task/result contract;
 inspect existing support before proposing new integration work. A team's setups (instruction

@@ -34,7 +34,13 @@ relai/tests/<id>/
    empty bare repository as `refs/heads/main`, then bundle that explicit ref. Clone with
    `git clone -b main <bundle> /app` rather than relying on the bare repository's default HEAD.
    Resolve source and bundle paths from the stated build context; never change the source
-   repository. A large public repository can be fetched in the Dockerfile instead.
+   repository. The full history up to the start is what agents see in real use, so do not
+   shorten it to save space without the user's agreement, recorded as a measurement choice.
+   Every task repeats a similar copy: check one bundle's size and multiply by the planned tasks
+   before building many. When that is too much for where tasks live, a large public repository
+   can be fetched in the Dockerfile at the start commit instead, or the tasks can live in a
+   separate repository ([scope](scope.md), *The repository*). The start commit must not hold the
+   eval project itself (`relai/`), which `check_task.py` refuses.
 3. **Dockerfile.** An authorized base image pinned by tag or digest (public for the bundled hosted
    recipe; local/private infrastructure is allowed by the shared contract). Digest pinning is
    optional when a tag meets the reproducibility requirement. Use the toolchain the start
