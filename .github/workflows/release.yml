@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'New version (X.Y.Z); leave blank for the next patch'
+        description: 'Version (X.Y.Z); first release may use the manifest version; blank for next patch'
         required: false
         type: string
       prerelease:
         description: Mark the GitHub release as early access
         type: boolean
-        default: true
+        default: false
       project_copy_notes:
         description: 'Migration steps for project copies, if any (included in release notes)'
         required: false
