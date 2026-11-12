@@ -2,30 +2,25 @@
 
 from __future__ import annotations
 
-import json
+import importlib.util
 import re
-import tomllib
 import unittest
 from urllib.parse import unquote, urlsplit
 
 from helpers import EXAMPLES, PLUGIN, TEMPLATE
 
-MANIFESTS = ["plugin.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]
+spec = importlib.util.spec_from_file_location("relai_release", PLUGIN / "scripts/release.py")
+release = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(release)
 
 
 def guidance():
-    return sorted([*PLUGIN.glob("skills/**/*.md"), PLUGIN / "README.md", PLUGIN / "DESIGN.md"])
+    return sorted([*PLUGIN.glob("skills/**/*.md"), *PLUGIN.glob("*.md")])
 
 
 class PluginTest(unittest.TestCase):
     def test_versions_agree(self):
-        versions = {name: json.loads((PLUGIN / name).read_text())["version"] for name in MANIFESTS}
-        market = json.loads((PLUGIN / ".claude-plugin/marketplace.json").read_text())
-        versions["marketplace"] = market["plugins"][0]["version"]
-        header = re.match(r"<!-- relai (\S+) -->", (TEMPLATE / "README.md").read_text())
-        versions["template README"] = header and header.group(1)
-        versions["pyproject"] = tomllib.loads((PLUGIN / "pyproject.toml").read_text())["project"]["version"]
-        self.assertEqual(len(set(versions.values())), 1, versions)
+        release.check(PLUGIN)
 
     def test_referenced_files_exist(self):
         missing = []

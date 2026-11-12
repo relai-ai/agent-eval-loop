@@ -24,6 +24,8 @@ plugin alone does not patch those copies. When applying a fix, review local modi
 and revalidate the affected guarantees. Updating a verifier inside a frozen task changes
 measurement identity and requires the controlled repair process described in the
 [project contract](skills/start/template/README.md).
+Follow the [project-copy upgrade policy](skills/start/template/docs/upgrades.md) when applying
+fixes to those files; see the [README](README.md#updating) for installed plugin updates.
 
 ## Security boundaries
 

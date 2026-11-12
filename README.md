@@ -127,9 +127,29 @@ cp -R ~/agent-eval-loop/skills/* .agents/skills/
 Other project directories: `.cursor/skills/` (Cursor), `.windsurf/skills/` (Windsurf),
 `.opencode/skills/` (OpenCode), `.github/skills/` (GitHub Copilot), `.kiro/skills/` (Kiro).
 Copy each skill's whole folder, including the files next to `SKILL.md`, then reload your agent.
-To update a manual install, run `git -C ~/agent-eval-loop pull` and copy the skills again.
 
 </details>
+
+## Updating
+
+Update using the same method and scope you installed with, then start a new session.
+Read [release notes](https://github.com/relai-ai/agent-eval-loop/releases) for migration steps.
+
+| Installation | Update |
+| --- | --- |
+| Skills CLI | Run `npx skills update`; keep all seven RELAI skills together. |
+| Claude Code plugin | Enable auto-update for **agent-eval-loop** in the plugin manager's Marketplaces tab (off by default), or run `claude plugin marketplace update agent-eval-loop`. |
+| Codex plugin | Run `codex plugin marketplace upgrade agent-eval-loop` and verify the installed version; use the plugin manager's install controls if it remains stale. |
+| Manual copy | Run `git -C ~/agent-eval-loop pull`, then copy the complete skill folders again, preserving local edits. |
+
+The Skills CLI and manual copies need explicit updates. Native refresh policies are described
+in the [Claude Code](https://code.claude.com/docs/en/plugins/install#keep-plugins-updated) and
+[Codex](https://developers.openai.com/plugins/build/plugins) docs; commands were checked with
+Claude Code 2.1.284 and Codex CLI 0.160.0 on 2026-11-11. Internal installs need repository read
+access. `main` can contain unreleased changes; pin a tag where supported for a fixed release.
+
+Plugin updates do not replace existing project files in `relai/` or frozen tasks. Use the
+[project-copy policy](skills/start/template/docs/upgrades.md) to preserve adaptations and evidence.
 
 ## Why RELAI
 
