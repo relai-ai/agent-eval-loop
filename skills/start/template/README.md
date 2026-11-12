@@ -141,7 +141,7 @@ summary exports. Python 3.11+, standard library; Harbor-based checks use `[harbo
 | --- | --- |
 | `python3 relai/bin/check_task.py relai/tests/<id> [--cloud] [--verifier [--fixture DIR]]` | After writing or changing a test. `--cloud` additionally checks the bundled hosted-builder recipe; local checks do not require anonymous public images. `--verifier` (Harbor only) runs the verifier in the local container engine on a synthetic normal and empty-reply trajectory; `--fixture DIR` adds files to `/logs/agent` |
 | `python3 relai/bin/check_trajectory.py <trajectory.json> [--turns N]` | On a trajectory from a trial |
-| `python3 relai/bin/check_wiki.py` | After changing the wiki or a test's `covers` |
+| `python3 relai/bin/check_wiki.py` | After changing the wiki or a test's `covers`; checks managed attachment JSON syntax, not factual fidelity |
 | `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | After a run; concise by default, `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`) and descriptive `noise`/`se` |
 | `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run |
 | `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer |
