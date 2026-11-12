@@ -40,7 +40,10 @@ the repository and its test setup.
 
 Make material restrictions available in the task request without revealing the answer. Protecting
 existing tests while allowing new tests is a policy choice, not an inherent definition of a correct
-fix. Confirm that constraints allow legitimate solutions; changing the policy later changes the
+fix. When the repository asks contributors to extend existing test files (its instruction files
+or contributing docs say so), protecting them scores the expected change against the agent: put
+the existing test files in `restore` instead, and install the hidden tests at a new protected
+path no existing file uses (such as `tests/relai-hidden/`). Confirm that constraints allow legitimate solutions; changing the policy later changes the
 evaluation and follows the freeze rule.
 
 ## What the verifier guards against
@@ -49,7 +52,9 @@ The library's docstring says what it trusts and what it cannot stop. In two roun
 added `conftest.py`, pytest options in `pyproject.toml`, a symlinked `tests/`, a stale `.pyc`, a
 hostile git config, a planted score file and a leftover process each defeated an earlier version;
 the defenses hold only for files the task lists, so list them. It is not a sandbox against an agent built to defeat its verifier; where the image
-allows, run the agent as a non-root user (`[agent].user`).
+allows, run the agent as a non-root user (`[agent].user`), and then set `[verifier] user = "root"`:
+Harbor does not fall back to root, and a non-root verifier records no reward (`check_task.py`
+checks it).
 
 `params.json` keys are in `relai/docs/files.md`; expected values live there, never in code.
 
@@ -65,8 +70,8 @@ missing exact check), adapt a copy:
 - Keep its guarantees: trust only what arrives with `tests/`; compute the diff without the agent's
   git configuration; put protected and restored files back before any command runs; take the
   hidden tests out before the suite; score a hang or a command that cannot run as 0; write the
-  score files, `diff.patch` and `facts.json`. `test.sh` keeps stopping leftover processes,
-  clearing `/logs/verifier` and running `verify.py` isolated, which `check_task.py` checks.
+  score files, `diff.patch` and `facts.json`. `test.sh` keeps stopping leftover processes
+  (sparing the container's keep-alive, the Harbor notes), clearing `/logs/verifier` and running `verify.py` isolated, which `check_task.py` checks.
 - Rerun the plugin's verifier tests (`tests/test_coding_evals.py`, which replay the known
   attacks) against the adapted copy, and fix what fails before using it.
 - Every task in a comparison carries the same copy. Changing a frozen task's copy goes through

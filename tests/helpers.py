@@ -124,14 +124,14 @@ def trajectory(steps: list[dict], **extra) -> dict:
 
 def harbor_trial(job: Path, name: str, task_dir: Path, rewards: dict | None, checksum: str = "c1",
                  exception: str | None = None, feedback: dict | None = None, judges: dict | None = None,
-                 with_trajectory: bool = True) -> Path:
+                 with_trajectory: bool = True, usage: dict | None = None) -> Path:
     trial = job / name
     (trial / "agent").mkdir(parents=True)
     (trial / "verifier").mkdir()
     result = {"trial_name": name, "task_name": task_dir.name, "task_id": {"path": str(task_dir)},
               "task_checksum": checksum, "verifier_result": {"rewards": rewards} if rewards is not None else None,
               "exception_info": {"exception_type": exception} if exception else None,
-              "agent_result": {"n_input_tokens": 100, "n_output_tokens": 10, "cost_usd": 0.01}}
+              "agent_result": usage if usage is not None else {"n_input_tokens": 100, "n_output_tokens": 10, "cost_usd": 0.01}}
     (trial / "result.json").write_text(json.dumps(result))
     if with_trajectory:
         (trial / "agent" / "trajectory.json").write_text(json.dumps(trajectory([

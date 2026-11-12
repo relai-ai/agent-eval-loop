@@ -39,7 +39,9 @@ carry it, under the freeze rule; new tasks pick it up.
   works with on it, or the agent it builds; the second may belong to the
   [eval skill](../../eval/SKILL.md) (below). The answer changes every task's purpose.
 - **The agent in use** and its setup (instruction files, skills, configuration) from the team's
-  repositories; its model and installed version before the first paid run.
+  repositories; its model and version before the first paid run. Check that the version supports
+  the model, since an older release may not know a newer model; when the installed one is too old
+  or none is installed, propose the agent's current stable release. Record the version run.
 - **How it authenticates**, before the first paid run (building calls no model): a subscription
   login or an API key. Harbor accepts both for some agents (the
   [Harbor notes](../../eval/references/harbor-notes.md)).

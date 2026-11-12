@@ -262,6 +262,22 @@ class CodingEvalsTest(unittest.TestCase):
                          "shares the agent's container", "could fetch it", "solution/solve.sh is missing"):
             self.assertIn(expected, out)
 
+    def test_a_non_root_agent_needs_a_root_verifier(self):
+        task = fill_task(self.project, self.src, self.bundle())
+        base = (task / "task.toml").read_text()
+        docker = (task / "environment" / "Dockerfile").read_text()
+        for toml, dockerfile in ((base.replace("[agent]\n", '[agent]\nuser = "dev"\n'), docker),
+                                 (base, docker + "USER dev\n")):
+            (task / "task.toml").write_text(toml)
+            (task / "environment" / "Dockerfile").write_text(dockerfile)
+            ran = self.check(task)
+            self.assertIn('[verifier] user = "root"', ran.stdout)
+            (task / "task.toml").write_text(toml.replace("[verifier]\n", '[verifier]\nuser = "root"\n'))
+            ran = self.check(task)
+            self.assertNotIn('[verifier] user = "root"', ran.stdout)
+            self.assertEqual(ran.returncode, 0, ran.stdout)
+        (task / "environment" / "Dockerfile").write_text(docker)
+
     def test_a_start_commit_holding_the_eval_project_is_an_error(self):
         # the eval project lives in the source repository, and a later task starts after relai/ was committed
         repo = self.src["repo"]

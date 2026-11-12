@@ -27,6 +27,11 @@ a note against that release before relying on it, and update this file.
 - **Installed agents get their model host through the network limit.** With
   `[agent] network_mode = "no-network"` or `"allowlist"`, Harbor adds the installed agent's
   inference host to the allowlist; an explicit `--allow-agent-host` list replaces that inference.
+  When Harbor cannot tell the host it only logs a warning and adds none, so the agent cannot
+  reach its model; Claude Code signed in with a subscription token is one such case. Then pass
+  the host yourself (`--allow-agent-host api.anthropic.com` for that one). On `-e docker` a
+  restricted network also builds Harbor's egress-control sidecar image, which needs the engine's
+  image builder (`docker buildx` on a Docker CLI); check it before the first restricted run.
   An environment that cannot change its network policy after start refuses a run whose setup or
   verifier policy is broader than the agent's.
 - **A network limit also switches off web tools.** Server-side web tools (search or fetch at the
@@ -42,6 +47,14 @@ a note against that release before relying on it, and update this file.
 - **An installed agent's release is a kwarg.** Pass `--ak version=<release>`; without it Harbor
   installs whatever is newest, so runs on different days compare different agents.
   `[agent].user` runs the agent as that user instead of the image's default (often root).
+- **The verifier runs as `[verifier].user`, or the image's default user when unset.** It does not
+  fall back to root: with a non-root agent (`[agent].user`, or a final `USER` in the Dockerfile),
+  a verifier that must stop processes or write `/logs/verifier` needs `[verifier] user = "root"`,
+  or it records no reward.
+- **The container's keep-alive can be a child of PID 1.** Harbor's compose command is
+  `sh -c "sleep infinity"`, and a shell that does not exec its last command (Debian's `dash`)
+  leaves `sleep` as PID 1's child; the container stops when it dies. A verifier that stops
+  leftover processes must spare it, as the coding-evals `test.sh` does.
 - **`.harborignore` hides grader inputs.** Files it matches under `tests/` or `solution/` are
   left out of the upload and of the task checksum, so a grader can run without them and two
   different test trees can hash the same. `check_task.py` rejects it.

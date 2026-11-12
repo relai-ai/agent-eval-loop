@@ -41,6 +41,11 @@ relai/tests/<id>/
    can be fetched in the Dockerfile at the start commit instead, or the tasks can live in a
    separate repository ([scope](scope.md), *The repository*). The start commit must not hold the
    eval project itself (`relai/`), which `check_task.py` refuses.
+   A shallow bundle does not clone. When the user agrees to a shorter history, fetch the start
+   commit at depth N and rewrite the cut-off commit into a parentless root with fixed author,
+   committer, dates and message, so every build yields the same commits; bundle that or do it in
+   the Dockerfile. The rewritten start is the task's `start_commit`: assert it as HEAD in the
+   Dockerfile, keep the leak guard, and record N and the rewrite in the README.
 3. **Dockerfile.** An authorized base image pinned by tag or digest (public for the bundled hosted
    recipe; local/private infrastructure is allowed by the shared contract). Digest pinning is
    optional when a tag meets the reproducibility requirement. Use the toolchain the start
@@ -60,7 +65,10 @@ relai/tests/<id>/
 7. **Suite.** `suite.command` runs the repository's tests, deselecting those that already fail at
    the start (list them in the README). Add `build.command` when the project has a build or type
    check. Commands call the test runner directly, not a script the agent can edit unless that
-   script is protected.
+   script is protected. Time the suite on the first task: it runs in every trial and health
+   run, so cost grows with its runtime. When it is slow, offer the runner's own selection of
+   tests related to the changed files (`vitest related`, `jest --findRelatedTests`) as the user's
+   choice, stating its limit (a regression outside the selection goes unseen), and record it.
 8. **Globs and the snapshot.** `protected`: the existing tests and CI files; hidden test paths
    fall inside. `scope.allowed`: where any correct fix may go, generously. Then run
    `coding_checks.py protect` (its docstring).

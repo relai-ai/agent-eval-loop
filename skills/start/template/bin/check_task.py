@@ -245,6 +245,10 @@ def bundle_contents(bundle: Path, commits: list[str]) -> tuple[list[str], list[s
     return present, heads, eval_dirs, bundles
 
 
+def is_root(user) -> bool:
+    return str(user).split(":")[0] in ("root", "0")
+
+
 def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> None:
     """An agent-neutral coding task: any coding agent can run it, and nothing it can see gives the answer away."""
     meta = config.get("metadata", {}).get("relai", {}) or {}
@@ -303,6 +307,19 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
             if not any(op == "RUN" and guard.search(" ".join(args)) for op, args in instructions):
                 report.error(f"environment/Dockerfile needs the leak guard `RUN ! git -C {workspace} cat-file -e {fix}`, "
                              "so the image fails to build if the real fix is in the workspace")
+        users = [args[0] for op, args in instructions if op == "USER" and args]
+        image_user = users[-1] if users else None
+    else:
+        image_user = None
+    # The verifier stops leftover processes, puts protected files back and writes /logs/verifier, so it needs
+    # root; unset, Harbor runs it as the image's default user, and a non-root verifier quietly records no reward.
+    verifier_user = (config.get("verifier") or {}).get("user")
+    effective = verifier_user if verifier_user is not None else image_user
+    if (effective is not None and not is_root(effective)) or (verifier_user is None and agent.get("user") is not None
+                                                              and not is_root(agent.get("user"))):
+        report.error('set [verifier] user = "root": the agent runs as a non-root user, and the verifier must stop '
+                     "its processes, put protected files back and write /logs/verifier; Harbor runs an unset "
+                     "verifier user as the image's default user, and a non-root verifier records no reward")
 
     tests_dir = task / "tests"
     try:

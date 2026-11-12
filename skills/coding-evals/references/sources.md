@@ -40,6 +40,15 @@ work and areas. Read each diff before proposing it: its tests must check behavio
 about, and a request must be writable as a symptom ("exporting an empty report crashes"), never
 the change; a request taken from a linked issue is verbatim, one you write is `symptom`.
 
+## Read the fix's tests before proposing a task
+
+Before the task list goes to the user, read each candidate's added or changed tests against its
+request for what only one implementation passes: helpers, exports or names the fix introduced;
+exact commands, messages or strings the request does not fix; a fix location the request leaves
+open; and assertions that contradict the request. Show each finding with the task, and whether
+rewriting the tests through a public interface ([task-format](task-format.md), step 6) settles
+it or the task should be replaced, so the user approves the list knowing.
+
 ## Many sessions at once
 
 Triage them as the discover skill's [trace triage](../../discover/references/trace-triage.md) does: sessions the developer

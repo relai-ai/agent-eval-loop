@@ -3,7 +3,8 @@
 ## Before any paid run
 
 Every task is frozen and healthy. Measure one trial per version run (its cost, or with a
-subscription its plan usage and time), then follow "Cost before spend" in `relai/README.md`.
+subscription its plan usage and time); it also shows that the agent installs, reaches its model
+and does work, so a trial with no model calls is fixed before any larger run. Then follow "Cost before spend" in `relai/README.md`.
 Choose attempts for the decision, observed variability and budget; coding agents can vary between
 runs. Reuse deterministic work only when it preserves the uncertainty being measured.
 
@@ -89,7 +90,13 @@ is a task error, not permission to ignore those files.
 
 The task request, grading logic, checks and all unrelated `tests/` content stay identical; only
 the setup declaration/manifest and its snapshot differ as intended. A bare variant installs no
-setup. Check these differences before comparing, run the same agent and attempts, and compare
+setup; when the start commit already holds guidance, the variant also removes it from the
+workspace and from every commit in its history (rewritten as in [task-format](task-format.md)
+step 2, its new start recorded), since the agent can read it from git. Before running a variant,
+confirm from the agent version's documentation or a trial's trajectory that it loads the
+variant's files: agents differ, and one that reads only its own file (such as `CLAUDE.md`) reaches
+`AGENTS.md` or shared skills only through an import or link. A variant the agent never reads
+measures nothing. Check these differences before comparing, run the same agent and attempts, and compare
 task by task. Adopting this verifier for frozen tasks follows the freeze rule; do not silently
 rewrite user-owned copies or mix earlier scores with changed measurement.
 
