@@ -9,9 +9,12 @@ needs the plugin to run: any coding agent or person can read, run and extend it 
 runner and the bundled Python checkers.
 
 This file holds shared guarantees and terms. Read the parts relevant to the selected task.
-Adapt, combine or omit suggested activities to fit the request; completion criteria for a later
-stage apply when that stage is requested. Preserve the applicable evidence, authorization, budget
-and measurement guarantees. Direct fixes and project-native regression checks need no evaluation setup. Maintain useful
+Adapt, combine or omit suggested activities to fit the request. Match detail to the current
+decision; retain other useful findings and next steps concisely instead of fully developing every
+later option. Approval of a finding or priority does not by itself request the next stage.
+Completion criteria apply to the requested outcomes, without making later stages mandatory.
+Evidence, authorization, budget and measurement guarantees remain binding. Direct fixes and
+project-native regression checks need no evaluation setup. Maintain useful
 knowledge as described below. The layout below is the
 default for RELAI-managed work: reuse existing project records when they preserve the needed
 evidence, and use checker-specific formats only when using those checkers. File formats and

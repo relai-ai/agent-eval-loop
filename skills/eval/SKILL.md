@@ -9,12 +9,14 @@ Inspect existing tests, runners and results first. Read the relevant terms and g
 `relai/README.md`, or the bundled [contract](../start/template/README.md#terms) when absent.
 Use the [start skill](../start/SKILL.md)
 when RELAI's managed artifacts are needed, not to replace working evaluation infrastructure.
-Choose the mode for the request; the methods below are starting points, not a required full journey.
+Choose the work needed for the request under the [shared scope guidance](../start/template/README.md).
+The methods below are starting points, not a required full journey.
 For unsuitable or failing supplied code, use the shared
 [adaptation guidance](../start/template/README.md#adapting-supplied-implementations).
 
-Goal: each important behavior has a test that fails when the agent lacks it and passes when it
-has it, runs the real agent the way users do, and was reviewed and frozen before its first run;
+When building or running evals, the goal is that each important behavior has a test that fails
+when the agent lacks it and passes when it has it, runs the real agent the way users do, and was
+reviewed and frozen before its first run;
 and the user has honest numbers on how the agent does on those tests.
 
 Across Build and Run, maintain knowledge for future usefulness under the
@@ -23,8 +25,8 @@ Useful discoveries can update existing records without reproducing a wiki or boa
 
 ## Pick the mode
 
-- **Build** (default when the behavior has no test yet) - the harness on first use, then new or
-  harder tests, with scenario approval and grader preview below.
+- **Build** - implement new or harder tests, with scenario approval and grader preview below.
+  Add a harness on first use when the selected tests need one.
 - **Run** - run selected frozen tests, score them and report where the agent stands
   ([measure](references/measure.md); its *Done when* applies). On a benchmark, follow
   [benchmarks](references/benchmarks.md). To compare runs before and after a change, use the `improve` skill.

@@ -7,11 +7,16 @@ required.
 
 ## Follow consequential leads
 
-Use policy obligations, user goals and actual tool behavior to form investigable questions.
-Follow a linked episode: request and constraints, revisions, plan or approval, action, observed
-result or readback, then the agent's claim and recovery. A local error can be recovered; an
-apparently successful action can violate an earlier constraint. Judge a decision using the
-information available then, rather than a requirement introduced later.
+For broad discovery, compare what users wanted with what the agent chose, did and claimed across
+meaningfully different cases. Include revised constraints, decision-relevant tool evidence,
+effects and recovery. Compact episode views or grouped summaries can make this pass scalable;
+validate them against full source and disclose omissions. Mechanical flags and terminal outcomes
+do not substitute for these comparisons.
+
+Use gaps in that view, policy obligations and actual tool behavior to form investigable questions.
+Follow the relevant episode in context: a local error can be recovered, while an apparently
+successful action can violate an earlier constraint. Judge a decision using the information
+available then, rather than a requirement introduced later.
 
 Check plausible alternatives such as a changed request, correct refusal, valid derivation or
 expected tool limitation. Distinguish observed behavior from hypotheses about its cause; a bad
