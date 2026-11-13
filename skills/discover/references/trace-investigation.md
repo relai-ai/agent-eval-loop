@@ -7,13 +7,13 @@ required.
 
 ## Follow consequential leads
 
-For broad discovery, compare what users wanted with what the agent chose, did and claimed across
-meaningfully different cases. Include revised constraints, decision-relevant tool evidence,
+For broad discovery, compare the agent's goals and constraints with its decisions, actions and
+results across meaningfully different cases. Include revised constraints, relevant inputs,
 effects and recovery. Compact episode views or grouped summaries can make this pass scalable;
 validate them against full source and disclose omissions. Mechanical flags and terminal outcomes
 do not substitute for these comparisons.
 
-Use gaps in that view, policy obligations and actual tool behavior to form investigable questions.
+Use gaps in that view, applicable requirements and observed behavior to form investigable questions.
 Follow the relevant episode in context: a local error can be recovered, while an apparently
 successful action can violate an earlier constraint. Judge a decision using the information
 available then, rather than a requirement introduced later.

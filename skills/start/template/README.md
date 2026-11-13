@@ -69,6 +69,10 @@ invoked) is the choice of whoever builds the tests.
 
 ## Terms
 
+- **Evaluated agent.** Establish its purpose and operating context from project evidence. Use
+  those expectations when analyzing behavior or designing tests; keep important unresolved
+  assumptions explicit. A conversational interface or simulated user is appropriate only when
+  it fits the agent being evaluated.
 - **Splits.** Every test is `development` (the default: its runs may be read for diagnosis),
   `held-out` (optional: scored to decide whether a change is kept, never read for diagnosis), or
   `final` (a benchmark's test split: reported only, at the end or when the user asks). Scores

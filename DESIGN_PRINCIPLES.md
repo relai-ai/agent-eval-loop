@@ -126,7 +126,7 @@ should happen. Keep these distinctions explicit, including uncertainty and confl
 Connect diagnoses to recorded behavior and improvement claims to evaluated revisions and
 comparable runs. Preserve enough context for someone else to inspect the conclusion.
 
-### 20. Evaluate the behavior real users exercise
+### 20. Evaluate behavior under relevant operating conditions
 
 Use the relevant entrypoint, configuration, lifecycle, permissions, and tool behavior.
 Confirm that the proposed change is active on the evaluated path.
@@ -267,3 +267,8 @@ own. Leave general engineering, tool troubleshooting and platform-specific setup
 which can diagnose them from the error at hand. Every line costs context on every task and must
 be maintained, so keep a technical detail only when getting it wrong would fail silently or
 corrupt evidence.
+
+### 42. Ground assumptions about the agent
+
+Use project evidence to understand the agent's purpose and how it operates. Do not assume a
+particular interface, workflow, or architecture. Make important unresolved assumptions explicit.

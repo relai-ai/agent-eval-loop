@@ -15,8 +15,8 @@ For unsuitable or failing supplied code, use the shared
 [adaptation guidance](../start/template/README.md#adapting-supplied-implementations).
 
 When building or running evals, the goal is that each important behavior has a test that fails
-when the agent lacks it and passes when it has it, runs the real agent the way users do, and was
-reviewed and frozen before its first run;
+when the agent lacks it and passes when it has it, runs the real agent under relevant operating
+conditions, and was reviewed and frozen before its first run;
 and the user has honest numbers on how the agent does on those tests.
 
 Across Build and Run, maintain knowledge for future usefulness under the
@@ -65,8 +65,8 @@ filenames are not required.
 
 - One test per behavior. Extend an existing test rather than near-duplicating it; a frozen test
   changes only under the *Frozen tests* rule.
-- Hard but realistic: real data instances, the ambiguity and competing cues that make the
-  behavior hard, a simulated user whose instructions hold only the user's goal and knowledge.
+- Hard but realistic: real data instances and the ambiguity and competing cues that make the
+  behavior hard. When using a simulated user, its instructions hold only that user's goal and knowledge.
   Never put the answer, a diagnosis or a hint in the agent's input.
 - Exact criteria are code, meaning is a judge, each criterion its own evaluator; expected values
   live in `tests/params.json`, not in evaluator code ([test-design](references/test-design.md)).
