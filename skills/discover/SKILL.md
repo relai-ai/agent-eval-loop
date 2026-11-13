@@ -108,5 +108,5 @@ user" in `relai/README.md` says when the agreement leaves a consequential choice
   method; a long finding list is not a stopping rule. Assess remaining opportunities and justify
   stopping under [trace investigation](references/trace-investigation.md), without extending the
   allowance on your own.
-- **Say what it found.** Lead the report with what the user did not know: "your 20 runs revealed
-  7 risks, including 2 with directly observed failures".
+- **Say what it found.** Lead the report with what the user did not know: "your 20 runs had 1
+  failure; the traces show 7 risks, 2 confirmed".
