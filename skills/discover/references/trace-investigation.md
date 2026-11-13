@@ -13,6 +13,10 @@ effects and recovery. Compact episode views or grouped summaries can make this p
 validate them against full source and disclose omissions. Mechanical flags and terminal outcomes
 do not substitute for these comparisons.
 
+Before relying on a compact view, ask whether two plausible cases could share its retained
+facts yet require different judgments under the actual requirements. Use the missing distinction
+to choose a focused source read. Imagined cases are questions, not evidence of a failure.
+
 Use gaps in that view, applicable requirements and observed behavior to form investigable questions.
 For selected cases, choose an outcome or obligation grounded in available evidence and identify
 what recorded evidence would show it was met. Work backward from the result or claim through the
