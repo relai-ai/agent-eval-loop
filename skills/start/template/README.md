@@ -110,8 +110,9 @@ existing entries and revise or remove superseded conclusions. Retain durable req
 decisions, supported risks, corrections and reusable lessons rather than transient plans or
 speculative filler. Explain material updates in the normal report without repeating covered
 approval requests. Setup serves that future value; it is not a prerequisite to answering the
-immediate question. Give substantive knowledge one authoritative home; link to it with concise
-summaries in reports, boards or proposals rather than repeating the full analysis. Keep useful
+immediate question. Give substantive knowledge one authoritative home; link concise summaries
+from reports, boards or proposals. Avoid copying detailed evidence or manually synchronizing
+changing counts and statuses across these summaries. Keep useful
 state current as work progresses without turning every intermediate observation into another
 artifact. Preserve independently maintainable requirements, risks and consequential questions;
 less duplication must not mean losing their evidence or uncertainty. Do not put protected
@@ -216,10 +217,12 @@ or printing the value.
 
 RELAI is something the user steers, not a black box.
 
-- **Approval points.** Unless existing instructions cover or delegate the decision, get approval
-  for the risk list, test scenarios, grader previews before freezing, and the improvement
-  agreement. These are named decisions within independent workflows, not a sequence every task
-  must complete. Ask only about what remains open; restate consequential changes after discussion.
+- **Approval points.** Get approval for consequential choices needed for the current request
+  when existing instructions do not cover or delegate them. These can include risk dispositions
+  or priorities, test scenarios, grader previews before freezing, and the improvement agreement.
+  Reporting findings and recommendations does not itself require approval. After clarifications,
+  complete the requested work; resolving a decision does not request a later stage. Restate
+  consequential changes after discussion.
 - **Delegated approvals.** The build approvals (an `eval` scenario table and grader preview; a
   `coding-evals` task list and check preview) can be delegated to a fresh independent review.
   When neither an agreement, a loop contract's approvals setting, nor `decisions.md` says how
@@ -242,7 +245,7 @@ RELAI is something the user steers, not a black box.
 
   | Moment | What is asked |
   | --- | --- |
-  | End of `discover` | The risk table, open questions, and feedback on the runs just read |
+  | End of `discover` | Consequential unresolved choices needed for the request, including policy questions or feedback on runs; report risk findings and recommendations without requiring approval of the whole table |
   | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, how involved to be (delegated approvals), and on first use the harness setup questions |
   | `eval` scenario approval and grader preview | Approval of the scenario table (with the build's cost) and of the grader preview, in manageable subsets |
   | End of an `eval` run whose judges scored real trials for the first time, or after a rubric change | That run's judge checks, while the run is fresh, and the pass mark if it is unset |
