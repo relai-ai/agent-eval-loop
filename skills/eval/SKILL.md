@@ -115,6 +115,12 @@ start, ask together only what is still open:
   tests, the user may also choose one sitting: build first (building runs no agent), then show the
   scenario with its grader preview together. Record the choice in `decisions.md`.
 
+Make the timing explicit: choosing personal review "before trials" does not by itself choose
+combined review after construction. Reuse covered authorization; otherwise retain scenario
+approval before building, or offer a combined preview where appropriate as above. Surface
+unresolved questions that affect omitted coverage or the intended use of the suite, with their
+tradeoffs, rather than treating a nonblocking assumption as a settled user preference.
+
 Name any missing credential variable and the project's credential mechanism (or `relai/.env`)
 as an instruction, not a question. Reuse existing setup and continue work that does not need it.
 
@@ -149,6 +155,9 @@ changes or is missing anything the user cares about; separate independent choice
 guidance describes. Iterate until the answer is no, then review and freeze. When this decision
 is delegated, the fresh test review stands in for the user. Build/freeze only the subset whose required decisions
 are resolved; do not treat partial review as approval of the remaining tests.
+Use the shared [reviewable handoff](../start/template/README.md#working-with-the-user): offer a
+guided first batch or a capable app view with sources, scenarios and scoring examples. A large
+preview file or aggregate score table alone does not establish an informed review.
 
 ## Approach
 

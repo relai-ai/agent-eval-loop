@@ -44,7 +44,7 @@ Project-owned copies have independent provenance and follow the template's
 | --- | --- | --- |
 | `start` | The request is routed, or needed managed state and a useful board exist | none (orientation) |
 | `discover` | Requirements, ranked falsifiable risks and open questions, every trace-derived claim cited | Risks reviewed, consequential open questions answered or deferred |
-| `trace-review` | A project-owned app for full traces, keyboard navigation, filters and persistent source-linked feedback | External data movement or broader hosting when not already authorized |
+| `trace-review` | A project-owned app for traces and source-linked feedback; findings, questions and eval review when needed | External data movement, broader hosting or consequential review decisions when not already authorized |
 | `eval` | Harness (first time), then frozen, reviewed tests that can fail and pass fairly; honest runs that show where the agent stands | Scenarios and grader preview |
 | `improve` | Direct fixes with bounded evidence, regression checks, or measured improvement against an agreed objective | Improvement agreement, unless existing instructions cover it |
 | `loop` | discover → eval → improve as new evidence arrives, with agent-chosen experiments per iteration | One agreement covers delegated decisions; measurement changes are controlled |
@@ -63,12 +63,14 @@ shaped these choices:
 | Choice | Evidence |
 | --- | --- |
 | A `loop` skill composes the others under one contract and a locked verification kernel, asking only about ambiguity, conflicts, safety or policy | The value is a system that keeps improving with little human time; repeating covered approvals would interrupt a long run |
-| A standalone `trace-review` skill builds or adapts a project-owned viewer, leaving the UI stack and trace adapters to the coding agent | Human review needs a working app independently of discovery or eval setup; feedback retains source references without becoming an automatic requirement or score change |
+| A standalone `trace-review` skill builds or adapts a project-owned review app, leaving the UI stack and adapters to the coding agent | Trace annotation works independently of discovery or eval setup; related findings, questions and evals can be reviewed beside evidence without automatically changing requirements or scores |
 | Few skills, with specialized work (benchmarks, mocks, shared evaluators) as references inside them | Users could not tell which of many skills to use or in what order |
 | `start` routes from the request and existing infrastructure, with useful next actions | Without prior RELAI knowledge the user would not know the order |
 | Useful knowledge and state in project-owned records, with `relai/` as the default | Users need inspectable context for future development; artifacts are maintained for that value, not as prerequisites to every answer |
 | Sign-off on risks, test scenarios, graders and the improvement agreement, each skipped when already agreed | Test scenarios and verifiers felt like a black box; ingest asked nothing; improvement never asked about cost |
-| Questions answered in chat with a recommended answer, at set moments, capped per sitting, moot ones closed first | Users did not know whether to edit the Markdown; a large triage could ask dozens at once |
+| Questions answered in chat with a recommendation, at useful checkpoints, sized by decision effort, moot ones closed first | Users did not know whether to edit the Markdown; a large triage could ask dozens at once |
+| Consequential open questions are surfaced for resolution or explicit deferral, with downstream consequences | A trace-analysis trial saved nonblocking policy questions without asking them; the user learned of them only after asking whether input was needed |
+| Chat, review apps and the board share underlying records; handoffs offer a guided batch or a capable app view | The same trial handed over a large scenario list and grader preview without a practical review path; saved artifacts alone did not provide user engagement |
 | Trace analysis chooses exhaustive reading or scalable triage, using focused checks where useful | A shortened transcript missed a recurring failure; source verification and explicit coverage matter without mandating full reads at scale |
 | The optional triage example groups leads into judgment, coverage gaps and weak signals; projects can adapt the method | Reading every trace does not scale past dozens |
 | `feedback.md` for per-run questions, apart from open questions | A user's verdict on a real run is the strongest evidence of expected behavior; it closes once answered, while open questions become requirements |

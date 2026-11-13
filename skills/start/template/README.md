@@ -244,12 +244,30 @@ RELAI is something the user steers, not a black box.
   supported; make clear what the answer approves and what can wait. Each prompt should make sense
   on its own. Batch related choices at a checkpoint, but give independently answerable choices
   separate prompts or labeled rows rather than compressing them into one sentence.
+- **Unfinished decisions.** Recording a consequential open question does not replace asking it.
+  Bring unresolved choices relevant to the request forward at a useful checkpoint for resolution
+  or explicit deferral, even when independent work can finish without them. Explain what the
+  answer would change, including excluded coverage or proposed follow-up such as additional
+  evals. An answer does not itself authorize that follow-up or further spending. Inspect existing
+  questions on subsequent requests; resurface those that affect the work, become actionable or
+  challenge an earlier assumption. Respect explicit deferrals rather than repeating an unchanged
+  backlog; retain their scope and a useful reason or condition for revisiting them.
+- **Connected review.** Chat brings decisions to the user's attention; a review app supplies
+  evidence and annotation context; the board provides continuity. Use the same underlying items
+  and recorded outcomes across these surfaces, with stable references to sources and reviewed
+  artifacts. Link directly to the relevant item or view when supported, rather than just the app
+  homepage. Apply answers given in either surface to the authoritative records and reconcile
+  stale views before asking again. Acknowledge what the input changed, what remains unresolved,
+  and any proposed follow-up. Keep comments, run verdicts, policy decisions and approvals distinct.
+  Record an approval's subset, reviewed revision or content identity, and any limits in the
+  existing decision record; reassess affected approvals when that material changes. A comment,
+  reviewed marker or partial approval does not approve other items or unseen scoring.
 - **When the user is asked.** Questions wait for a natural moment; only a blocking item
   interrupts a step.
 
   | Moment | What is asked |
   | --- | --- |
-  | End of `discover` | Consequential unresolved choices needed for the request, including policy questions or feedback on runs; report risk findings and recommendations without requiring approval of the whole table |
+  | End of `discover` | Consequential unresolved choices relevant to the request, including nonblocking policy questions and feedback on runs; resolve or explicitly defer them, explaining coverage and follow-up implications |
   | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, how involved to be (delegated approvals), and on first use the harness setup questions |
   | `eval` scenario approval and grader preview | Approval of the scenario table (with the build's cost) and of the grader preview, in manageable subsets |
   | End of an `eval` run whose judges scored real trials for the first time, or after a rubric change | That run's judge checks, while the run is fresh, and the pass mark if it is unset |
@@ -266,6 +284,16 @@ RELAI is something the user steers, not a black box.
   Prioritize blocking items, likely failures, judge checks, then open questions and the rest.
   Close moot items first (`docs/files.md`, `feedback.md`), say how many remain, and leave
   them on the board. An answer of "later" leaves an item pending.
+- **Reviewable handoffs.** Separate findings to understand from items needing a verdict, decision
+  or approval. Lead with the substantive findings and offer a deeper explanation or evidence
+  walkthrough without requiring sign-off on an analysis. For review items, explain the judgments
+  needed and recommend a manageable first batch; offer a guided chat walkthrough or a suitable
+  existing app, with the relevant location and what to do there. File links supplement this
+  invitation rather than assigning an unexplained document-reading task. Check the app's actual
+  capabilities: if review or annotation is missing, offer to extend it, or to build a review app
+  when the workload warrants one, using the `trace-review` skill. Keep chat available and do not
+  make app construction a prerequisite. When approval is needed, ask for the current subset's
+  concrete decision rather than only offering help later.
 - **Updates.** Lead with the answer or decision, uncertainty and the next useful action; put
   optional future mechanics and supporting detail afterward or in existing files. When another
   action is useful, name it and why; a completed request need not be routed into another stage.

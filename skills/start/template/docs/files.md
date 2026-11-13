@@ -282,6 +282,10 @@ retries it blindly.
 `- 2026-11-12 · <the choice, in a sentence> · <asked: the user | assumed: the coding agent> · <source>`.
 The source links to where the detail lives (a feedback item such as `feedback.md#FB-2026-11-traces-07`,
 a wiki page, `records/eval/2026-11-12-scenarios.md`); link to it rather than copying the answer.
+For approvals, identify the reviewed subset, revision or content identity and limits in that
+record. For explicit deferrals, retain what was deferred and when or why to revisit it. Keep
+these outcomes consistent with the source item, whether the answer arrived in chat or an app;
+app-local reviewed flags and comments are not approval records.
 `UPSTREAM.md` is one line per copied file or folder: its path here, the plugin path and version
 or commit it came from, and a short note of local adaptations.
 
@@ -294,7 +298,7 @@ It is not the place for general questions:
 | --- | --- | --- |
 | Asks | How should the agent behave, in general? | Was this one run (or judge score) right? |
 | Answer becomes | A requirement; the question page is deleted | A regression test, risk evidence, a judge-agreement point, or nothing |
-| Lifetime | Durable knowledge, cited by tests | Closed once answered |
+| Lifetime | Temporary decision, resolved into durable knowledge | Closed once answered |
 
 A feedback answer that exposes a general ambiguity also opens a question; answering a question
 can settle pending feedback items. One `## ` item each, with an id `FB-<year>-<month>-<source>-<n>`
@@ -316,6 +320,10 @@ item a later change, a new requirement or a retired test has made moot is closed
 `Status: dismissed` and `Outcome: moot - <why>`. When the user answers, fill `Answer`, set the
 status, and record in `Outcome` what the answer became. An open question page may carry the same
 `Recommended:` and `Blocking:` lines.
+An explicit deferral leaves the item pending; note its scope and revisit context on the item and
+link the decision from `decisions.md`. Silence is not a user decision to defer. Review apps use
+these same item identities and outcomes, or explicitly reconcile imports/exports before another
+review; they must not silently maintain competing answers.
 
 A **judge check** asks whether the user agrees with a judge's score on a real trial. It adds
 `Kind: judge-check` and `Judge: tests/<id> · <evaluator id> · <job>/<trial>`, says what the judge
