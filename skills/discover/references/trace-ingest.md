@@ -41,11 +41,6 @@ values and relationships needed for the claim when permitted; otherwise omit or 
 claim rather than silently corrupt the evidence. Keep aliases consistent within the cited batch
 and record their scope when cross-batch comparisons would otherwise imply shared identities.
 
-Check redaction against identity-bearing values and context in the original source, including
-free text and shortened or transformed identifiers. Checking only the values collected by the
-exporter cannot reveal what its collection missed. Preserve ordinary language and claim-bearing
-facts when a short identifier also has a common meaning.
-
 Run the existing managed `check_wiki.py` after wiki changes. It checks attachment JSON syntax
 as well as wiki links; it cannot certify redaction, factual fidelity or semantic support. Check
 those separately, including source references. When reusing an older local checker, inspect its

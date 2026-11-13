@@ -7,17 +7,11 @@ required.
 
 ## Follow consequential leads
 
-For broad discovery, bring together the current request or approved plan, the facts available to
-the agent, the meaning of selected records or identifiers, and the actions, effects and claims.
-Changed constraints and recovery matter. A valid tool call can succeed while acting on the wrong target
-or details. Compact views built for a particular question, grouped comparisons or local checks
-can make comparisons across relevant cases scalable. Verify the associations against source
-rather than inferring intent from the action.
-
-Retain alternatives when needed to judge refusal, preferences or optimization. For long episodes,
-inspect bounded decision evidence rather than excluding the episode because full rendering is
-large. Report which questions were actually checked and what the views omit; an event inventory
-does not establish that decisions were correct.
+For broad discovery, compare what users wanted with what the agent chose, did and claimed across
+meaningfully different cases. Include revised constraints, decision-relevant tool evidence,
+effects and recovery. Compact episode views or grouped summaries can make this pass scalable;
+validate them against full source and disclose omissions. Mechanical flags and terminal outcomes
+do not substitute for these comparisons.
 
 Use gaps in that view, policy obligations and actual tool behavior to form investigable questions.
 Follow the relevant episode in context: a local error can be recovered, while an apparently
@@ -31,16 +25,13 @@ assumptions and relationships that make a suspected discrepancy a failure or jus
 rule. When that basis is missing, retain a qualified lead or resolve the question before dependent
 work. Use the target's actual obligations rather than a generic workflow rule.
 
-When a mechanism survives source verification, identify the expectation or relationship that
-failed, then ask which other cases could violate it while passing the current checks. Retrieve
-fuller context or repair a view that cannot distinguish plausible answers. Where feasible, check
-the affected cases rather than only collecting more examples of the original symptom. Verify
-candidates, meaningful variants and opposite-correct cases against source, using focused local
-checks when useful.
-Compare this deepening with unexplored questions and unchecked facets of familiar episodes;
-more easy examples should not displace consequential unfamiliar leads. Keep checked observations,
-rejected interpretations and unresolved expectations distinct; ask about consequential ambiguity
-while continuing independent work.
+When a mechanism survives source verification, ask where else it could occur and what would
+distinguish failure from correct behavior. Search or sample for recurrence, variants and
+opposite-correct cases, using focused local checks when useful. Compare further deepening with
+unexplored questions and unchecked facets of familiar episodes. More easy examples should not
+displace consequential unfamiliar leads. Keep checked observations, rejected interpretations and
+unresolved expectations distinct; ask about consequential ambiguity while continuing independent
+work.
 
 ## Deliberately look beyond the method's flags
 

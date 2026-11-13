@@ -29,16 +29,6 @@ How to design each test for the `eval` skill, whose Rules bind; this adds the me
 
 ## Approach
 
-### Choosing a useful set
-
-Compare candidates by important failures they expose beyond existing or already-selected tests,
-the evidence that those failures matter, and the effort to build and maintain them. Ask which
-plausible wrong behavior could still pass the set, and which candidate would distinguish it.
-A shared evaluator covers another condition only when a scenario actually exercises that condition;
-a broad rubric alone does not establish coverage. Keep unrelated behaviors independently
-interpretable rather than packing them into one scenario. Explain consequential omissions and
-uncertainty without elaborating a full backlog that the decision does not need.
-
 ### Choosing code or a judge
 
 Ask of each criterion: could two correct replies differ in how they satisfy it?
