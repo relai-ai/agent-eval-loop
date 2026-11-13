@@ -93,6 +93,10 @@ user" in `relai/README.md` says when the agreement leaves a consequential choice
 - For open questions needed now: what is unclear, why the answer matters, concrete choices.
 - For selected feedback items: what happened, a source quote and the recommended verdict with its
   uncertainty. The user's judgment on a real run can establish the expected behavior.
+- At handoff, surface consequential nonblocking questions as unfinished decisions, including
+  what resolving them could enable or change in proposed eval coverage. Offer the shared
+  [review paths](../start/template/README.md#working-with-the-user) for findings and items needing
+  judgment; a saved report or question page is not the user interaction.
 - Turn each answer into the page change yourself ([resolving an open
   question](references/wiki-rules.md#resolving-an-open-question)), and fill the feedback item's
   `Answer` and `Outcome`.

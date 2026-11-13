@@ -26,12 +26,17 @@ The sections:
 - **Next action:** continue the user's request or resolve its actual missing prerequisite. A
   question blocks only dependent work. Show broader coverage, hardening or new trace analysis as
   optional opportunities, not mandatory next stages. If the request is complete, say so.
-- **Waiting on the user:** decisions or resource limits that block the current request, such as
-  consequential open questions, risk admissions, feedback or test approvals needed now. Keep
-  uncertainties and approvals for future work visible without presenting them as current blockers.
+- **Waiting on the user:** consequential decisions, feedback and approvals relevant to the
+  request, including nonblocking open questions awaiting resolution or explicit deferral, and
+  resource limits. Distinguish actual blockers from choices independent work can proceed without.
+  Link explicitly deferred items separately with their revisit context; do not report "Nothing"
+  merely because unanswered questions do not block execution. Keep future opportunities visible
+  without presenting them as current blockers.
 - **Next to answer:** a manageable batch sized by actual judgment effort, using "When the user
   is asked" in `../README.md`, each with its kind (marked blocking where it is), recommendation
   and source, and how many remain. A large table does not automatically count as one small choice.
+  Link the same underlying records used in chat and any review app, including a direct review
+  view when available; the board summarizes those records rather than maintaining another queue.
 - **Wiki:** counts of requirements, risks and open questions, and per risk its impact / confidence
   / triggerability, status, and the tests that probe it (from `covers` and the page's `## Probes`).
 - **Tests:** the runner, isolation and pass mark ("not set yet" until it is chosen); per test, its split, whether it is frozen, its
