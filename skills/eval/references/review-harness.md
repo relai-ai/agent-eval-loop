@@ -36,17 +36,17 @@ or a trajectory step):
    edits change behavior are read live, not baked into an image.
 2. **Real configuration.** The integrated configuration is the one the repository presents as
    real use (README, defaults), not a test fixture; `relai.toml` names it and the evidence.
-3. **Real input.** Input reaches the agent the way a user's does, including any preprocessing the
-   application applies, and multi-turn state is kept the way the application keeps it.
+3. **Real input.** Input reaches the agent through its normal input path, including any preprocessing
+   the application applies, and state is kept the way the application keeps it.
 4. **Unchanged behavior.** The harness and any project edits change nothing the agent does:
    prompts, tool policies, model choice, data and control flow are as in production. Recording
-   only observes. Permissions come from the settings the agent's real users run it with, or, for
+   only observes. Permissions come from the agent's relevant operating settings, or, for
    interactive prompts, from the user's answer recorded in `decisions.md`.
 5. **Declared stand-ins.** Anything not run for real is replaced only at a dependency's client
    boundary, is listed in `relai/harness/mocks/MOCKS.md`, and applicable authorization covers it
    (an approval or covering agreement).
 6. **Truthful trajectory.** Every recorded step happened, in order, and nothing that matters is
-   missing: user input, model messages, tool calls with arguments, results tied to their calls.
+   missing: inputs, model messages, tool calls with arguments and results tied to their calls, as applicable.
 7. **Output reaches evaluators.** What the agent produces (a reply, a file, a record) is visible
    to the evaluators, and the smoke test's evaluators check a real outcome rather than activity
    and could fail. The smoke test is not frozen, so a check loosened until it passes fails this.

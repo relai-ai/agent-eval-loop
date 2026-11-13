@@ -49,12 +49,13 @@ fully (reuse it), partly (extend it, or add a narrower one), or not at all (writ
 A shared evaluator cannot know each test's scenario in advance, so it reads it from the
 trajectory.
 
-- A shared judge's rubric reads the user turns to learn what the scenario asks, then judges the
-  replies against that: they address what was asked, are correct and consistent with what the
-  agent could know from the conversation and its tools, and are clear and complete without
-  invented details. Its feedback names the turns behind the score and what would score higher.
-- Decide whether a deliverable is required from the user's request in the trajectory, not from
-  the evaluator: when asking or declining is the right response, nothing is missing.
+- A shared judge's rubric reads the task inputs and relevant context to learn what the scenario
+  requires, then judges the agent's outputs and actions against that. Check that they are correct,
+  consistent with information available to the agent, and free of unsupported claims, with clarity
+  and completeness where required. Its feedback cites the evidence behind the score and what
+  would score higher.
+- Decide whether a deliverable is required from the task and applicable requirements, not from
+  the evaluator: when asking, declining or taking no action is correct, nothing is missing.
 
 ### Repairing it
 

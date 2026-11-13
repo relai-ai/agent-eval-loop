@@ -11,7 +11,7 @@ categories:
 | Lane | What it is | Where it goes |
 | --- | --- | --- |
 | A. Needs judgment | Likely failures, and runs whose right outcome the wiki does not settle | `relai/feedback.md`, resolved in risk review |
-| B. Coverage gaps | Situations real users bring that no test covers | Test proposals for the [eval skill](../../eval/SKILL.md) |
+| B. Coverage gaps | Relevant operating situations that no test covers | Test proposals for the [eval skill](../../eval/SKILL.md) |
 | C. Weak signals | Problems short of failure and signals that co-occur | Near-miss evidence and compound test proposals |
 
 ## Choose useful processing

@@ -77,7 +77,7 @@ prerequisites for the selected runner and fix what fails.
 - When the agent needs a service, database or credential, run the real thing inside the trial or
   declare the credential by name. Mock only at a client boundary, under applicable authorization
   ([mocks](mocks.md)). Never stub the agent, its model calls, or a tool's own logic.
-- When the agent gets its permissions from settings, use the settings its real users run it with.
+- When the agent gets its permissions from settings, use its relevant operating settings.
   When it would ask a person interactively, use the user's answer on how prompts are answered in
   trials. Add no permission policy of your own.
 - Use absolute paths in trials. Smoke-test one turn through the selected runner before a full

@@ -16,8 +16,8 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 
 1. **Measures the stated behavior.** The scenario actually exercises it, and the evaluators reward
    exactly it, not something adjacent or easier.
-2. **No answer in the input.** The agent-facing input holds only the original request and its
-   context: no expected answer, diagnosis, root cause, or suggested fix. A simulated user's
+2. **No answer in the input.** The agent-facing input holds only the original task and its
+   context: no expected answer, diagnosis, root cause, or suggested fix. When used, a simulated user's
    instructions hold the user's goal and knowledge, never the expected agent behavior.
 3. **Not made easy.** Ambiguity, competing cues and constraints that make the behavior hard are
    kept; the input was not simplified so the right answer is obvious.

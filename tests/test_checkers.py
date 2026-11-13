@@ -357,6 +357,35 @@ class CheckWikiTest(Base):
         self.assertEqual(len(data["warnings"]), 1)
         self.assertIn("missing.json", data["warnings"][0])
 
+    def test_index_links_are_checked_without_registering_index_as_an_id(self):
+        index = self.repo.write("relai/wiki/index.md", "# Knowledge\n[missing](requirements/absent.md#rule)\n")
+        before = index.read_bytes()
+        self.repo.task(toml=GOOD_TASK_TOML.replace('behavior =', 'covers = ["index"]\nbehavior ='))
+        result = self.repo.run("check_wiki.py", "--json")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        errors = json.loads(result.stdout)["errors"]
+        self.assertTrue(any("wiki/index.md: link to requirements/absent.md#rule" in e for e in errors))
+        self.assertTrue(any("covers 'index', which is not a wiki page" in e for e in errors))
+        self.assertEqual(index.read_bytes(), before)
+
+    def test_index_uses_existing_local_link_policy_and_other_reports_are_outside_scope(self):
+        self.repo.write("relai/wiki/requirements/refunds.md", "# Refunds\n")
+        self.repo.write("relai/wiki/attachments/trace with spaces.json", "{}")
+        self.repo.write("relai/wiki/index.md", """# Knowledge
+[requirement](requirements/refunds.md#policy)
+[evidence](<attachments/trace with spaces.json>)
+[missing attachment](attachments/missing.json)
+[external](https://example.invalid/absent.md)
+[section](#knowledge)
+""")
+        self.repo.write("relai/analysis.md", "[outside scope](missing.md)\n")
+        result = self.repo.run("check_wiki.py", "--json")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        data = json.loads(result.stdout)
+        self.assertEqual(data["errors"], [])
+        self.assertEqual(len(data["warnings"]), 1)
+        self.assertIn("attachments/missing.json", data["warnings"][0])
+
     def test_missing_markdown_page_still_errors(self):
         self.repo.write("relai/wiki/requirements/refunds.md", "# Refunds\n[missing](absent.md#policy)\n")
         result = self.repo.run("check_wiki.py")

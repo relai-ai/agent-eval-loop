@@ -6,7 +6,7 @@ Usage:
 
 Pages live in relai/wiki/{requirements,risks,open-questions}/<id>.md; a page's id is its
 file name. Checks: ids are lowercase slugs and unique across the three folders, each page
-starts with a '# ' title, local links resolve (missing attachments warn), and every id a test or
+starts with a '# ' title, local links in typed pages and a present wiki/index.md resolve (missing attachments warn), and every id a test or
 benchmark lists in [metadata.relai].covers exists. Managed wiki/attachments/**/*.json
 files must parse as UTF-8 JSON; this checks format, not evidence accuracy. Read-only.
 """
@@ -28,6 +28,21 @@ KINDS = ("requirements", "risks", "open-questions")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 LINK_RE = re.compile(r"\]\((<[^>]+>|[^)\s]+)(?:\s+[^)]*)?\)")
 RISK_FIELDS = ("mechanism", "trigger", "observable failure")
+
+
+def check_links(page: Path, relai_dir: Path, report: Report) -> None:
+    rel = page.relative_to(relai_dir)
+    for target in LINK_RE.findall(page.read_text(encoding="utf-8", errors="replace")):
+        raw = target.strip("<>")
+        if re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", raw) or raw.startswith("//"):
+            continue  # external targets are outside this local-file check
+        link = urlsplit(raw)
+        if not link.path:
+            continue
+        path = page.parent / unquote(link.path)
+        if not path.is_file():
+            emit = report.error if path.suffix.lower() == ".md" else report.warn
+            emit(f"{rel}: link to {target} does not resolve")
 
 
 def check_attachments(relai_dir: Path, report: Report) -> None:
@@ -112,20 +127,15 @@ def main() -> int:
                 missing = [f for f in RISK_FIELDS if f not in lowered]
                 if missing:
                     report.warn(f"{rel}: a risk should state its {', '.join(missing)}")
-            for target in LINK_RE.findall(text):
-                raw = target.strip("<>")
-                if re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", raw) or raw.startswith("//"):
-                    continue  # external targets are outside this local-file check
-                link = urlsplit(raw)
-                if not link.path:
-                    continue
-                path = page.parent / unquote(link.path)
-                if not path.is_file():
-                    emit = report.error if path.suffix.lower() == ".md" else report.warn
-                    emit(f"{rel}: link to {target} does not resolve")
+            check_links(page, relai_dir, report)
         for other in sorted(p for p in folder.iterdir() if p.suffix != ".md" and not p.name.startswith(".")):
             report.warn(f"{other.relative_to(relai_dir)}: only .md pages belong in {kind}/")
 
+    index = wiki / "index.md"
+    if index.is_file():
+        check_links(index, relai_dir, report)
+    report.note("Local links checked in typed wiki pages and a present wiki/index.md; "
+                "other documents, reference-style links and fragment destinations are not checked")
     check_attachments(relai_dir, report)
 
     for kind in ("tests", "benchmarks"):

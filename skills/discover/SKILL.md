@@ -50,13 +50,10 @@ reusable assets. Respect explicit read-only requests and wiki opt-outs across di
     [trace triage](references/trace-triage.md) describes. Do not also require a full read of every
     trace. Report processed, failed, sampled, truncated and unexamined material. Distinguish
     parsing or mechanical screening from contextual review.
-- Credible consequential leads have been investigated within the agreed scope and resources,
-  with adaptive follow-through and a deliberate blind-spot review for substantial trace work
-  as [trace investigation](references/trace-investigation.md) describes. Merely labelling a
-  feasible lead "deferred" does not complete it. Before declaring completion, assess the most
-  valuable remaining investigation and justify stopping, as that reference describes. When
-  resources prevent follow-through, deliver a partial handoff with unresolved leads and coverage
-  gaps rather than claim discovery complete.
+- Credible consequential leads were investigated within scope and resources, with adaptive
+  follow-through and deliberate blind-spot checks for substantial trace work. Assess useful
+  remaining opportunities and explain stopping as [trace investigation](references/trace-investigation.md)
+  describes. When resources prevent worthwhile follow-through, leave a resumable partial handoff.
 - The ingestion wiki default above was followed; useful durable findings from other discovery
   paths were maintained in the wiki or relevant local records. Temporary plans and speculative
   filler were not persisted. Every claim cites checked source
