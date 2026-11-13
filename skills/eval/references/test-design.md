@@ -109,9 +109,11 @@ requirements it covers; the scenario, naming the real data it uses; the trigger 
 hard; what passing and failing look like; its opposite-direction partner, if any; its split; and
 what would make the probe invalid.
 
-Account for each requested behavior with a scenario that exercises it and an observable
-passing/failing distinction, or explain the remaining gap. Group related behaviors only when
-those distinctions remain clear.
+When the request calls for coverage of a defined set of behaviors or findings, account for each
+within the agreed scope with a scenario that exercises it and an observable passing/failing
+distinction, or explain the remaining gap. For prioritized or exploratory requests, match the
+selection and detail to the requested outcome. Group related behaviors when their distinctions
+remain clear.
 
 ### Updating a test
 
