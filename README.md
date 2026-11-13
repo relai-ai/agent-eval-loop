@@ -60,7 +60,7 @@ they are frozen, and a baseline score for each risk.
 
 ```text
 Use RELAI's improve skill to fix the failing tests without breaking the passing ones.
-You may change prompts and tools, not the model; budget $20
+You may change prompts and tools, not the model
 ```
 
 You get a branch with the change, before-and-after scores on the same frozen tests, and a
@@ -70,7 +70,7 @@ record of what was tried and rejected.
 
 ```text
 Use RELAI's loop skill to keep improving this agent from ./traces;
-optimize task success first, then cost; budget $50
+optimize task success first, then cost
 ```
 
 ### 🏭 Coding agents your team uses
@@ -99,7 +99,7 @@ the solved rate and cost per solved task
 **3. Improve your setup before you roll it out**
 
 ```text
-Use RELAI's improve skill to improve our CLAUDE.md and skills against these evals; budget $30
+Use RELAI's improve skill to improve our CLAUDE.md and skills against these evals
 ```
 
 You get a branch with the improved setup, the solved rate with its noise before and after, cost
