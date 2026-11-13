@@ -140,7 +140,7 @@ generic infrastructure without a concrete need.
 | `bin/` | The shared checkers (below), plus any example script copied from the plugin | yes |
 | `harness/` | How the agent runs in a trial: adapter, recorder, image recipe; `mocks/` with `MOCKS.md`; `smoke/`, the smoke test | yes |
 | `wiki/` | `requirements/`, `risks/`, `open-questions/`: one page per item; `index.md`; `attachments/` for cited trace excerpts | yes |
-| `tests/<id>/` | One test per behavior | yes |
+| `tests/<id>/` | Focused tests, with distinguishable criteria for combined behaviors | yes |
 | `benchmarks/<id>/` | A benchmark from another repository: its README, and its case template and `cases/` (import) or its adapter (wrap) | yes |
 | `evaluators/<id>/` | Criteria shared across tests | yes |
 | `setups/<id>/` | A team's setup for coding agents, laid out as in a repository root (the `coding-evals` skill) | yes |

@@ -1,6 +1,6 @@
 ---
 name: eval
-description: Use to build and run evals for the AI agent (or LLM app, chatbot or pipeline) in this repository - the harness that runs the real agent (first time), hard realistic tests from risks, requirements, failed runs or traces, harder or combined tests, benchmarks, and shared evaluators ("create evals for this agent", "turn this failure into a test", "set up the harness", "bring in this benchmark"); or to run them and report where the agent stands without changing it ("run the agent evals", "get a baseline", "is the agent getting worse"). Also to fix a test or evaluator that errors or cannot fail, or to mock a dependency trials cannot reach. For agent-neutral coding tasks from sessions or PRs, use the coding-evals skill, including for a custom coding agent developed in this repository.
+description: Use to build and run evals for the AI agent (or LLM app, chatbot or pipeline) in this repository - the harness that runs the real agent (first time), hard realistic tests from risks, requirements, failed runs or traces, harder or combined tests, benchmarks, and shared evaluators ("create evals for this agent", "turn this failure into a test", "set up the harness", "bring in this benchmark"); or to run them and report where the agent stands without changing it ("run the agent evals", "get a baseline", "is the agent getting worse"). Also use its methods to analyze evaluation coverage or design scenarios when requested, without requiring implementation or execution. Also to fix a test or evaluator that errors or cannot fail, or to mock a dependency trials cannot reach. For agent-neutral coding tasks from sessions or PRs, use the coding-evals skill, including for a custom coding agent developed in this repository.
 ---
 
 # Build and run evals
@@ -23,7 +23,12 @@ Across Build and Run, maintain knowledge for future usefulness under the
 [shared policy](../start/template/README.md#maintain-useful-knowledge), respecting read-only work.
 Useful discoveries can update existing records without reproducing a wiki or board checklist.
 
-## Pick the mode
+## Choose the work
+
+Apply the methods relevant to the requested outcome, including analysis and scenario design.
+Build and Run describe implementation and execution work; their setup, approvals and completion
+criteria apply when that work is requested. Designing or recommending tests does not itself
+authorize building or running them.
 
 - **Build** - implement new or harder tests, with scenario approval and grader preview below.
   Add a harness on first use when the selected tests need one.
@@ -63,7 +68,8 @@ filenames are not required.
 
 ## Rules
 
-- One test per behavior. Extend an existing test rather than near-duplicating it; a frozen test
+- Keep tests focused; a combined scenario must exercise each behavior with distinguishable
+  passing/failing criteria. Extend an existing test rather than near-duplicating it; a frozen test
   changes only under the *Frozen tests* rule.
 - Hard but realistic: real data instances and the ambiguity and competing cues that make the
   behavior hard. When using a simulated user, its instructions hold only that user's goal and knowledge.
@@ -78,8 +84,8 @@ filenames are not required.
   count alone: many unique, issue-specific tests are not a useful random split.
 - A failure caused by the trial itself (a refused action, a broken harness, a killed container)
   is inconclusive, not evidence about the agent; fix the probe.
-- **Where tests come from**, in this order: runs the user's feedback judged wrong (replay the run,
-  [test-design](references/test-design.md)); admitted risks, highest first; coverage gaps and co-occurring
+- **Where tests come from.** Choose sources relevant to the request: runs the user's feedback judged wrong
+  (replay the run, [test-design](references/test-design.md)); open risks; coverage gaps and co-occurring
   weak signals from a triage (`relai/work/discover/<ingest-id>/lanes.json`); requirements no test
   covers; and harder or combined versions of passing tests ([hardening](references/hardening.md), always as
   new tests).
@@ -146,8 +152,8 @@ are resolved; do not treat partial review as approval of the remaining tests.
 
 ## Approach
 
-- Start from admitted risks, highest impact first, then requirements no test covers. With no
-  risks, follow the user's answer to *Where to start*. For each test, write down the trigger,
+- Start from the request and relevant sources above, prioritizing risks by impact when choosing
+  among them. For each test, write down the trigger,
   passing, failing and what would make the probe invalid before building.
 - Prefer the agent's real configuration, real data and real user simulator. Grade outcomes from
   exported state (database changes, files, mock journals) with code; keep judges for meaning.

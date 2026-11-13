@@ -109,6 +109,10 @@ requirements it covers; the scenario, naming the real data it uses; the trigger 
 hard; what passing and failing look like; its opposite-direction partner, if any; its split; and
 what would make the probe invalid.
 
+Account for each requested behavior with a scenario that exercises it and an observable
+passing/failing distinction, or explain the remaining gap. Group related behaviors only when
+those distinctions remain clear.
+
 ### Updating a test
 
 Classify the request before editing: a correction of how the test checks (same evaluators,
