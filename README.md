@@ -82,8 +82,7 @@ project (a repository that holds the evals):
 **1. Turn past work into evals**
 
 ```text
-Use RELAI's coding-evals skill to build 20 evals from the last six months
-of merged pull requests and reverts in acme/api
+Use RELAI's coding-evals skill to build 20 evals from the last six months of merged pull requests and reverts in the repo {name-of-the-repo} 
 ```
 
 You get complete evals in [Harbor](https://github.com/harbor-framework/harbor) format, ready to
@@ -299,7 +298,7 @@ Source-linked feedback can later inform discovery, eval proposals or judge calib
 ### Bring your own benchmark
 
 ```text
-Use RELAI's eval skill to bring in the benchmark at ../bench-x
+Use RELAI's eval skill to bring in the benchmark at {path-to-benchmark}
 (its own runner and scorer, train/validation/test)
 ```
 
@@ -310,7 +309,7 @@ RELAI first checks a small pilot against the benchmark's own scorer. It respects
 The `coding-evals` skill turns your team's work into long-horizon tasks that any coding agent can run:
 
 ```text
-Use RELAI's coding-evals skill to make a test from PR #412 in acme/api
+Use RELAI's coding-evals skill to make a test from PR #412 in {repo-name}
 Use RELAI's coding-evals skill to check whether our new CLAUDE.md helps on our tasks
 ```
 
