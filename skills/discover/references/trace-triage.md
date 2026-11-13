@@ -2,7 +2,7 @@
 
 Use when exhaustive reading is not justified by the question, scale or budget. Reuse suitable
 project tooling or choose an approach that preserves trace references, coverage and failures.
-The optional [triage example](../../../examples/triage.py), with
+The optional LLM-based [triage example](../../../examples/triage.py), with
 [judge.py](../../../examples/judge.py) beside it, can be copied to `relai/bin/` and adapted or
 replaced in the project's language (if `examples/` is not installed, fetch it as the project
 contract's *Checkers* section says). Its three lanes are a useful starting point, not mandatory
@@ -21,6 +21,13 @@ Inventory the selected set and reuse available summaries or mechanical checks fr
 heuristics cannot establish that an unconfirmed action was unauthorized or that an unmatched
 number was invented. Do not build a generic audit-script suite as a prerequisite.
 
+Consider model assistance for tasks such as semantic grouping, episode selection or screening
+when it could improve analysis within scope and resources. Inspect existing project tools and
+model configuration first. Suitable models may be language models, classifiers or rankers;
+reuse or adapt project tooling for the selected task. Prefer an economical model with adequate
+capability. Continue direct inspection and deterministic analysis when access is unavailable,
+declined or unsuitable.
+
 For substantial work, follow [adaptive investigation and deliberate blind-spot review](trace-investigation.md):
 use new mechanisms to revise checks and selection, including unflagged episodes inside familiar
 traces. Keep the finding inventory distinct from the shortlist.
@@ -29,11 +36,13 @@ Choose a pilot and inspect its output against the source traces before scaling a
 method. Revise the method if it misjudges outcomes or invents signals. Supply relevant target
 policy and requirements when judging behavior; unresolved expectations remain uncertain.
 
-Before paid processing or sending trace text to a provider, check the existing agreement for
-cost and data authorization. Ask only for what it leaves open, naming the provider, material
-sent and estimated spend. Say plainly that personal or customer data in the traces goes to the
-provider as recorded unless you remove it first: the example removes only declared secret values.
-Redaction does not itself authorize external processing.
+Before additional model processing, check existing authorization and delegated choices. Where
+unresolved, recommend a model and confirm with the user whether and which model to use, explaining
+its purpose, provider or local execution, material processed, pilot scope and estimated cost or
+resource allowance. Reuse covered decisions rather than repeat the intake. Before paid processing
+or sending trace text to a provider, resolve uncovered cost and data authorization. Say plainly
+that personal or customer data goes to the provider as recorded unless removed first: the example
+removes only declared secret values. Redaction does not itself authorize external processing.
 
 ## If using the example
 
