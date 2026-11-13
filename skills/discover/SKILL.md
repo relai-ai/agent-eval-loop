@@ -103,6 +103,12 @@ user" in `relai/README.md` says when the agreement leaves a consequential choice
   parallelize independent analysis as appropriate. The selected coverage mode, not a fixed script
   sequence, determines completion. Shortened transcripts can guide selection but cannot support
   claims about omitted content.
+- **Consider model assistance.** When scale or semantic complexity makes additional model-assisted
+  processing worthwhile, inspect existing project tools and model configuration. Reuse covered
+  decisions; confirm unresolved choices with the user about whether and which model to use under
+  [scalable triage](references/trace-triage.md). Follow that guidance for method selection,
+  pilot validation and source verification. Continue useful independent analysis while decisions
+  remain open or model access is unavailable.
 - **Discover before selecting.** Preserve distinct findings, weak signals and uncertainty beyond
   the priority shortlist. Follow useful new mechanisms and test the blind spots of the chosen
   method; a long finding list is not a stopping rule. Assess remaining opportunities and justify

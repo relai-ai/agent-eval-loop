@@ -122,6 +122,10 @@ Actively maintain reusable project-local assets when they will make future analy
 easier. Inspect and reuse existing scripts, adapters, queries or other suitable assets; improve or
 consolidate them when the current work reveals a concrete need, preserving user modifications.
 Leave useful nontrivial work runnable and understandable in the project's language and conventions.
+Separate reusable processing from inputs likely to change, such as datasets, selections and output
+locations. Use project-relative defaults and expose inputs where variation is expected; case-specific
+IDs and expected counts can remain explicit in selections and fixture checks. Keep useful
+domain-specific checks and their assumptions clear as helpers evolve.
 Match maintenance effort to expected reuse and ownership cost, within authorized scope; respect
 read-only requests and opt-outs. Asset creation is not a completion checklist or a reason to build
 generic infrastructure without a concrete need.
