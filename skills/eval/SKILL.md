@@ -1,6 +1,6 @@
 ---
 name: eval
-description: Use to build and run evals for the AI agent (or LLM app, chatbot or pipeline) in this repository - the harness that runs the real agent (first time), hard realistic tests from risks, requirements, failed runs or traces, harder or combined tests, benchmarks, and shared evaluators ("create evals for this agent", "turn this failure into a test", "set up the harness", "bring in this benchmark"); or to run them and report where the agent stands without changing it ("run the agent evals", "get a baseline", "is the agent getting worse"). Also to fix a test or evaluator that errors or cannot fail, or to mock a dependency trials cannot reach. For agent-neutral coding tasks from sessions or PRs, use the coding-evals skill, including for a custom coding agent developed in this repository.
+description: Use to design, build and run evals for the AI agent (or LLM app, chatbot or pipeline) in this repository - the harness that runs the real agent (first time), hard realistic tests from risks, requirements, failed runs or traces, harder or combined tests, benchmarks, and shared evaluators ("create evals for this agent", "turn this failure into a test", "set up the harness", "bring in this benchmark"); or to run them and report where the agent stands without changing it ("run the agent evals", "get a baseline", "is the agent getting worse"). Also to fix a test or evaluator that errors or cannot fail, or to mock a dependency trials cannot reach. For agent-neutral coding tasks from sessions or PRs, use the coding-evals skill, including for a custom coding agent developed in this repository.
 ---
 
 # Build and run evals
@@ -10,7 +10,9 @@ Inspect existing tests, runners and results first. Read the relevant terms and g
 Use the [start skill](../start/SKILL.md)
 when RELAI's managed artifacts are needed, not to replace working evaluation infrastructure.
 Choose the work needed for the request under the [shared scope guidance](../start/template/README.md).
-The methods below are starting points, not a required full journey.
+The methods below are starting points, not a required full journey. Use
+[test design](references/test-design.md) when choosing behaviors, scenarios and expected outcomes,
+including work that stops before implementation; apply only the activities needed for the request.
 For unsuitable or failing supplied code, use the shared
 [adaptation guidance](../start/template/README.md#adapting-supplied-implementations).
 

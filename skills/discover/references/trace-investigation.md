@@ -25,13 +25,16 @@ assumptions and relationships that make a suspected discrepancy a failure or jus
 rule. When that basis is missing, retain a qualified lead or resolve the question before dependent
 work. Use the target's actual obligations rather than a generic workflow rule.
 
-When a mechanism survives source verification, ask where else it could occur and what would
-distinguish failure from correct behavior. Search or sample for recurrence, variants and
-opposite-correct cases, using focused local checks when useful. Compare further deepening with
-unexplored questions and unchecked facets of familiar episodes. More easy examples should not
-displace consequential unfamiliar leads. Keep checked observations, rejected interpretations and
-unresolved expectations distinct; ask about consequential ambiguity while continuing independent
-work.
+When a mechanism survives source verification, identify the expectation or relationship that
+failed, then ask which other cases could violate it while passing the current checks. Choose
+views and checks that preserve the facts needed to distinguish plausible answers; retrieve fuller
+context or repair the view when it omits those facts. Where feasible, check the affected cases
+rather than only collecting more examples of the original symptom. Verify candidates, meaningful
+variants and opposite-correct cases against source, using focused local checks when useful.
+Compare this deepening with unexplored questions and unchecked facets of familiar episodes;
+more easy examples should not displace consequential unfamiliar leads. Keep checked observations,
+rejected interpretations and unresolved expectations distinct; ask about consequential ambiguity
+while continuing independent work.
 
 ## Deliberately look beyond the method's flags
 
