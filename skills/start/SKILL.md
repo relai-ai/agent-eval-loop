@@ -1,6 +1,6 @@
 ---
 name: start
-description: Use when the user asks how to use RELAI, where to start, what it can do for their agent, or what the status of their evals is and what to do next ("how do I use RELAI", "where do I start", "what's the status of my evals"); also to set up RELAI records when a selected workflow needs them. Routes an already clear request directly to the appropriate skill, reusing existing project infrastructure.
+description: Orient users on RELAI's capabilities, current eval status and next steps, or initialize RELAI records when a workflow needs them. Route clear requests directly to the relevant skill and reuse existing project infrastructure.
 ---
 
 # Start here

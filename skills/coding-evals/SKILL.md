@@ -1,6 +1,6 @@
 ---
 name: coding-evals
-description: Use to build evals for the coding agent a team uses (Claude Code, Codex, OpenHands, or the team's own setup of one) from real coding sessions, pull requests and git history, and to run them to measure how that agent does on the team's code, check whether a change helps (a model, an agent version, CLAUDE.md, AGENTS.md, a skill), find which parts of a setup help, or compare agents ("turn this session into a test", "make a test from PR #123", "mine this repo for tasks", "how does our coding agent do on our code", "does our CLAUDE.md help", "is the new model better on our code", "which coding agent is best on our code"). Tasks are agent-neutral Harbor tasks that any coding agent can run. Use the eval skill for application-agent scenarios and harnesses; choose coding-evals for agent-neutral coding tasks even when the coding agent's source is in this repository.
+description: Build and run agent-neutral coding evals from sessions, PRs or git history for a team's coding agent, including one developed here. Measure its baseline or compare models, versions, setup changes and agents. Use eval for application-agent scenarios and harnesses.
 ---
 
 # Evals for coding agents

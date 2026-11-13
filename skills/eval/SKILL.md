@@ -1,6 +1,6 @@
 ---
 name: eval
-description: Use to build and run evals for the AI agent (or LLM app, chatbot or pipeline) in this repository - the harness that runs the real agent (first time), hard realistic tests from risks, requirements, failed runs or traces, harder or combined tests, benchmarks, and shared evaluators ("create evals for this agent", "turn this failure into a test", "set up the harness", "bring in this benchmark"); or to run them and report where the agent stands without changing it ("run the agent evals", "get a baseline", "is the agent getting worse"). Also use its methods to analyze evaluation coverage or design scenarios when requested, without requiring implementation or execution. Also to fix a test or evaluator that errors or cannot fail, or to mock a dependency trials cannot reach. For agent-neutral coding tasks from sessions or PRs, use the coding-evals skill, including for a custom coding agent developed in this repository.
+description: Build and run evaluations for an AI agent or LLM application, including harnesses, failure-based tests, benchmarks and shared evaluators. Also analyze evaluation coverage or design scenarios without requiring implementation or execution. Repair broken tests or mock unreachable dependencies. Use improve for changing the agent or comparing changes; use coding-evals for agent-neutral coding tasks, including agents developed here.
 ---
 
 # Build and run evals
