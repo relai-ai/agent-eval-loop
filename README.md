@@ -32,51 +32,80 @@
 
 ## Two ways to use it
 
-### 🤖 Agent applications and business workflows
+### 🤖 AI agents you build
 
-The agents you build and deploy, regardless of framework. RELAI creates evals from your agent's traces or generates them from its code, documentation, and potential risks. It then improves prompts, tools, workflows, memory, and model choices, keeping only changes that improve evaluation results while satisfying your guardrails.
+The agents you build and deploy, on any framework. Open your agent's repository and go from
+"it seems to work" to measured improvements in three requests:
 
-Open your agent's repository and ask:
-
-```text
-Use RELAI's discover skill to map this agent's behavior and where it can fail
-```
-
-Or start from production traces:
+**1. Discover where it can fail**
 
 ```text
-Use RELAI's loop skill to improve this agent from ./traces;
-optimize task success and cost
+Use RELAI's discover skill to read this agent's code, prompts and the traces
+in ./traces, and tell me where it is likely to fail
 ```
 
-### 🏭 Coding agents and software factories
+You get an **EvalsWiki** in `relai/wiki/`: what the agent must do, ranked risks with evidence,
+and the open questions only you can answer.
 
-The coding agents your team uses: Claude Code, Codex, OpenHands or your own setup of one.
-RELAI turns coding sessions, pull requests, and Git history into reproducible evals that any coding agent can run. It then measures whether a new model, CLAUDE.md, skill, or agent configuration actually improves performance on *your* codebase.
-
-Open an eval project and ask:
+**2. Turn the risks into evals**
 
 ```text
-Use RELAI's coding-evals skill to mine my repo at {path-to-repo} for tasks
-from the last six months, then measure how our coding agent does on them
+Use RELAI's eval skill to build tests for the top five risks and get a baseline
 ```
 
-You can start at any skill without completing the full workflow.
+You get realistic tests that run the real agent end to end, with graders you preview before
+they are frozen, and a baseline score for each risk.
 
-### First steps
+**3. Improve without regressions**
 
-Not sure where to begin? Ask *"Use RELAI's start skill to look at this agent and suggest a first
-step."* It reads your repository and recommends one, without running your agent or spending on
-models. What each first request needs and leaves behind:
+```text
+Use RELAI's improve skill to fix the failing tests without breaking the passing ones.
+You may change prompts and tools, not the model
+```
 
-| First request | Needs | Creates | Spends |
-| --- | --- | --- | --- |
-| `start` | nothing | a recommendation; `relai/` only if the next step needs it | your coding agent's usage only |
-| `discover` | your code, optionally traces | `relai/wiki/` (requirements, risks, open questions) | coding agent only, plus a cheap triage model for large trace sets if you approve it |
-| `trace-review` | your traces | a small review app in your project | coding agent only |
-| `eval` | Python 3.11+, a container engine and `uv` for Harbor (or your own runner), model keys | `relai/` with a harness, tests and results | agent and judge model calls, estimated before each run |
-| `improve`, `loop` | working evals (built on the way if missing) | candidate changes on a branch, records of what was tried | agent and judge runs within the budget you set |
-| `coding-evals` | Harbor, a container engine, access to your repositories | tasks under `relai/tests/` | building and health checks call no model; runs use your coding agent's plan or API |
+You get a branch with the change, before-and-after scores on the same frozen tests, and a
+record of what was tried and rejected.
+
+**Then keep it going** as new traces arrive:
+
+```text
+Use RELAI's loop skill to keep improving this agent from ./traces;
+optimize task success first, then cost
+```
+
+### 🏭 Coding agents your team uses
+
+Claude Code, Codex, OpenHands or your own setup of one. Find out whether a new model,
+CLAUDE.md or skill actually helps on *your* code, not on a public benchmark. From an eval
+project (a repository that holds the evals):
+
+**1. Turn past work into evals**
+
+```text
+Use RELAI's coding-evals skill to build 20 evals from the last six months of merged pull requests and reverts in the repo {name-of-the-repo} 
+```
+
+You get complete evals in [Harbor](https://github.com/harbor-framework/harbor) format, ready to
+run. Each starts at the commit before the real fix, ships the repository and its toolchain, and is
+graded by hidden tests and checks the real fix must pass. Any coding agent can run them.
+
+**2. Evaluate your coding agent**
+
+```text
+Use RELAI's coding-evals skill to evaluate Claude Code on these evals and report
+the solved rate and cost per solved task
+```
+
+**3. Improve your setup before you roll it out**
+
+```text
+Use RELAI's improve skill to improve our CLAUDE.md and skills against these evals
+```
+
+You get a branch with the improved setup, the solved rate with its noise before and after, cost
+per solved task, and the evals where the two setups differ.
+
+You can start at any step without completing the full workflow.
 
 ## Installation
 
@@ -147,6 +176,21 @@ Other project directories: `.cursor/skills/` (Cursor), `.windsurf/skills/` (Wind
 Copy each skill's whole folder, including the files next to `SKILL.md`, then reload your agent.
 
 </details>
+
+## First steps
+
+Not sure where to begin? Ask *"Use RELAI's start skill to look at this agent and suggest a first
+step."* It reads your repository and recommends one, without running your agent or spending on
+models. What each first request needs and leaves behind:
+
+| First request | Needs | Creates | Spends |
+| --- | --- | --- | --- |
+| `start` | nothing | a recommendation; `relai/` only if the next step needs it | your coding agent's usage only |
+| `discover` | your code, optionally traces | `relai/wiki/` (requirements, risks, open questions) | coding agent only, plus a cheap triage model for large trace sets if you approve it |
+| `trace-review` | your traces | a small review app in your project | coding agent only |
+| `eval` | Python 3.11+, a container engine and `uv` for Harbor (or your own runner), model keys | `relai/` with a harness, tests and results | agent and judge model calls, estimated before each run |
+| `improve`, `loop` | working evals (built on the way if missing) | candidate changes on a branch, records of what was tried | agent and judge runs within the budget you set |
+| `coding-evals` | Harbor, a container engine, access to your repositories | tasks under `relai/tests/` | building and health checks call no model; runs use your coding agent's plan or API |
 
 ## Updating
 
@@ -222,7 +266,7 @@ When RELAI-managed state is useful, `relai/STATUS.md` shows the current request,
 
 RELAI checks the prerequisites needed for the task, names missing credentials and reuses existing runners and tests. It uses your project's credential mechanism or `relai/.env`; coding agents never read credential values, while executable helpers use them for authentication and redaction.
 
-## Agent applications and business workflows
+## AI agents you build
 
 ### Discover from code, documentation and traces
 
@@ -254,18 +298,18 @@ Source-linked feedback can later inform discovery, eval proposals or judge calib
 ### Bring your own benchmark
 
 ```text
-Use RELAI's eval skill to bring in the benchmark at ../bench-x
+Use RELAI's eval skill to bring in the benchmark at {path-to-benchmark}
 (its own runner and scorer, train/validation/test)
 ```
 
 RELAI first checks a small pilot against the benchmark's own scorer. It respects the benchmark's splits: fixes are learned from train, validation decides what is kept, and test is reserved for final assessment. The benchmark is pinned to its commit and never edited.
 
-## Coding agents and software factories
+## Coding agents your team uses
 
 The `coding-evals` skill turns your team's work into long-horizon tasks that any coding agent can run:
 
 ```text
-Use RELAI's coding-evals skill to make a test from PR #412 in acme/api
+Use RELAI's coding-evals skill to make a test from PR #412 in {repo-name}
 Use RELAI's coding-evals skill to check whether our new CLAUDE.md helps on our tasks
 ```
 
