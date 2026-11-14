@@ -93,6 +93,10 @@ user" in `relai/README.md` says when the agreement leaves a consequential choice
 - For open questions needed now: what is unclear, why the answer matters, concrete choices.
 - For selected feedback items: what happened, a source quote and the recommended verdict with its
   uncertainty. The user's judgment on a real run can establish the expected behavior.
+- At handoff, surface consequential nonblocking questions as unfinished decisions, including
+  what resolving them could enable or change in proposed eval coverage. Offer the shared
+  [review paths](../start/template/README.md#working-with-the-user) for findings and items needing
+  judgment; a saved report or question page is not the user interaction.
 - Turn each answer into the page change yourself ([resolving an open
   question](references/wiki-rules.md#resolving-an-open-question)), and fill the feedback item's
   `Answer` and `Outcome`.
@@ -103,6 +107,12 @@ user" in `relai/README.md` says when the agreement leaves a consequential choice
   parallelize independent analysis as appropriate. The selected coverage mode, not a fixed script
   sequence, determines completion. Shortened transcripts can guide selection but cannot support
   claims about omitted content.
+- **Consider model assistance.** When scale or semantic complexity makes additional model-assisted
+  processing worthwhile, inspect existing project tools and model configuration. Reuse covered
+  decisions; confirm unresolved choices with the user about whether and which model to use under
+  [scalable triage](references/trace-triage.md). Follow that guidance for method selection,
+  pilot validation and source verification. Continue useful independent analysis while decisions
+  remain open or model access is unavailable.
 - **Discover before selecting.** Preserve distinct findings, weak signals and uncertainty beyond
   the priority shortlist. Follow useful new mechanisms and test the blind spots of the chosen
   method; a long finding list is not a stopping rule. Assess remaining opportunities and justify

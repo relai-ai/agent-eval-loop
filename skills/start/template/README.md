@@ -110,8 +110,9 @@ existing entries and revise or remove superseded conclusions. Retain durable req
 decisions, supported risks, corrections and reusable lessons rather than transient plans or
 speculative filler. Explain material updates in the normal report without repeating covered
 approval requests. Setup serves that future value; it is not a prerequisite to answering the
-immediate question. Give substantive knowledge one authoritative home; link to it with concise
-summaries in reports, boards or proposals rather than repeating the full analysis. Keep useful
+immediate question. Give substantive knowledge one authoritative home; link concise summaries
+from reports, boards or proposals. Avoid copying detailed evidence or manually synchronizing
+changing counts and statuses across these summaries. Keep useful
 state current as work progresses without turning every intermediate observation into another
 artifact. Preserve independently maintainable requirements, risks and consequential questions;
 less duplication must not mean losing their evidence or uncertainty. Do not put protected
@@ -121,6 +122,10 @@ Actively maintain reusable project-local assets when they will make future analy
 easier. Inspect and reuse existing scripts, adapters, queries or other suitable assets; improve or
 consolidate them when the current work reveals a concrete need, preserving user modifications.
 Leave useful nontrivial work runnable and understandable in the project's language and conventions.
+Separate reusable processing from inputs likely to change, such as datasets, selections and output
+locations. Use project-relative defaults and expose inputs where variation is expected; case-specific
+IDs and expected counts can remain explicit in selections and fixture checks. Keep useful
+domain-specific checks and their assumptions clear as helpers evolve.
 Match maintenance effort to expected reuse and ownership cost, within authorized scope; respect
 read-only requests and opt-outs. Asset creation is not a completion checklist or a reason to build
 generic infrastructure without a concrete need.
@@ -139,7 +144,7 @@ generic infrastructure without a concrete need.
 | `bin/` | The shared checkers (below), plus any example script copied from the plugin | yes |
 | `harness/` | How the agent runs in a trial: adapter, recorder, image recipe; `mocks/` with `MOCKS.md`; `smoke/`, the smoke test | yes |
 | `wiki/` | `requirements/`, `risks/`, `open-questions/`: one page per item; `index.md`; `attachments/` for cited trace excerpts | yes |
-| `tests/<id>/` | One test per behavior | yes |
+| `tests/<id>/` | Focused tests, with distinguishable criteria for combined behaviors | yes |
 | `benchmarks/<id>/` | A benchmark from another repository: its README, and its case template and `cases/` (import) or its adapter (wrap) | yes |
 | `evaluators/<id>/` | Criteria shared across tests | yes |
 | `setups/<id>/` | A team's setup for coding agents, laid out as in a repository root (the `coding-evals` skill) | yes |
@@ -216,10 +221,12 @@ or printing the value.
 
 RELAI is something the user steers, not a black box.
 
-- **Approval points.** Unless existing instructions cover or delegate the decision, get approval
-  for the risk list, test scenarios, grader previews before freezing, and the improvement
-  agreement. These are named decisions within independent workflows, not a sequence every task
-  must complete. Ask only about what remains open; restate consequential changes after discussion.
+- **Approval points.** Get approval for consequential choices needed for the current request
+  when existing instructions do not cover or delegate them. These can include risk dispositions
+  or priorities, test scenarios, grader previews before freezing, and the improvement agreement.
+  Reporting findings and recommendations does not itself require approval. After clarifications,
+  complete the requested work; resolving a decision does not request a later stage. Restate
+  consequential changes after discussion.
 - **Delegated approvals.** The build approvals (an `eval` scenario table and grader preview; a
   `coding-evals` task list and check preview) can be delegated to a fresh independent review.
   When neither an agreement, a loop contract's approvals setting, nor `decisions.md` says how
@@ -237,12 +244,30 @@ RELAI is something the user steers, not a black box.
   supported; make clear what the answer approves and what can wait. Each prompt should make sense
   on its own. Batch related choices at a checkpoint, but give independently answerable choices
   separate prompts or labeled rows rather than compressing them into one sentence.
+- **Unfinished decisions.** Recording a consequential open question does not replace asking it.
+  Bring unresolved choices relevant to the request forward at a useful checkpoint for resolution
+  or explicit deferral, even when independent work can finish without them. Explain what the
+  answer would change, including excluded coverage or proposed follow-up such as additional
+  evals. An answer does not itself authorize that follow-up or further spending. Inspect existing
+  questions on subsequent requests; resurface those that affect the work, become actionable or
+  challenge an earlier assumption. Respect explicit deferrals rather than repeating an unchanged
+  backlog; retain their scope and a useful reason or condition for revisiting them.
+- **Connected review.** Chat brings decisions to the user's attention; a review app supplies
+  evidence and annotation context; the board provides continuity. Use the same underlying items
+  and recorded outcomes across these surfaces, with stable references to sources and reviewed
+  artifacts. Link directly to the relevant item or view when supported, rather than just the app
+  homepage. Apply answers given in either surface to the authoritative records and reconcile
+  stale views before asking again. Acknowledge what the input changed, what remains unresolved,
+  and any proposed follow-up. Keep comments, run verdicts, policy decisions and approvals distinct.
+  Record an approval's subset, reviewed revision or content identity, and any limits in the
+  existing decision record; reassess affected approvals when that material changes. A comment,
+  reviewed marker or partial approval does not approve other items or unseen scoring.
 - **When the user is asked.** Questions wait for a natural moment; only a blocking item
   interrupts a step.
 
   | Moment | What is asked |
   | --- | --- |
-  | End of `discover` | The risk table, open questions, and feedback on the runs just read |
+  | End of `discover` | Consequential unresolved choices relevant to the request, including nonblocking policy questions and feedback on runs; resolve or explicitly defer them, explaining coverage and follow-up implications |
   | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, how involved to be (delegated approvals), and on first use the harness setup questions |
   | `eval` scenario approval and grader preview | Approval of the scenario table (with the build's cost) and of the grader preview, in manageable subsets |
   | End of an `eval` run whose judges scored real trials for the first time, or after a rubric change | That run's judge checks, while the run is fresh, and the pass mark if it is unset |
@@ -259,6 +284,16 @@ RELAI is something the user steers, not a black box.
   Prioritize blocking items, likely failures, judge checks, then open questions and the rest.
   Close moot items first (`docs/files.md`, `feedback.md`), say how many remain, and leave
   them on the board. An answer of "later" leaves an item pending.
+- **Reviewable handoffs.** Separate findings to understand from items needing a verdict, decision
+  or approval. Lead with the substantive findings and offer a deeper explanation or evidence
+  walkthrough without requiring sign-off on an analysis. For review items, explain the judgments
+  needed and recommend a manageable first batch; offer a guided chat walkthrough or a suitable
+  existing app, with the relevant location and what to do there. File links supplement this
+  invitation rather than assigning an unexplained document-reading task. Check the app's actual
+  capabilities: if review or annotation is missing, offer to extend it, or to build a review app
+  when the workload warrants one, using the `trace-review` skill. Keep chat available and do not
+  make app construction a prerequisite. When approval is needed, ask for the current subset's
+  concrete decision rather than only offering help later.
 - **Updates.** Lead with the answer or decision, uncertainty and the next useful action; put
   optional future mechanics and supporting detail afterward or in existing files. When another
   action is useful, name it and why; a completed request need not be routed into another stage.

@@ -126,6 +126,11 @@ real-trial judge checks. Name the credentials needed as instructions (export the
 to `relai/.env`) and continue work
 that does not need them.
 
+At review checkpoints, use the shared [reviewable handoff](../start/template/README.md#working-with-the-user)
+for a guided batch or suitable app view of tasks and scoring. Surface consequential open
+questions even when the chosen task subset can proceed, explaining excluded coverage and
+possible follow-up; record resolution or explicit deferral in the existing items.
+
 Long steps (image builds, health runs, trials) stay visible: say what is running, how far along it
 is (tasks or trials done of the total), spend so far and where results land, and update
 `STATUS.md` at milestones.

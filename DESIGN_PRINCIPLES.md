@@ -57,12 +57,16 @@ arises or the work would exceed those boundaries.
 ### 9. Contain uncertainty to the work it affects
 
 Pause work that requires an unresolved answer while continuing useful, independent work.
-Keep deferred questions visible.
+Consequential open questions are unfinished decisions: bring them forward for resolution or
+explicit deferral at useful checkpoints, explaining what their answers would change. Recording
+a question does not replace asking it. Revisit deferred questions when relevant to later work.
 
 ### 10. Make autonomous work inspectable and interruptible
 
 Expose progress, spend, important decisions, stopping conditions, and where results live.
 Users should be able to understand, redirect, or stop the work.
+Connect conversation, review interfaces and project records so users can inspect evidence, give
+input and see its outcome without maintaining competing answers across surfaces.
 
 ## Keep implementation flexible and maintainable
 

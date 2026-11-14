@@ -32,6 +32,8 @@ updates and run `check_wiki.py` after managed wiki changes.
 
 When new knowledge conflicts with an existing page and the applicable agreement leaves the
 decision unresolved, or before reducing or retiring coverage outside existing authorization.
+For consequential open questions, follow the shared [unfinished-decision and review guidance](../../start/template/README.md#working-with-the-user):
+bring relevant questions forward for resolution or explicit deferral, including nonblocking ones.
 
 ## Approach
 
@@ -51,6 +53,10 @@ general scenario, its runtime or output format.
 
 ### Resolving an open question
 
+Open questions are temporary decisions to settle, not a permanent inventory of ambiguities.
+Keep the evidence, recommendation, affected work and any explicit deferral with its revisit
+context on the page. When an answer arrives, preserve its decision/source link in the resulting
+requirement or other outcome so app and chat references can be reconciled after the page is removed.
 The answer comes first as a requirement. When it settles the behavior, write or update the
 requirement and delete the question. When it is partial, narrow the question to what is still
 unclear. Write no requirement only when the answer says the behavior is not required, is out of

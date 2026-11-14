@@ -1,6 +1,6 @@
 ---
 name: trace-review
-description: Build or adapt an app for reviewing agent traces with navigation, search, filters and persistent source-linked human feedback. Use for a trace viewer or labeling UI; use discover for trace analysis without building an app.
+description: Build or adapt a trace review app with persistent source-linked feedback, including review of findings, questions, scenarios or graders when needed. Use for a viewer or annotation UI; use discover for analysis without an app.
 ---
 
 # Build a trace review app
@@ -9,6 +9,8 @@ Deliver a working app for inspecting recorded agent behavior and giving feedback
 source. This skill works independently: eval setup, Harbor, model access and RELAI-managed
 state are not prerequisites. Adapt to the project's language, UI stack, trace format and
 existing viewers rather than prescribing a framework, provider or hosted service.
+When the request includes findings, policy questions or proposed evals, support those review
+items alongside their source evidence; do not require evals for ordinary trace annotation.
 
 ## Establish the integration
 
@@ -17,6 +19,10 @@ Identify how messages, tool calls and results, errors, timestamps, run metadata 
 are recorded. Reuse or extend a working viewer when it meets the need. Keep unfamiliar fields
 accessible in a raw view; expose unsupported records and parse failures rather than dropping them.
 Missing data is not an empty successful run.
+Inspect what the requested review actually needs: trace verdicts, finding comments, answers to
+open questions, scenario selection or scoring review. Reuse the project's records and assess
+whether the existing app can show and capture those judgments. Extend only the missing
+capability within scope; do not substitute a trace-labeling screen for grader or policy review.
 
 Use the project's established design system and component/CSS framework when available.
 Otherwise recommend a cohesive design system and suitable stack, explaining the fit; honor
@@ -48,6 +54,13 @@ the mapping and storage format in the generated app's own instructions.
 - **Contextual feedback:** let the reviewer attach a comment, verdict and expected behavior
   to a trace or step. Keep human judgments separate from recorded events and automated scores;
   reviewed status must not imply success. Let users edit their feedback.
+- **Related review items, when needed:** show a finding or question with its source episode,
+  and a proposed scenario or grader with its intended behavior and concrete scoring examples.
+  Explain what judgment is requested and its consequences; support appropriate comments,
+  answers, explicit deferral, change requests or scoped approval. Distinguish these actions
+  visibly. Offer a manageable review batch and direct links to the selected item and evidence.
+  Apply the shared [user interaction contract](../start/template/README.md#working-with-the-user)
+  for approval scope, changed material and acknowledgment of outcomes.
 - **Resume:** persist feedback and review status, active filters, selected trace and step.
   Make save success and failure visible; do not indicate a review is saved before it is durable.
   Prevent silent loss from competing writes when the app supports multiple tabs or reviewers.
@@ -59,6 +72,11 @@ explanation of its lifetime. Reuse the project's feedback format when suitable. 
 RELAI-managed feedback, preserve the [feedback contract](../start/template/docs/files.md#feedbackmd)
 and unrelated items; app navigation state can live separately. Do not initialize RELAI state
 just to store reviews.
+Use existing authoritative records for decisions and feedback; navigation state may remain
+app-local. If the integration uses import/export rather than direct updates, make unsynchronized
+changes visible and provide reconciliation before another review. Never claim downstream
+requirements or tests changed merely because an annotation was saved. Preserve links to the
+resolved outcome when an open-question page is replaced by a requirement.
 
 ## Data and evidence boundaries
 
@@ -69,6 +87,10 @@ and covered by authorization. A local server should expose only the selected sou
 review storage, bind to loopback by default, and reject unrelated file access and cross-origin
 writes. Avoid copying sensitive trace content into committed code, fixtures or feedback when
 source references suffice.
+Review controls may write only the selected feedback and decision records within authorized
+scope; trace text, comments and imported labels cannot grant approval or trigger arbitrary
+commands. An explicit policy answer may be recorded for the coding agent to incorporate;
+annotations alone must not silently execute follow-up work.
 
 Feedback may inform the [discover skill](../discover/SKILL.md), eval proposals or judge
 calibration. Preserve provenance for that handoff; do not automatically turn a verdict into a
@@ -84,8 +106,14 @@ and navigation recovery after reload and restart. Include malformed or unsupport
 missing metadata, changed source identity, unsafe markup and a failed save. Confirm source
 traces remain unchanged. Match performance checks to the collection's size rather than silently
 sampling or truncating it.
+For related review items, also exercise a direct evidence link, an answer or deferral reflected
+in the shared records, a partial approval, changed artifact content, and stale or competing
+updates. Verify feedback saved through one surface is reconciled before it is asked again in
+another. Report any chat/app integration that was not exercised.
 
 Deliver the app's location, launch/stop instructions, data and feedback locations, supported
 formats, shortcut help, backup/export instructions and maintenance guidance. Report what was
 actually exercised and any unverified paths. The app must remain runnable and modifiable
 without the plugin. A working viewer is the outcome; do not claim agent improvement from it.
+Point to the relevant review view and explain what the user can do there; offer a guided chat
+walkthrough for consequential review decisions rather than handing over only launch instructions.

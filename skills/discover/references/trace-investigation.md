@@ -14,9 +14,12 @@ validate them against full source and disclose omissions. Mechanical flags and t
 do not substitute for these comparisons.
 
 Use gaps in that view, applicable requirements and observed behavior to form investigable questions.
-Follow the relevant episode in context: a local error can be recovered, while an apparently
-successful action can violate an earlier constraint. Judge a decision using the information
-available then, rather than a requirement introduced later.
+For selected cases, choose an outcome or obligation grounded in available evidence and identify
+what recorded evidence would show it was met. Work backward from the result or claim through the
+consequential choice to the input or constraint that makes it correct; verify that relationship
+for the actual case. An allowed or successfully executed action does not by itself establish
+fulfillment. Missing evidence of an effect leaves that conclusion unresolved. Judge a decision
+using the information available then, rather than a requirement introduced later.
 
 Check plausible alternatives such as a changed request, correct refusal, valid derivation or
 expected tool limitation. Distinguish observed behavior from hypotheses about its cause; a bad
