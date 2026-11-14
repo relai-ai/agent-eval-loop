@@ -34,6 +34,8 @@
 
 ### 🤖 AI agents you build
 
+https://github.com/user-attachments/assets/53ce7659-21f8-4f42-897e-a5e3cc4d1ffa
+
 The agents you build and deploy, on any framework. Open your agent's repository and go from
 "it seems to work" to measured improvements in three requests:
 
@@ -74,6 +76,8 @@ optimize task success first, then cost
 ```
 
 ### 🏭 Coding agents your team uses
+
+https://github.com/user-attachments/assets/c8002907-e339-4679-9328-246a66a2bea1
 
 Claude Code, Codex, OpenHands or your own setup of one. Find out whether a new model,
 CLAUDE.md or skill actually helps on *your* code, not on a public benchmark. From an eval
