@@ -34,8 +34,6 @@
 
 ### 🤖 AI agents you build
 
-A two-minute walkthrough, recorded in Claude Code. The agent, names and numbers in it are illustrative.
-
 https://github.com/user-attachments/assets/53ce7659-21f8-4f42-897e-a5e3cc4d1ffa
 
 The agents you build and deploy, on any framework. Open your agent's repository and go from
@@ -78,8 +76,6 @@ optimize task success first, then cost
 ```
 
 ### 🏭 Coding agents your team uses
-
-A 90-second walkthrough, recorded in Codex. The repository, names and numbers in it are illustrative.
 
 https://github.com/user-attachments/assets/c8002907-e339-4679-9328-246a66a2bea1
 
