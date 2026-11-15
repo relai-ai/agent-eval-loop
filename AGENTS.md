@@ -3,6 +3,24 @@
 Before changing this plugin, read [DESIGN_PRINCIPLES.md](DESIGN_PRINCIPLES.md) and follow it.
 For the current architecture and its rationale, see [DESIGN.md](DESIGN.md).
 
+## Write in clear, plain language
+
+Write the README, docs and skills for a technical reader who is new to this plugin. Say what
+the plugin does and what the user gets, in specific terms.
+
+- **Plain words over slogans.** Write "RELAI writes the evals; you review them", not "Evals are
+  the hard part. RELAI builds them." Avoid marketing words (seamless, powerful, robust,
+  realistic, game-changer) and phrases that flatter the reader ("questions only you can
+  answer").
+- **Name who acts.** Prefer "you preview the judges" or "RELAI repairs the test" over passive
+  sentences with no actor ("judges are previewed", "a test is repaired openly").
+- **No rhetorical patterns.** No "not X, it's Y" contrasts, runs of short dramatic sentences,
+  aphorisms ("the yardstick holds still"), forced groups of three or empty "from X to Y" ranges.
+- **Define project terms once,** then use the same word each time. Don't switch between
+  synonyms for one thing.
+- **Punctuation and formatting.** Use commas, colons, periods or parentheses instead of em
+  dashes. Use bold only where a reader scans for it, and don't put emojis in headings.
+
 ## Stay portable across users' setups
 
 The plugin runs inside whatever coding agent, toolchain and machine the user has. Guidance and
