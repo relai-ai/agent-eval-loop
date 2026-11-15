@@ -2,42 +2,8 @@
 
 [Back to README](../README.md)
 
-## Build, evaluate and improve
-
-https://github.com/user-attachments/assets/c8002907-e339-4679-9328-246a66a2bea1
-
-Claude Code, Codex, OpenHands or your own setup of one. Measure whether a new model,
-CLAUDE.md or skill improves results on your repositories. From an eval project (a repository
-that holds the evals):
-
-**1. Turn past work into evals**
-
-```text
-Use RELAI's coding-evals skill to build 20 evals from the last six months of
-merged pull requests and reverts in {repository}
-```
-
-You get complete evals in [Harbor](https://github.com/harbor-framework/harbor) format, ready to
-run. Each starts at the commit before the real fix, ships the repository and its toolchain, and is
-graded by hidden tests and checks the real fix must pass. Any coding agent can run them.
-
-**2. Evaluate your coding agent**
-
-```text
-Use RELAI's coding-evals skill to evaluate Claude Code on these evals and report
-the solved rate and cost per solved task
-```
-
-**3. Improve your setup before you roll it out**
-
-```text
-Use RELAI's improve skill to improve our CLAUDE.md and skills against these evals
-```
-
-You get a branch with the improved setup, the solved rate with its noise before and after, cost
-per solved task, and the evals where the two setups differ.
-
-You can start at any step without completing the full workflow.
+Start with the [README walkthrough](../README.md#coding-agents-your-team-uses), expanding the
+full walkthrough beneath the task-building request. This guide covers task design and setup.
 
 ## Task sources and grading
 

@@ -24,14 +24,18 @@ the plugin does and what the user gets, in specific terms.
 ## Keep the README focused
 
 The README should help a new reader understand RELAI, choose a use case, install it and make
-one useful first request. Aim for 1,000–1,200 readable words, about 5–6 minutes at an assumed
-200 words per minute, excluding linked guides and videos. This is an editorial target, not
-a hard limit or a claim about observed reading speed. Count visible prose, tables and code
-examples; exclude markup and link destinations when estimating reading time.
+one useful first request. Aim for 1,000–1,200 readable words in the default view, about
+5–6 minutes at an assumed 200 words per minute, excluding collapsed walkthrough contents,
+linked guides and videos. This is an editorial target, not a hard limit or a claim about
+observed reading speed. Count visible prose, tables and code
+examples; exclude markup and link destinations when estimating reading time. Report default-view
+and fully expanded reading estimates separately when the README has collapsed content.
 
 Keep essential information about cost, data movement, authorization and evaluation limits
-visible. Put detailed workflows, alternative setup methods and review procedures in top-level
-`docs/` guides, with descriptive links from the relevant README section. Preserve linked anchors
+visible. Keep full use-case walkthroughs in collapsed README sections beneath their starter
+requests, without duplicating their content in the guides. Put specialized workflows,
+alternative setup methods and review procedures in top-level `docs/` guides, with descriptive
+links from the relevant README section. Preserve linked anchors
 when moving content. Project contracts remain authoritative in `skills/start/template/`; link
 to them rather than maintaining competing rules in the guides.
 

@@ -43,6 +43,8 @@ https://github.com/user-attachments/assets/53ce7659-21f8-4f42-897e-a5e3cc4d1ffa
 
 For agents you build and deploy, on any framework. Open your agent's repository and ask:
 
+**1. Discover where it can fail**
+
 ```text
 Use RELAI's discover skill to read this agent's code, prompts and the traces
 in ./traces, and tell me where it is likely to fail
@@ -52,7 +54,40 @@ This builds an **EvalsWiki** in `relai/wiki/`: requirements, ranked risks with s
 and questions about intended behavior. Traces are optional. From there, RELAI can build tests,
 record a baseline and compare changes on a branch, with a record of what it tried and rejected.
 
-[Follow the full discover, eval and improve walkthrough](docs/agent-evals.md),
+<details>
+<summary>Full walkthrough: discover, evaluate and improve</summary>
+
+Continue from the discovery request above:
+
+**2. Turn the risks into evals**
+
+```text
+Use RELAI's eval skill to build tests for the top five risks and get a baseline
+```
+
+You get tests that run the real agent end to end, with graders you preview before
+they are frozen, and a baseline score for each risk.
+
+**3. Improve without regressions**
+
+```text
+Use RELAI's improve skill to fix the failing tests without breaking the passing ones.
+You may change prompts and tools, not the model
+```
+
+You get a branch with the change, before-and-after scores on the same frozen tests, and a
+record of what was tried and rejected.
+
+**Continue as new traces arrive:**
+
+```text
+Use RELAI's loop skill to keep improving this agent from ./traces;
+optimize task success first, then cost
+```
+
+</details>
+
+[Explore discovery and runner options](docs/agent-evals.md),
 [review and annotate traces](docs/agent-evals.md#review-traces-in-an-app), or
 [bring an existing benchmark](docs/agent-evals.md#bring-your-own-benchmark).
 
@@ -63,6 +98,8 @@ https://github.com/user-attachments/assets/c8002907-e339-4679-9328-246a66a2bea1
 For Claude Code, Codex, OpenHands or your own setup. Build tests from your team's work to
 measure whether a model, instruction file or skill improves results on your repositories:
 
+**1. Turn past work into evals**
+
 ```text
 Use RELAI's coding-evals skill to build 20 evals from the last six months of
 merged pull requests and reverts in {repository}
@@ -72,7 +109,34 @@ This creates tasks that start before the original fix, include the repository an
 and score the evaluated agent using hidden tests and reviewed checks. Any coding agent can run
 them. You can measure solved rate and cost per solved task, then compare changes to your setup.
 
-[Build tasks, evaluate your coding agent and compare setups](docs/coding-evals.md).
+<details>
+<summary>Full walkthrough: build tasks, evaluate and compare</summary>
+
+Continue from the task-building request above:
+
+**2. Evaluate your coding agent**
+
+```text
+Use RELAI's coding-evals skill to evaluate Claude Code on these evals and report
+the solved rate and cost per solved task
+```
+
+This reports the agent's results on your tasks, with uncertainty and cost per solved task.
+
+**3. Improve your setup before you roll it out**
+
+```text
+Use RELAI's improve skill to improve our CLAUDE.md and skills against these evals
+```
+
+You get a branch with the improved setup, the solved rate with its noise before and after, cost
+per solved task, and the evals where the two setups differ.
+
+You can start at any step without completing the full workflow.
+
+</details>
+
+[Task sources, grading safeguards and eval-project setup](docs/coding-evals.md).
 
 ## Installation
 

@@ -2,50 +2,10 @@
 
 [Back to README](../README.md)
 
-## Build evals and improve your agent
+Start with the [README walkthrough](../README.md#ai-agents-you-build), expanding the full
+walkthrough beneath the discovery request. This guide covers specialized options and operation.
 
-https://github.com/user-attachments/assets/53ce7659-21f8-4f42-897e-a5e3cc4d1ffa
-
-For agents you build and deploy, on any framework. Run these requests from the agent's repository.
-You can start at any step and reuse existing tests or evidence:
-
-**1. Discover where it can fail**
-
-```text
-Use RELAI's discover skill to read this agent's code, prompts and the traces
-in ./traces, and tell me where it is likely to fail
-```
-
-You get an **EvalsWiki** in `relai/wiki/`: what the agent must do, ranked risks with evidence,
-and questions about intended behavior.
-
-**2. Turn the risks into evals**
-
-```text
-Use RELAI's eval skill to build tests for the top five risks and get a baseline
-```
-
-You get tests that run the real agent end to end, with graders you preview before
-they are frozen, and a baseline score for each risk.
-
-**3. Improve without regressions**
-
-```text
-Use RELAI's improve skill to fix the failing tests without breaking the passing ones.
-You may change prompts and tools, not the model
-```
-
-You get a branch with the change, before-and-after scores on the same frozen tests, and a
-record of what was tried and rejected.
-
-**Continue as new traces arrive:**
-
-```text
-Use RELAI's loop skill to keep improving this agent from ./traces;
-optimize task success first, then cost
-```
-
-### Discover from code, documentation and traces
+## Discover from code, documentation and traces
 
 `discover` builds the EvalsWiki: what the agent must do, where it can fail and what remains unclear.
 
@@ -59,7 +19,7 @@ The optional triage example groups leads into three lanes:
 
 Durable findings update EvalsWiki when they help future work. The wiki is not a transcript archive or a checklist of artifacts.
 
-### Review traces in an app
+## Review traces in an app
 
 ```text
 Use RELAI's trace-review skill to build a review app for ./traces
@@ -72,7 +32,7 @@ where you stopped. Traces stay read-only and data stays local by default. The ap
 own run instructions and inspectable feedback storage; no eval setup or model access is required.
 Source-linked feedback can later inform discovery, eval proposals or judge calibration.
 
-### Bring your own benchmark
+## Bring your own benchmark
 
 ```text
 Use RELAI's eval skill to bring in the benchmark at {path-to-benchmark}
