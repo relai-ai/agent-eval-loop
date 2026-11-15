@@ -32,6 +32,8 @@
 
 ## Two ways to use it
 
+You can start at any step without completing the full workflow.
+
 ### 🤖 AI agents you build
 
 https://github.com/user-attachments/assets/53ce7659-21f8-4f42-897e-a5e3cc4d1ffa
@@ -86,7 +88,8 @@ project (a repository that holds the evals):
 **1. Turn past work into evals**
 
 ```text
-Use RELAI's coding-evals skill to build 20 evals from the last six months of merged pull requests and reverts in the repo {name-of-the-repo} 
+Use RELAI's coding-evals skill to build 20 evals from the last six months of
+merged pull requests and reverts in {repository}
 ```
 
 You get complete evals in [Harbor](https://github.com/harbor-framework/harbor) format, ready to
@@ -114,17 +117,9 @@ per solved task, and the evals where the two setups differ.
 - **Hard to game.** Hidden tests, existing tests as regression checks, and checks for edited
   tests, out-of-scope changes, unsafe work and claims that do not match what happened.
 
-You can start at any step without completing the full workflow.
-
 ## Installation
 
-RELAI supports Claude Code, Codex, and other coding agents. Native installs for Claude Code
-and Codex are below; expand **Other agents, Skills CLI, and manual installation** for
-additional options.
-
 ### Claude Code
-
-From a terminal:
 
 ```bash
 claude plugin marketplace add relai-ai/agent-eval-loop
@@ -132,8 +127,6 @@ claude plugin install relai@agent-eval-loop
 ```
 
 ### Codex
-
-From a terminal:
 
 ```bash
 codex plugin marketplace add relai-ai/agent-eval-loop
@@ -186,11 +179,12 @@ Copy each skill's whole folder, including the files next to `SKILL.md`, then rel
 
 </details>
 
+<a id="updating"></a>
 <details>
-<summary><b>Updating and uninstalling</b></summary>
+<summary><b>Updating</b></summary>
 
-**Updating.** Update using the same method and scope you installed with, then start a new session.
-Read [release notes](https://github.com/relai-ai/agent-eval-loop/releases) for migration steps.
+Update using the same method and scope you installed with, then start a new session. Read the
+[release notes](https://github.com/relai-ai/agent-eval-loop/releases) for migration steps.
 
 | Installation | Update |
 | --- | --- |
@@ -199,98 +193,43 @@ Read [release notes](https://github.com/relai-ai/agent-eval-loop/releases) for m
 | Skills CLI | Run `npx skills update`; keep all seven RELAI skills together. |
 | Manual copy | Run `git -C ~/agent-eval-loop pull`, then copy the complete skill folders again, preserving local edits. |
 
-The Skills CLI and manual copies need explicit updates. Native refresh policies are described
-in the [Claude Code](https://code.claude.com/docs/en/plugins/install#keep-plugins-updated) and
-[Codex](https://developers.openai.com/plugins/build/plugins) docs; commands were checked with
-Claude Code 2.1.284 and Codex CLI 0.160.0 on 2026-11-11. Internal installs need repository read
-access. `main` can contain unreleased changes; pin a tag where supported for a fixed release.
-
-Plugin updates do not replace existing project files in `relai/` or frozen tasks. Use the
-[project-copy policy](skills/start/template/docs/upgrades.md) to preserve adaptations and evidence.
-
-**Uninstalling.**
-
-| Installation | Uninstall |
-| --- | --- |
-| Claude Code plugin | `claude plugin uninstall relai@agent-eval-loop`, then optionally `claude plugin marketplace remove agent-eval-loop` |
-| Codex plugin | `codex plugin remove relai@agent-eval-loop` |
-| Skills CLI | Use the Skills CLI's remove command, or delete the seven RELAI skill folders it installed |
-| Manual copy | Delete the seven skill folders you copied, and `~/agent-eval-loop` |
-
-Commands were checked with Claude Code 2.1.322 and Codex CLI 0.167.1. Uninstalling leaves your
-projects' `relai/` folders untouched; they keep working without the plugin.
-
-**Removing RELAI from a project.** Remove candidate worktrees first (`git worktree list`, then
-`git worktree remove` for those under `relai/work/candidates/`, and `git worktree prune`), delete
-review branches you no longer want (`git branch --list`), then delete `relai/`. Keep
-`relai/records/`, `changes.md` and `decisions.md` elsewhere if you want the history of what was
-approved and tried. Container images built for tests can be removed with your engine's image
-commands.
+Commands were checked with Claude Code 2.1.284 and Codex CLI 0.160.0. `main` can contain
+unreleased changes; pin a tag where supported for a fixed release. Plugin updates do not replace
+existing project files in `relai/` or frozen tasks; see the
+[project-copy policy](skills/start/template/docs/upgrades.md).
 
 </details>
 
-## First steps
+## How it works
 
 Not sure where to begin? Ask *"Use RELAI's start skill to look at this agent and suggest a first
 step."* It reads your repository and recommends one, without running your agent or spending on
-models. What each first request needs and leaves behind:
+models.
 
-| First request | Needs | Creates | Spends |
+| Skill | What it does | What you decide | Needs |
 | --- | --- | --- | --- |
-| `start` | nothing | a recommendation; `relai/` only if the next step needs it | your coding agent's usage only |
-| `discover` | your code, optionally traces | `relai/wiki/` (requirements, risks, open questions) | coding agent only, plus a cheap triage model for large trace sets if you approve it |
-| `trace-review` | your traces | a small review app in your project | coding agent only |
-| `eval` | Python 3.11+, a container engine and `uv` for Harbor (or your own runner), model keys | `relai/` with a harness, tests and results | agent and judge model calls, estimated before each run |
-| `improve`, `loop` | working evals (built on the way if missing) | candidate changes on a branch, records of what was tried | agent and judge runs within the budget you set |
-| `coding-evals` | Harbor, a container engine, access to your repositories | tasks under `relai/tests/` | building and health checks call no model; runs use your coding agent's plan or API |
+| **`start`** | Finds the right starting skill for your request and sets up `relai/` only if the task needs it. | Where to begin when the goal is unclear. | nothing |
+| **`discover`** | Builds the **EvalsWiki** in `relai/wiki/` from code, documentation and traces: requirements, ranked risks and open questions. | Which risks matter; answers to open questions. | your code, optionally traces |
+| **`trace-review`** | Builds or adapts a review app in your project, on your own stack, for traces and persistent source-linked feedback. | Review verdicts, expected behavior and the requested decisions. | your traces |
+| **`eval`** | Builds evals from traces, generates them from the wiki's risks or brings in an existing benchmark, graded by code checks and LLM judges, then reviewed and frozen. | Which evals to build; whether the graders score the way you would. | a runner (Harbor or your own), model keys |
+| **`improve`** | Compares scoped changes against the recorded baseline for an agreed behavioral, cost or latency objective, on a branch. | The objective, what may change and the budget. | working evals (built on the way if missing) |
+| **`loop`** | Keeps learning and improving as new traces, answers or tests arrive, choosing which of discover, eval and improve each round needs. | The goal, scope, budget and limits; then real ambiguity or safety calls. | working evals (built on the way if missing) |
+| **`coding-evals`** | Mines coding sessions, pull requests and git history for tasks any coding agent can run, measures the team's agent on them and, when asked, compares setups or agents. | Which repositories and tasks; whether the checks score the way you would; what to compare. | Harbor, access to your repositories |
+
+Bundled checkers and scripts need **Python 3.11+**. Running Harbor tasks needs
+[uv](https://docs.astral.sh/uv/) and a container engine with a Docker-compatible CLI, or Podman.
+RELAI reuses your existing runners, tests and credentials. The generated `relai/README.md`
+([template](skills/start/template/README.md)) lists the prerequisites for each runner.
 
 ## Why RELAI
 
 - **Evals are the hard part. RELAI builds them.** Evals come from traces, or are generated from what the agent must do and where it can break, including risks that never appeared as failed runs. You review them; you do not write them.
 - **Realistic, long-horizon environments.** Evals are [Harbor](https://github.com/harbor-framework/harbor)-format tasks: the agent runs end to end in a container, with its tools, data and as many steps as the work takes. Your project's own runner works too.
 - **Scores you can inspect.** Code checks and LLM judges are previewed and frozen before the first run, with fresh-context reviews of the harness, evals and changes. RELAI reports noise ("too few attempts to tell" is a valid result), supports optional held-out evals and separates infrastructure or judge errors from agent results.
-- **The yardstick holds still.** Tests, graders and run conditions stay fixed while a change is measured, so before-and-after numbers stay comparable. A wrong test is repaired openly and the baseline is measured again.
-- **The same evals support improvement and comparison.** Run the current agent, record a baseline and compare candidate changes, agents, models or setups against the same frozen evals.
-- **You stay in charge.** You approve the risks, evals, graders, objective and budget, and RELAI asks only at natural decision points ([full list](skills/start/template/README.md#working-with-the-user)). `relai/STATUS.md` shows what is waiting on you, every risk and the eval that probes it, recent runs with flaky ones flagged, how often each judge agrees with you, and spend against your budget.
-
-## How it works
-
-| Step | What happens | What you decide |
-| --- | --- | --- |
-| **`start`** | Finds the right starting skill for your request and sets up `relai/` only if the task needs it. | Where to begin when the goal is unclear. |
-| **`discover`** | Builds the **EvalsWiki** from code, documentation and traces: requirements, ranked risks and open questions. | Which risks matter; answers to open questions. |
-| **`trace-review`** | Builds or adapts a project-owned app for traces and persistent source-linked feedback, including findings, questions and eval review when needed. | Review verdicts, expected behavior and the requested decisions. |
-| **`eval`** | Builds evals from traces, generates them from the wiki's risks or brings in an existing benchmark. Evals use Harbor tasks or suitable project-native equivalents, graded by code checks and LLM judges, then reviewed and frozen. | Which evals to build; whether the graders score the way you would. |
-| **`improve`** | Runs the agent against the evals and compares scoped changes against the recorded baseline for an agreed behavioral, cost or latency objective. | The objective, what may change and the budget. |
-| **`loop`** | Keeps learning and improving as new traces, answers or tests arrive, choosing which of discover, eval and improve each round needs. | The goal, scope, budget and limits; then real ambiguity or safety calls. |
-| **`coding-evals`** | Mines coding sessions, pull requests and git history for tasks any coding agent can run, measures the team's agent on them and, when asked, compares changes, setups or other agents. | Which repositories; which tasks to build; whether the checks score the way you would; what to compare, if anything. |
-
-`relai/STATUS.md` shows where things stand, what is waiting on you and the recommended next step.
-RELAI reuses your existing runners, tests and credentials; coding agents never read credential values.
-
-## Requirements
-
-- **Python 3.11+** for bundled checkers and reference scripts; project-native integrations are supported. The optional hooks run the `python3` first on your `PATH`: with an older one (such as macOS's built-in 3.9) frozen tests are still guarded, but edits are not checked automatically, and the hook says so once.
-- **Harbor execution:** [uv](https://docs.astral.sh/uv/) and a locally supported container engine with a Docker-compatible CLI, or Podman. Tasks with a restricted network also need the engine's image builder (`docker buildx` on a Docker CLI).
-- **Native execution:** the project or benchmark runner's own prerequisites; unused Harbor or container tools are not required.
-- **Model access** for the agent, simulated users and judges, through your project's credential mechanism or `relai/.env`.
-
-The generated `relai/README.md` lists the prerequisites for each runner (see the [bundled contract](skills/start/template/README.md)).
+- **The yardstick holds still.** Tests, graders and run conditions stay fixed, so a baseline and every candidate change, agent, model or setup are compared on the same frozen evals. A wrong test is repaired openly and the baseline is measured again.
+- **You stay in charge.** You approve the risks, evals, graders, objective and budget, and RELAI asks only at natural decision points ([full list](skills/start/template/README.md#working-with-the-user)). `relai/STATUS.md` shows what is waiting on you, every risk and the eval that probes it, recent runs with flaky ones flagged, how often each judge agrees with you, spend against your budget and the recommended next step.
 
 ## FAQ
-
-<details>
-<summary>Can I review traces myself?</summary>
-
-Yes. The `trace-review` skill builds a review app in your project, on your own stack, with full
-traces, hotkeys, search, filters and feedback on individual steps. Traces stay read-only and data
-stays local; your feedback can later inform discovery, eval proposals or judge calibration.
-
-```text
-Use RELAI's trace-review skill to build a review app for ./traces
-```
-
-</details>
 
 <details>
 <summary>Can I bring my own benchmark?</summary>
@@ -309,13 +248,6 @@ Use RELAI's eval skill to bring in the benchmark at {path-to-benchmark}
 <summary>Does RELAI run my agent on my machine?</summary>
 
 Containers are the default. Running on the host requires explicit authorization and reviewed sandboxing. Integrations use the real entrypoint and current source.
-
-</details>
-
-<details>
-<summary>What is the difference between an open question and feedback?</summary>
-
-An open question asks how the agent should behave in general. Your answer becomes a requirement in the wiki. Feedback asks about one specific run or judge score. Your answer can become a regression eval or evidence on a risk.
 
 </details>
 
@@ -343,7 +275,7 @@ scheduler or cron; remove that schedule to stop it for good.
 <details>
 <summary>What does it cost?</summary>
 
-You pay for model calls from the agent, simulated users and judges. RELAI estimates the cost before a paid run, and the board tracks spend against the budget you set. The coding agent running RELAI (Claude Code, Codex, …) also uses your plan or API tokens while it reads, builds and reviews; discovery and setup use only that, while eval runs add the agent's and judges' model calls.
+The coding agent running RELAI (Claude Code, Codex, …) uses your plan or API tokens while it reads, builds and reviews; `start`, `discover`, `trace-review` and building coding-evals tasks use only that. Eval runs add model calls from the agent, simulated users and judges. RELAI estimates the cost before a paid run, and `relai/STATUS.md` tracks spend against the budget you set.
 
 </details>
 
@@ -361,7 +293,9 @@ guarantees.
 <details>
 <summary>Can I use the results without the plugin?</summary>
 
-Yes. Tests run through Harbor or a native runner. Bundled checkers are standard-library Python, and the integration records how to rerun the suite.
+Yes. Tests run through Harbor or a native runner, bundled checkers are standard-library Python,
+and the integration records how to rerun the suite. Your project's `relai/` folder keeps working
+if you remove the plugin.
 
 </details>
 
@@ -372,38 +306,9 @@ Yes. Tests run through Harbor or a native runner. Bundled checkers are standard-
 
 </details>
 
-## What's inside
-
-```text
-agent-eval-loop/
-├── skills/
-│   ├── start/         # the relai/ template and checkers
-│   ├── discover/      # requirements, risks, open questions, trace triage
-│   ├── trace-review/  # project-owned trace review apps and human feedback
-│   ├── eval/          # harness, test design, hardening, mocks, benchmarks, running and scoring
-│   ├── improve/       # regression checks, agent-chosen experiments, cost and latency
-│   ├── loop/          # contract, new evidence, iterations and experiment rounds
-│   └── coding-evals/  # agent-neutral tasks for coding agents: sources, checks and comparison
-├── examples/          # example launcher, judge, triager and native-runner scripts
-├── hooks/             # optional Claude Code and Codex hooks: guard frozen tests, run checkers after edits
-├── tests/             # tests for the checkers and examples
-├── DESIGN.md          # the design and the reasons behind it
-└── README.md
-```
-
-Workflows that need managed state add a `relai/` folder, holding only what they use: `discover` adds the wiki, `eval` the harness and tests, `improve` and `loop` their records; `trace-review` and direct fixes add none. Its contract is in `relai/README.md` (template: [skills/start/template/README.md](skills/start/template/README.md)).
-
 ## Contributing
 
 Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
 validation, and review guidance, and follow our [code of conduct](CODE_OF_CONDUCT.md).
 Report suspected vulnerabilities privately using [SECURITY.md](SECURITY.md).
 Ask questions and share examples in [Discussions](https://github.com/relai-ai/agent-eval-loop/discussions).
-
-Run the checker tests with:
-
-```text
-python3 -m unittest discover -s tests
-```
-
-Tests that build images require a running Docker-compatible engine or Podman and are skipped without one. The reasoning behind each design choice is in [DESIGN.md](DESIGN.md).
