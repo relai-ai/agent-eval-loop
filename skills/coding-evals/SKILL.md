@@ -157,8 +157,7 @@ for a guided batch or suitable app view of tasks and scoring. Surface consequent
 questions even when the chosen task subset can proceed, explaining excluded coverage and
 possible follow-up; record resolution or explicit deferral in the existing items.
 
-Long steps (image builds, health runs, trials) stay visible: say what is running, about how long
-it takes and why (an image build, the full suite in every graded run), how far along it
+Long steps (image builds, health runs, trials) stay visible: say what is running, how far along it
 is (tasks or trials done of the total), spend so far and where results land, and update
 `STATUS.md` at milestones.
 
