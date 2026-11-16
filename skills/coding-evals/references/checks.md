@@ -59,14 +59,24 @@ the repository and its test setup.
   against the agent.
 - `allowed_changes`: protected or restored files the correct fix itself must change. Health shows
   the need: the oracle fails.
-- `ignore_changes`: what the image build or test run leaves untracked.
+- `ignore_changes`: what the image build or test run leaves untracked. It does not exempt
+  `protected` or `restore` paths (`relai/docs/files.md`).
 
 Make material restrictions available in the task request without revealing the answer. Protecting
 existing tests while allowing new tests is a policy choice, not an inherent definition of a correct
-fix. When the repository asks contributors to extend existing test files (its instruction files
-or contributing docs say so), protecting them scores the expected change against the agent: put
-the existing test files in `restore` instead, and install the hidden tests at a new protected
-path no existing file uses (such as `tests/relai-hidden/`). Confirm that constraints allow legitimate solutions: the requirement-consistent alternative from
+fix. Where tests live beside the code they test (Go `_test.go` files, colocated JavaScript
+tests), or the repository asks contributors to extend existing test files, adding a regression
+test means editing an existing file, so protecting them scores good work against the agent: put
+the existing test files in `restore` instead. The verifier puts them back before each of its
+commands, except files under `allowed_changes`, so a weakened test cannot change a score;
+`review-ready` sees the weakening in the diff, and `tests-untouched` then covers only CI and
+runner files (say so in the task README). Hidden tests must still match `protected`: install
+them at a new path no existing file uses (such as `tests/relai-hidden/`) and list it there.
+Where tests must sit in the package, use a new file holding only the added or changed cases,
+under new names, so it does not redefine what the restored files declare. A restored test that
+asserts the old behavior then fails with the fix: deselect it in the suite, or list it in
+`allowed_changes` only when `solve.sh` applies the fix's edit to it, and say so. Confirm that
+constraints allow legitimate solutions: the requirement-consistent alternative from
 [validation](task-format.md#validation) must pass with every protected and restored file in place.
 If it does not, loosen the constraint (or move the file to `restore`) before freezing. Changing the
 policy later changes the evaluation and follows the *Frozen tests* rule.

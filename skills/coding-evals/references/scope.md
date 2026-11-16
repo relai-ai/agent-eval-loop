@@ -28,9 +28,10 @@ one pull request or session needs the source repository, where the eval project 
 live, and standards
 drafted from the instruction files and contributing docs at hand, shown with the task list rather
 than in a round of their own. Mining review comments, other repositories and kinds of work suits
-a request to mine a repository or build a set. The agent's model, version and authentication wait
-for the first paid run. Adding standards to a shared evaluator later changes frozen tasks that
-carry it, under the *Frozen tests* rule; new tasks pick it up.
+a request to mine a repository or build a set. The agent's model, version and authentication are
+not needed for building; ask them with the run plan (*Ask the run plan*). Adding
+standards to a shared evaluator later changes frozen tasks that carry it, under the *Frozen tests*
+rule; new tasks pick it up.
 
 ## Find out first
 
@@ -71,23 +72,29 @@ found online run without network ([task-format](task-format.md), *The network an
 Corrections to the drafted standards, or to that default, count as answers. The pass mark is
 asked after the first run.
 
-## Ask before the first paid run
+## Ask the run plan
 
-These change the runs, not the tasks, so building does not wait for them. Ask when the request
-raises them or a paid run is next, unless already answered:
+These change the runs, not the tasks, so building does not wait for them. When the request plans
+paid runs, ask them together as one run plan at the task-list checkpoint; otherwise ask when a
+paid run is next. Skip what is already answered:
 
 1. **What to measure.** By default, unasked: the agent as the team uses it now (the baseline).
    Compare only when the user names a change (a model, a version, an instruction-file edit, a
    skill or hook) or another agent; after a baseline, you may mention once that these are
    possible. When the user compares agents, list each the same way, and whether to compare them
    bare or each with a matched setup ([comparing](comparing.md), *Comparing agents*).
-2. **Budget**, with the cost model: trials = tasks × versions × attempts, at a cost (or plan
-   usage and time) per trial measured on one task before any larger run. With a subscription,
-   say that runs count against the plan's usage limits and that the user should check the plan
-   allows automated runs; it is information, not a question.
+2. **Each agent's model, version and sign-in** (*Find out first*), attempts per task, and
+   `[judge].mode` (API or subagent judges).
+3. **The pilot**: one trial per version run ([comparing](comparing.md), *Before any paid run*),
+   with its estimated cost.
 
-For example, when the user asked to compare two agents and models, sign-in and budget remain
-open:
+After the pilot, ask the **full-run budget** from its measured cost: trials = tasks × versions ×
+attempts, at the cost (or plan usage and time) per trial the pilot measured. With a
+subscription, say that runs count against the plan's usage limits and that the user should check
+the plan allows automated runs; it is information, not a question.
+
+For example, when the user asked to compare two agents and models, the run plan at the task
+list might read:
 
 > I'll give Codex and Claude the same repository instructions so the comparison is fair.
 > Task code will stay in this private repo, and both agents will have internet access.
@@ -99,6 +106,11 @@ open:
 > (using each plan's allowance), API keys (incurring API charges), or decide before running.
 > You can choose differently for each agent.
 >
+> **Pilot:** one run per agent on one task first, estimated at $1-3 in total, to measure the real
+> cost before the full run. Approve it, or name another limit.
+
+After the pilot, the budget question:
+
 > **Budget:** one trial on one task cost about $0.80; 12 tasks × 2 agents × 3 attempts is about
 > $58. Approve up to $60, or name another limit. The tests are already built.
 

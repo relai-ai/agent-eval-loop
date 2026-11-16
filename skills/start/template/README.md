@@ -271,9 +271,10 @@ RELAI is something the user steers, not a black box.
   | Start of an `eval` build | Only what is still open: where to start when there are no risks, what the results will decide, how involved to be (delegated approvals), and on first use the harness setup questions |
   | `eval` scenario approval and grader preview | Approval of the scenario table (with the build's cost) and of the grader preview, in manageable subsets |
   | End of an `eval` run whose judges scored real trials for the first time, or after a rubric change | That run's judge checks, while the run is fresh, and the pass mark if it is unset |
-  | `coding-evals` scope and task selection | Unresolved scope and task selection, combined when ready, and how involved to be (delegated approvals); reuse existing authorization |
-  | `coding-evals` check preview before freezing | Scoring and coverage approval still needed, in manageable subsets; a delegated independent review may cover it |
-  | Before the first paid `coding-evals` run | What to compare, if the request named a change or another agent, and the run budget |
+  | `coding-evals` scope and task selection | Unresolved scope and task selection, combined when ready, and how involved to be (delegated approvals); the run plan when paid runs are planned; reuse existing authorization |
+  | `coding-evals` check preview before freezing | Scoring and coverage approval still needed, with the independent review's verdict, in manageable subsets; a delegated independent review may cover it |
+  | Before the `coding-evals` pilot (the first paid run) | What the run plan left open |
+  | After the `coding-evals` pilot | The full-run budget, from the pilot's measured cost |
   | End of the first `coding-evals` run that scored real trials | Its judge checks, and the pass mark if it is unset |
   | Each `loop` iteration's digest | Everything pending; a blocking item is asked at once, and only it pauses the loop |
   | Whenever the user asks | Everything pending |

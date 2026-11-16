@@ -22,6 +22,25 @@ Use RELAI's coding-evals skill to check whether our new CLAUDE.md helps on our t
 
 Coding-agent evals live in an *eval project*: a repository whose `relai/` holds the tasks. Task source can come from the current or other scoped repositories; each evaluated workspace contains only its starting history.
 
+## What happens, step by step
+
+RELAI shows these stages at every checkpoint, with the current one marked. Its main questions
+come with the task list (with a run plan when paid runs are planned), at your sign-off on the
+reviewed checks, and after the pilot for the full-run budget; the
+[project contract](../skills/start/template/README.md#working-with-the-user) lists every point.
+
+| Stage | What RELAI does | Paid runs or judge calls? |
+| --- | --- | --- |
+| 1. Pick tasks | Finds candidate pull requests, sessions or fixes and shows you a task list | No |
+| 2. Build | Writes each task (workspace at the start commit, request, hidden tests) and checks that a different correct fix also passes | No |
+| 3. Self-test | Checks that the real fix gets full marks and the untouched code fails | No |
+| 4. Second-opinion review | A reviewer that did not build the task audits it, alongside stage 3; RELAI resolves what it finds | No |
+| 5. Your sign-off | You (or a reviewer you delegate to) approve the reviewed checks once | No |
+| 6. Lock | Tasks are frozen; later changes need a recorded reason and a fresh review | No |
+| 7. Pilot run | One real run per agent or setup compared measures cost and time and confirms the setup loaded | Yes |
+| 8. Full run | The remaining runs, within your budget | Yes |
+| 9. Report | Solved rate, cost and time per run, and what separated the agents or setups | Judge calls |
+
 ## Choose an eval project
 
 The eval project can be the source repository or a separate repository. RELAI presents the
