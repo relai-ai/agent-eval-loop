@@ -236,6 +236,43 @@ class CodingEvalsTest(unittest.TestCase):
         self.assertNotEqual(ran.returncode, 0)
         self.assertIn("run verify.py isolated", ran.stdout)
 
+    def test_ignore_changes_over_protected_or_restored_paths_is_a_warning(self):
+        task = fill_task(self.project, self.src, self.bundle())
+        params = json.loads((task / "tests" / "params.json").read_text())
+        params["ignore_changes"] = ["build/**", "*.log"]  # outside protected and restore
+        (task / "tests" / "params.json").write_text(json.dumps(params))
+        ran = self.check(task)
+        self.assertEqual(ran.returncode, 0, ran.stdout)
+        self.assertNotIn("never exempts", ran.stdout)
+        # what a build might write: inside a tracked folder, under it by wildcard, or a tracked file by wildcard
+        for ignored in (["tests/build/out.bin"], ["**/*.bin"], ["pyproject.toml"], ["*.toml"]):
+            params["ignore_changes"] = ignored
+            (task / "tests" / "params.json").write_text(json.dumps(params))
+            ran = self.check(task)
+            self.assertEqual(ran.returncode, 0, ran.stdout)  # a warning: the task still runs
+            self.assertIn("never exempts", ran.stdout, ignored)
+
+    def test_check_task_matches_paths_as_the_verifier_does(self):
+        import importlib.util
+        def load(name: str, path: Path):
+            spec = importlib.util.spec_from_file_location(name, path)
+            module = importlib.util.module_from_spec(spec)
+            sys.path.insert(0, str(path.parent))
+            try:
+                spec.loader.exec_module(module)
+            finally:
+                sys.path.remove(str(path.parent))
+            return module
+        checker = load("relai_check_task", TEMPLATE / "bin" / "check_task.py")
+        verifier = load("relai_coding_checks", VERIFIER / "coding_checks.py")
+        patterns = ["tests/**", "**/conftest.py", "**/*.bin", "a?c/*.go", "script/build", "**", "src/**/x_test.go"]
+        paths = ["tests/a.py", "tests/b/c.bin", "conftest.py", "pkg/conftest.py", "abc/x.go", "abc/d/x.go",
+                 "script/build", "src/x_test.go", "src/p/q/x_test.go", "a.bin"]
+        for pattern in patterns:
+            for path in paths:
+                self.assertEqual(bool(checker.glob_regex(pattern).match(path)),
+                                 bool(verifier.glob_regex(pattern).match(path)), (pattern, path))
+
     def test_an_unset_pass_mark_is_a_warning_not_an_error(self):
         task = fill_task(self.project, self.src, self.bundle())
         toml = (self.project.relai / "relai.toml").read_text().replace("[scoring]\npass_mark = 0.8\n", "")
@@ -391,6 +428,37 @@ class CodingEvalsTest(unittest.TestCase):
                          ["tests/test_calc.py", "tests/test_new.py", "tests/test_é.py"])
         self.assertIn("notes.txt", result["diff"])
 
+
+    @unittest.skipUnless(have_pytest(), "pytest is not installed on this host")
+    def test_extending_a_restored_test_file_costs_nothing(self):
+        # Existing tests in restore (checks.md: the repository's developers add tests by editing existing
+        # test files), and the hidden tests at a new protected path in the same folder.
+        bundle = self.bundle()
+        task = fill_task(self.project, self.src, bundle)
+        params = json.loads((task / "tests" / "params.json").read_text())
+        params["hidden_tests"]["files"] = {"hidden/test_mean.py": "tests/test_mean_hidden.py"}
+        params["hidden_tests"]["command"] = params["hidden_tests"]["command"].replace("test_mean.py", "test_mean_hidden.py")
+        params["protected"] = ["tests/test_mean_hidden.py", "**/conftest.py", "**/pytest.ini", "**/tox.ini"]
+        params["restore"] = ["tests/**", "pyproject.toml", "setup.cfg"]
+        params["new_files_ok"] = []
+        (task / "tests" / "params.json").write_text(json.dumps(params))
+        ran = protect(self.src["repo"], self.src["start"], task)
+        self.assertEqual(ran.returncode, 0, ran.stderr + ran.stdout)
+        ws = self.workspace(bundle)
+        sh(ws, "git", "apply", str(task / "solution" / "fix.patch"))
+        with open(ws / "tests" / "test_calc.py", "a") as f:  # the agent adds a regression case to an existing file
+            f.write("\n\ndef test_mean_of_empty():\n    from calc import mean\n    assert mean([]) == 0.0\n")
+        result = self.verify(task, ws)
+        for ev in ("fixes-the-bug", "no-regressions", "tests-untouched"):
+            self.assertEqual(result["reward"][ev], 1.0, result["feedback"].get(ev))
+        self.assertIn("tests/test_calc.py", result["facts"]["restored_before_running"])
+        self.assertIn("test_mean_of_empty", result["diff"])  # judges still see the added test
+        weakened = self.workspace(bundle)  # breaks add() and edits its test to match: restoring catches it
+        (weakened / "calc.py").write_text(CALC_FIXED.replace("return a + b", "return a - b"))
+        (weakened / "tests" / "test_calc.py").write_text(TEST_CALC.replace("== 5", "== -1"))
+        result = self.verify(task, weakened)
+        self.assertEqual(result["reward"]["no-regressions"], 0.0)
+        self.assertEqual(result["reward"]["tests-untouched"], 1.0)  # covers only CI and runner files here
 
     @unittest.skipUnless(have_pytest(), "pytest is not installed on this host")
     def test_a_planted_conftest_cannot_make_the_tests_pass_even_when_hidden_from_git(self):

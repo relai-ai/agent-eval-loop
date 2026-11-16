@@ -26,8 +26,10 @@ the agent wrote). Judges that read the run record are "not recorded" for a run w
 
 Turn the approved requirements from [scope](scope.md) into explicit criteria. For each, record
 its source and revision, applicable paths and conditions, the evidence needed and the evaluator
-that reads it. Use the instructions available at the task's start or in its declared setup;
-resolve conflicting or inapplicable guidance before freezing.
+that reads it. Use the approved requirements that apply to the code at the task's start commit,
+wherever they are written (the start commit's files, the setup the team runs, contributing docs);
+resolve conflicting or inapplicable guidance before freezing. Every setup variant of a task is
+graded on the same criteria ([comparing](comparing.md), *Setups*).
 
 - **Output requirements** go to code checks when exact, or `review-ready` when they need
   judgment about the diff. For example, whether the delivered code passes lint is a code check.
@@ -64,18 +66,17 @@ the repository and its test setup.
 
 Make material restrictions available in the task request without revealing the answer. Protecting
 existing tests while allowing new tests is a policy choice, not an inherent definition of a correct
-fix. Where tests live beside the code they test (Go `_test.go` files, colocated JavaScript
-tests), or the repository asks contributors to extend existing test files, adding a regression
-test means editing an existing file, so protecting them scores good work against the agent: put
-the existing test files in `restore` instead. The verifier puts them back before each of its
-commands, except files under `allowed_changes`, so a weakened test cannot change a score;
+fix. When the repository's developers add tests by editing existing test files (its fixes do,
+or its guidance asks for it), protecting those files scores good work against the agent: put the
+existing test files in `restore` instead. Decide this once per repository at scope
+([scope](scope.md), *Find out first*) and record it in `decisions.md`, so `tests-untouched` means
+one thing across that repository's tasks. The verifier puts restored files back before each of
+its commands, except files under `allowed_changes`, so a weakened test cannot change a score;
 `review-ready` sees the weakening in the diff, and `tests-untouched` then covers only CI and
 runner files (say so in the task README). Hidden tests must still match `protected`: install
-them at a new path no existing file uses (such as `tests/relai-hidden/`) and list it there.
-Where tests must sit in the package, use a new file holding only the added or changed cases,
-under new names, so it does not redefine what the restored files declare. A restored test that
-asserts the old behavior then fails with the fix: deselect it in the suite, or list it in
-`allowed_changes` only when `solve.sh` applies the fix's edit to it, and say so. Confirm that
+them at a new path no existing file uses (such as `tests/relai-hidden/`) and list it there. A
+restored file that the fix also edits goes in `allowed_changes` only when `solve.sh` applies that
+edit. Confirm that
 constraints allow legitimate solutions: the requirement-consistent alternative from
 [validation](task-format.md#validation) must pass with every protected and restored file in place.
 If it does not, loosen the constraint (or move the file to `restore`) before freezing. Changing the

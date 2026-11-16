@@ -101,8 +101,8 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   setup must allow normal verification, including required cache and output writes. Check with
   the reference fix when needed to distinguish baseline behavior from an environment defect.
   Then list what the image and those commands left in the workspace (`git status --porcelain
-  --ignored`). A file under a `protected` or `restore` glob (a binary that `make` writes into a
-  script folder) is deleted before the verifier's commands, which can break them, and under
+  --ignored`). A file under a `protected` or `restore` glob (a build output written into a
+  protected folder) is deleted before the verifier's commands, which can break them, and under
   `protected` it also scores every agent that runs the documented commands as changing tests.
   Exclude it from those globs or stop creating it; `new_files_ok` stops only the score.
 - **Evaluator validity.** Identify an assumption the tests share with the reference fix and

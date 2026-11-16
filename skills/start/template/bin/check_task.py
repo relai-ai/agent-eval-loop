@@ -249,6 +249,32 @@ def is_root(user) -> bool:
     return str(user).split(":")[0] in ("root", "0")
 
 
+def glob_regex(pattern: str) -> re.Pattern:
+    """The verifier's path globs (coding_checks.glob_regex): ** any directories, * and ? within one segment."""
+    out, i = "", 0
+    while i < len(pattern):
+        if pattern.startswith("**/", i):
+            out, i = out + "(?:.*/)?", i + 3
+        elif pattern.startswith("**", i):
+            out, i = out + ".*", i + 2
+        elif pattern[i] in "*?":
+            out, i = out + ("[^/]*" if pattern[i] == "*" else "[^/]"), i + 1
+        else:
+            out, i = out + re.escape(pattern[i]), i + 1
+    return re.compile("^" + out + "$")
+
+
+def reaches_into(ignored: str, tracked: str) -> bool:
+    """Whether a sample path matches both globs: the ignored glob's sample, alone or under the tracked glob's
+    literal leading folder, or the tracked glob's own sample. A reported overlap is real; some overlaps go
+    unreported, so a broad tracked glob such as **/conftest.py does not flag every ignored folder."""
+    def sample(pattern: str) -> str:
+        return re.sub(r"\*\*/", "", pattern).replace("**", "x").replace("*", "x").replace("?", "x")
+    literal = re.split(r"[*?]", tracked, maxsplit=1)[0]
+    candidates = {sample(ignored), literal[:literal.rfind("/") + 1] + sample(ignored), sample(tracked)}
+    return any(glob_regex(ignored).match(path) and glob_regex(tracked).match(path) for path in candidates)
+
+
 def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> None:
     """An agent-neutral coding task: any coding agent can run it, and nothing it can see gives the answer away."""
     meta = config.get("metadata", {}).get("relai", {}) or {}
@@ -332,6 +358,15 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
     if params and (not given or not isinstance(start, str) or not (given.startswith(start) or start.startswith(given))):
         report.error("tests/params.json start_commit must be the task's start commit; the verifier diffs from it, "
                      "never from anything in the workspace")
+    def globs(key: str) -> list:
+        value = params.get(key)
+        return [g for g in value if isinstance(g, str)] if isinstance(value, list) else []
+    tracked, ignored = globs("protected") + globs("restore"), globs("ignore_changes")
+    overlap = sorted({g for g in ignored for t in tracked if reaches_into(g, t)})
+    if overlap:
+        report.warn(f"ignore_changes {overlap} overlaps protected or restore globs, which it never exempts: the "
+                    "verifier still checks those paths and puts them back before its commands; if a build or test "
+                    "run writes there, take the path out of protected/restore or stop creating it")
     if params and not params.get("protected_manifest"):
         report.error("tests/params.json has no protected_manifest: run `python3 tests/coding_checks.py protect` "
                      "(see its docstring)")

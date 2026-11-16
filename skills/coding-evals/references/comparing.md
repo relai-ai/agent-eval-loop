@@ -36,7 +36,10 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
 - **Paired, task by task**, when comparing. Compare the same tasks for both sides. A difference within the run's
   spread, or on few tasks, supports no claim either way.
 - **Per check**: how often each behavior held. Checks with errors were not recorded for that
-  agent.
+  agent. Report a check whose meaning differs between tasks separately for each meaning:
+  `tests-untouched` covers existing tests where they are `protected`, and only CI and runner
+  files where they are restored; group tasks by whether `params.json` lists the existing tests
+  under `restore` ([checks](checks.md)).
 - **By kind of work**: suggest routing only when a difference holds on several tasks of that kind.
 - **Tasks that separate versions** are the most informative; review the ones nobody solves for
   fairness.
@@ -97,23 +100,30 @@ setup; when the start commit already holds guidance, the variant also removes it
 workspace and from every commit in its history (rewritten as in [task-format](task-format.md)
 step 2, its new start recorded), since the agent can read it from git. Before running a variant,
 confirm from a trial that the agent loaded the variant's files, and that the bare variant loaded
-none: agents differ, and one may reach a file only through an import or link. A runner's
-trajectory can leave out instructions loaded at startup, so also check the agent's own session
-log. A variant the agent never reads measures nothing. Check these differences before comparing,
+none: agents differ, and one may reach a file only through an import or link. When the run
+record does not show which files loaded, check the agent's own log where it keeps one (the
+[Harbor notes](../../eval/references/harbor-notes.md)). A variant the agent never reads measures
+nothing. Check these differences before comparing,
 run the same agent and attempts, and compare task by task.
 
-Keep grading fair to every setup, and settle it before freezing (a later rubric change follows
-the *Frozen tests* rule). A judge standard taken from one setup's instruction file, or from one
-version of it at a task's start commit, scores agents for following or not seeing that file:
-keep only standards that hold for every compared setup and start commit, and report judges
-apart from the solved rate. When an instruction file tells agents to stop or decline (for
-example, on unsolicited contributions), keep the request identical across variants and report
-any stop as its own finding.
+Grade every setup of a task on the same criteria, settled before freezing (a later rubric change
+follows the *Frozen tests* rule). The criteria are the team's approved requirements that apply to
+the code at the task's start commit ([checks](checks.md#repository-requirements)), wherever they
+are written. A requirement that one setup's instruction file states (run the linter) also grades
+the bare variant, since whether the file helps the agent meet it is what the comparison
+measures. A rule that does not apply to the code at the start commit (one the start commit's own
+guidance contradicts, or about code it does not have yet), or that the team did not approve as a
+requirement, grades no setup. Report judge scores apart
+from the solved rate. When an instruction file tells agents to stop or decline (for example, on
+unsolicited contributions), keep the request identical across variants and report any stop as
+its own finding.
 
-Report per setup, beside the solved rate, the validation commands each run executed (tests,
-lint, build) from its record. A task every setup solves separates nothing on the solved rate:
-fix the task set before seeing the compared setups' results, and add attempts when a task's
-outcome varies.
+Report per setup, beside the solved rate, the trajectory criteria for process requirements
+(running the tests, linter or build), "not recorded" for runs without a run record. A task every
+setup solves separates nothing on the solved rate. Fix the task set and attempts per task before
+seeing the compared setups' results; if the results are too noisy to support a conclusion, add
+the same attempts to every task and setup, and report that attempts were extended after seeing
+results.
 
 **Which parts help.** One variant per part left out (a section of an instruction file, a skill, a
 hook, an MCP server). Trials grow as parts × tasks × attempts, so run it on the tasks that

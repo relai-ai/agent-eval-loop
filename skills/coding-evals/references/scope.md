@@ -53,6 +53,9 @@ rule; new tasks pick it up.
   CONTRIBUTING, README, pull request templates, lint and CI configuration, and recent review
   comments, including applicable nested files and linked guidance. Cite each source and separate
   output requirements from process requirements using [checks](checks.md#repository-requirements).
+- **How each repository's developers add tests**, from recent fixes and its guidance: in new
+  files, or by editing existing test files. It decides whether existing tests are protected or
+  restored ([checks](checks.md), *Choosing what the verifier protects*).
 
 ## Ask what is still open at the scope checkpoint
 
@@ -89,7 +92,9 @@ paid run is next. Skip what is already answered:
    with its estimated cost.
 
 After the pilot, ask the **full-run budget** from its measured cost: trials = tasks × versions ×
-attempts, at the cost (or plan usage and time) per trial the pilot measured. With a
+attempts, at the cost (or plan usage and time) per trial the pilot measured. When the request,
+`decisions.md` or an agreement already set a budget that covers that estimate, report the
+estimate and continue without asking; ask when there is none or the estimate exceeds it. With a
 subscription, say that runs count against the plan's usage limits and that the user should check
 the plan allows automated runs; it is information, not a question.
 
@@ -106,13 +111,13 @@ list might read:
 > (using each plan's allowance), API keys (incurring API charges), or decide before running.
 > You can choose differently for each agent.
 >
-> **Pilot:** one run per agent on one task first, estimated at $1-3 in total, to measure the real
+> **Pilot:** one trial per agent on one task first, estimated at $1-3 in total, to measure the real
 > cost before the full run. Approve it, or name another limit.
 
 After the pilot, the budget question:
 
 > **Budget:** one trial on one task cost about $0.80; 12 tasks × 2 agents × 3 attempts is about
-> $58. Approve up to $60, or name another limit. The tests are already built.
+> $58. Approve up to $60, or name another limit. The tasks are frozen and the pilot ran.
 
 This illustrates presentation, not fixed defaults: use the discovered facts and agreed scope.
 Keep installed versions in the setup summary unless they affect the choice.

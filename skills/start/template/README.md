@@ -274,7 +274,7 @@ RELAI is something the user steers, not a black box.
   | `coding-evals` scope and task selection | Unresolved scope and task selection, combined when ready, and how involved to be (delegated approvals); the run plan when paid runs are planned; reuse existing authorization |
   | `coding-evals` check preview before freezing | Scoring and coverage approval still needed, with the independent review's verdict, in manageable subsets; a delegated independent review may cover it |
   | Before the `coding-evals` pilot (the first paid run) | What the run plan left open |
-  | After the `coding-evals` pilot | The full-run budget, from the pilot's measured cost |
+  | After the `coding-evals` pilot | The full-run budget, from the pilot's measured cost, unless an approved budget covers it |
   | End of the first `coding-evals` run that scored real trials | Its judge checks, and the pass mark if it is unset |
   | Each `loop` iteration's digest | Everything pending; a blocking item is asked at once, and only it pauses the loop |
   | Whenever the user asks | Everything pending |

@@ -92,6 +92,9 @@ and update this file.
   add the working directory to `sys.path`; set `PYTHONPATH` to the directory holding it.
 - **A missing reward file is an exception**, and `reward.txt` holds one number. Write
   `reward.json` with one key per evaluator.
+- **Instruction files loaded at startup can be missing from the trajectory.** Observed in 0.26.0
+  with Claude Code: the `AGENTS.md` it loaded appeared in the agent's own session log, not in
+  Harbor's trajectory. Read the agent's log before concluding that a file was not loaded.
 - **ATIF**: Harbor validates `ATIF-v1.0` to `v1.8`
   (`python -m harbor.utils.trajectory_validator <file>`); `check_trajectory.py` runs it.
 - **Rescoring**: `harbor trial regrade <trial dir> -p <task>` reruns only the verifier on a
