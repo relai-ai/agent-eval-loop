@@ -53,6 +53,8 @@ rule; new tasks pick it up.
   CONTRIBUTING, README, pull request templates, lint and CI configuration, and recent review
   comments, including applicable nested files and linked guidance. Cite each source and separate
   output requirements from process requirements using [checks](checks.md#repository-requirements).
+  Show each with the evaluator that will read it, so a required gate with no check (a lint
+  command the instruction file requires) shows at the scope checkpoint, not in review.
 - **How each repository's developers add tests**, from recent fixes and its guidance: in new
   files, or by editing existing test files. It decides whether existing tests are protected or
   restored ([checks](checks.md), *Choosing what the verifier protects*).

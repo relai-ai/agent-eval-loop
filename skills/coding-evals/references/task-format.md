@@ -60,7 +60,10 @@ relai/tests/<id>/
    An image rebuilds from its first changed line: put guards, task-specific lines and a setup
    variant's installed files after the dependency install, so a fix to them or a variant does
    not reinstall dependencies. Run health checks with `--no-delete` so later rounds reuse the
-   image, and remove the images once the task is frozen.
+   image, and remove the images once the task is frozen. When several tasks come from one large
+   repository, a shared, pinned base image holding its toolchain saves rebuilding it per task;
+   it must not hold the repository or a dependency version later than a task's start pins, and
+   the bundled hosted recipe needs it public.
 4. **Request.** `instruction.md`: the developer's words, redacted, with no file names, diagnosis
    or approach they did not give; or, when they left none, a symptom written from the source
    (`request = "symptom"`, [sources](sources.md)).
@@ -120,14 +123,23 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   a successful run, a skipped run and a run followed by another relevant edit. Also check a
   conditional rule when it does not apply, a blocked command and an incomplete recording, using
   the evidence limits in [safe process](checks.md#safe-process-shared-evaluator).
+- **Shortcuts.** Before review, try the cheap ways an agent could pass a check without the fix
+  or leave it unable to see: fix the bug outside the repository (in an installed dependency the
+  request names), change the git configuration or environment variables the commands read, and
+  follow every documented setup command with the task's network setting. Fix what gets through,
+  or record why a check cannot see it.
 - **Health controls.** Run Harbor's `oracle` and `nop` agents on the final task, then
   `summarize.py`: the reference fix must score every outcome check at full marks and untouched
-  code must fail the primary check. Investigate unexpected scores rather than assuming the
+  code must fail the primary check. When the task records a first attempt
+  ([sources](sources.md), *Check the first attempt*), run it as a third control: it should fail
+  the primary check. Investigate unexpected scores rather than assuming the
   reference fix or evaluator is right. A hidden-test command that chains cases (`a && b`) shows
   only the first failure: run each case alone on the untouched code and record which fail; a
   case that passes there shows nothing about the fix. Resolve the findings from validation and
-  the independent review before rerunning the controls, since each round repeats the full suite
-  in every graded run. These controls call no model.
+  the independent review before rerunning the controls, since each round rebuilds images and
+  repeats the full suite in every graded run: while a task is still changing, get its verdicts
+  from local controls (*Trusted commands and offline preparation*), and run Harbor's on the
+  revision you send for final confirmation. These controls call no model.
 
 ## Trusted commands and offline preparation
 
@@ -145,8 +157,8 @@ not protect against an agent modifying the interpreter or the entire toolchain; 
 scope/integrity checks and protect other command-steering inputs relevant to the repository.
 
 When the execution engine is unavailable, tell the user what is missing and the options
-(`relai/README.md`, Prerequisites); useful preparation can still proceed in disposable
-copies: clone the bundle with its explicit branch, check that the fix is absent, apply the
+(`relai/README.md`, Prerequisites). Then, and while tasks are still changing, useful preparation
+can proceed in disposable copies: clone the bundle with its explicit branch, check that the fix is absent, apply the
 reference solution in one copy, leave a no-fix control in another, and exercise the original
 verifier's local hooks (`RELAI_WORKSPACE`, `RELAI_LOGS`, `RELAI_PARAMS`). Use absolute paths for
 those hooks and separate logs per control. Run `verify.py` with trusted verifier imports and

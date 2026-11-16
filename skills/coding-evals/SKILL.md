@@ -191,7 +191,10 @@ run plan (*Ask the user*).
 
 **Before freezing**, add the [validation evidence](references/task-format.md#validation), each
 hidden test's assertion, protected/restored/scope globs and judge rubrics to that same record,
-using links where the artifacts already say it. Start the fresh independent
+using links where the artifacts already say it. When several tasks share a builder (one
+repository, one generator), build, validate and review one of them first and fix what its
+review finds in the builder before building the rest: most findings concern the shared setup,
+and each one found late lands on every task and repeats its validation. Start the fresh independent
 [review](references/review-coding-task.md) once a task passes `check_task.py`; it can run
 alongside the health and validity checks, marking the controls pending until their results
 exist, and the reviewer or a scoped follow-up review closes that check on the final task once

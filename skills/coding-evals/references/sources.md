@@ -49,9 +49,21 @@ the change; a request taken from a linked issue is verbatim, one you write is `s
 Before the task list goes to the user, read each candidate's added or changed tests against its
 request for what only one implementation passes: helpers, exports or names the fix introduced;
 exact commands, messages or strings the request does not fix; a fix location the request leaves
-open; and assertions that contradict the request. Show each finding with the task, and whether
+open; a requirement first decided in review that the request leaves open; and assertions that
+contradict the request. Show each finding with the task, and whether
 rewriting the tests through a public interface ([task-format](task-format.md), step 6) settles
 it or the task should be replaced, so the user approves the list knowing.
+
+## Check the first attempt while picking tasks
+
+When review corrected a pull request or a developer corrected a session, the work before the
+correction (the pull request's first commit, the session's first finished change) shows what the
+task should catch. Apply its source changes at the start commit, add the fix's tests, and run
+them: they should fail on the corrected behavior. It is one patch and one test run, so do it
+before the task list goes to the user and again after any test change you propose. A first
+attempt that passes means the task does not measure the correction: say so with the task, and
+let the user keep it as an ordinary task, change the request or drop it, rather than reshaping
+the tests until the first attempt fails. Record the result in the task's README.
 
 ## Many sessions at once
 
