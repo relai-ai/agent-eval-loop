@@ -59,7 +59,7 @@ relai/tests/<id>/
    later release of the project itself.
    An image rebuilds from its first changed line: put guards, task-specific lines and a setup
    variant's installed files after the dependency install, so a fix to them or a variant does
-   not reinstall dependencies. Run the self-test with `--no-delete` so later rounds reuse the
+   not reinstall dependencies. Run health checks with `--no-delete` so later rounds reuse the
    image, and remove the images once the task is frozen.
 4. **Request.** `instruction.md`: the developer's words, redacted, with no file names, diagnosis
    or approach they did not give; or, when they left none, a symptom written from the source

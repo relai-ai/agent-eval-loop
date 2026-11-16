@@ -34,8 +34,8 @@ is set (SCORED otherwise, NOT SCORED with no scored attempt), then named warning
 attempts were not scored. Output describes observations, not acceptance or confidence. --details prints full tables;
 --json always writes the complete evidence. observed_change is higher, lower, equal or
 not-comparable; numeric noise/se fields are reference estimates only.
-For an agent-neutral coding task, each test also reports its solved rate: attempts whose headline
-check ([metadata.relai.coding].primary) scored full marks, apart from the mean over every recorded
+For an agent-neutral coding task, each test also reports its solved rate: attempts whose main
+check ([metadata.relai.coding].primary, usually the hidden tests) scored full marks, apart from the mean over every recorded
 check. From Harbor's trial timings it reports time per phase (environment setup, which includes any
 image build, agent setup, the agent's work and the verifier), and the agent's cost per solved task.
 Safe on a run still in progress: a job whose trials are not all finished gets a line with trials
@@ -62,7 +62,7 @@ from _common import (  # noqa: E402
 DEFINITIONS_UNAVAILABLE = "original evaluator definitions are unavailable"
 SHOWN = 5  # concise output lists at most this many warnings or problems, then says how many more
 STATUSES = ("scored", "evaluator error", "judges pending", "runtime failure", "unscored", "task not found")
-# trials whose headline check counts toward the solved rate: the agent ran, whatever its judges' state
+# trials whose main check counts toward the solved rate: the agent ran, whatever its judges' state
 SOLVED_STATUSES = ("scored", "evaluator error", "judges pending")
 
 
@@ -556,7 +556,7 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
     print(f"Coverage: {len(summary['tests'])} test(s)")
     solved = summary.get("solved")
     if solved:
-        line = (f"Solved (headline check at full marks): {solved['solved']} of {solved['attempts']} attempts on "
+        line = (f"Solved (main check at full marks): {solved['solved']} of {solved['attempts']} attempts on "
                 f"{solved['tests']} coding test(s); mean of per-test solved rates {solved['mean_rate']:.2f}. "
                 "The per-test mean below averages every recorded check, so it can be lower on tests every attempt solved.")
         print(line)
@@ -746,7 +746,7 @@ def print_comparison(comparison: dict, details: bool) -> None:
             return pair["solved"] / pair["scored"]
         more = sum(rate(r["candidate_solved"]) > rate(r["baseline_solved"]) for r in paired)
         fewer = sum(rate(r["candidate_solved"]) < rate(r["baseline_solved"]) for r in paired)
-        print(f"Solved (headline check at full marks), paired over {len(paired)} coding test(s): baseline "
+        print(f"Solved (main check at full marks), paired over {len(paired)} coding test(s): baseline "
               f"{sum(r['baseline_solved']['solved'] for r in paired)} of {sum(r['baseline_solved']['scored'] for r in paired)} "
               f"attempts, candidate {sum(r['candidate_solved']['solved'] for r in paired)} of "
               f"{sum(r['candidate_solved']['scored'] for r in paired)}; the candidate solved more often on {more} "

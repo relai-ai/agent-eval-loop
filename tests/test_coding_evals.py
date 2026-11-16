@@ -837,14 +837,14 @@ class SummarizeWithoutTrajectoryTest(unittest.TestCase):
             self.assertAlmostEqual(run["solved"]["cost_per_solved_task"], 0.01)  # $0.02 over 3 attempts, 2 solved
             self.assertEqual(run["timing"]["agent_execution"]["mean"], 300.0)
             self.assertEqual(run["timing"]["environment_setup"]["n"], 2)
-            self.assertIn("Solved (headline check at full marks): 2 of 2 attempts", out.stdout)
+            self.assertIn("Solved (main check at full marks): 2 of 2 attempts", out.stdout)
             self.assertIn("mean 0.75 (2/3 scored), solved 2/2", out.stdout)
             self.assertIn("agent 5m00s (6m00s)", out.stdout)
             self.assertIn("Agent cost per solved task: $0.0100", out.stdout)
             # the paired comparison reports solved counts beside the means
             out = project.run("summarize.py", str(job), "--baseline", str(job))
             self.assertIn("paired over 1 coding test(s): baseline 2 of 2 attempts, candidate 2 of 2", out.stdout)
-            # a non-coding test stays out of the solved rate and its cost; a headline check that errored is not
+            # a non-coding test stays out of the solved rate and its cost; a main check that errored is not
             # counted as solved or unsolved; an attempt without a reported cost stops the cost per solved task
             plain = project.task("plain")
             harbor_trial(job, "d", plain, {"looks-up-order": 1.0}, feedback={"looks-up-order": "ok"},

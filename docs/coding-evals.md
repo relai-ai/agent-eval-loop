@@ -30,15 +30,15 @@ come with the task list (with a run plan when paid runs are planned: which agent
 they sign in, attempts per task and the pilot's estimated cost), at your sign-off on the
 reviewed checks, and after the pilot for the full-run budget unless a budget you set already
 covers it; the [project contract](../skills/start/template/README.md#working-with-the-user) lists
-every point. Every stage uses your coding agent's own session (the second-opinion review is an
+every point. Every stage uses your coding agent's own session (the independent review is an
 extra agent in it); the last column shows spending beyond that session.
 
 | Stage | What RELAI does | Spends beyond your session? |
 | --- | --- | --- |
 | 1. Pick tasks | Finds candidate pull requests, sessions or fixes and shows you a task list | No |
 | 2. Build | Writes each task (workspace at the start commit, request, hidden tests) | No |
-| 3. Self-test | Checks that the real fix gets full marks, the untouched code fails and a different correct fix also passes | No |
-| 4. Second-opinion review | A reviewer that did not build the task audits it, alongside stage 3; RELAI resolves what it finds | No |
+| 3. Validate | Checks, with no model, that the real fix gets full marks, the untouched code fails the main check (the task's hidden tests) and a different correct fix also passes | No |
+| 4. Independent review | A reviewer that did not build the task checks it, alongside stage 3; RELAI resolves what it finds | No |
 | 5. Your sign-off | You (or a reviewer you delegate to) approve the reviewed checks once | No |
 | 6. Freeze | RELAI freezes the tasks; later changes need a recorded reason and a fresh review | No |
 | 7. Pilot run | One trial per agent or setup compared measures cost and time and confirms the setup loaded | Yes, agent runs |

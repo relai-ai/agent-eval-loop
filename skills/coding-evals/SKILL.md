@@ -47,22 +47,23 @@ At each checkpoint and when a long step starts, show the stages the request cove
 current one, and say what comes next and when the user is needed; progress updates in between
 name only the current stage:
 
-1. Pick tasks · 2. Build · 3. Self-test · 4. Second-opinion review (alongside 3) ·
+1. Pick tasks · 2. Build · 3. Validate · 4. Independent review (alongside 3) ·
 5. User sign-off · 6. Freeze · 7. Pilot run · 8. Full run · 9. Report
 
-In everything the user reads (messages, `STATUS.md`, task READMEs, review handoffs), use these
-plain names and say once what each proves; code, configuration keys and command names keep the
-technical terms.
+In new text the user reads (messages, `STATUS.md`, task READMEs, review handoffs), use these
+plain names and say once what each means; code, configuration keys and command names keep the
+technical terms. Do not rewrite existing records only to change their terms: a frozen task's
+README is part of the runner's task checksum, so later comparisons would report a changed test.
 
-| Say | Technical term | What it proves |
+| Say | Technical term | What it means |
 | --- | --- | --- |
+| main check | primary check (`[metadata.relai.coding].primary`, usually `fixes-the-bug`) | the task's hidden tests pass; it alone decides whether an attempt solved the task |
 | real-fix check | oracle run | the reference fix scores full marks on every outcome check |
-| do-nothing check | nop run | the untouched code fails the primary check |
-| self-test | health (oracle and nop runs) | both checks above, through the runner, with no model |
+| do-nothing check | nop run | the untouched code fails the main check |
 | alternative-fix check | evaluator validity | a different correct fix also passes |
-| second-opinion review | independent review | a reviewer that did not build the task audits it |
+| validation | health (oracle and nop runs) and evaluator validity | the three checks above pass, with no model |
+| independent review | independent review | a reviewer that did not build the task checks it |
 | freeze | `freeze.py` | later changes need a recorded reason and a fresh review |
-| headline check | primary check | the check the solved rate is reported on |
 
 ## Done when
 
