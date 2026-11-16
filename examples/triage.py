@@ -12,7 +12,8 @@ growing folder is triaged incrementally (run skips ids already done).
 Each trace gets one model call with the wiki's requirements and risks and the existing tests as
 context, and a structured verdict: intent, outcome (success / failure / unclear), evidence quotes,
 weak signals (things that went slightly wrong without failing), matching risks, the closest
-existing test, and whether a human should look. Verdicts go to
+existing test, whether a human should look, and human_questions (one list item per independent
+decision, empty when none). Verdicts go to
 relai/work/discover/<ingest-id>/verdicts.jsonl as they finish; failed calls to errors.jsonl.
 
 report sorts the verdicts into three lanes and writes triage.md and lanes.json beside them:
@@ -20,6 +21,8 @@ report sorts the verdicts into three lanes and writes triage.md and lanes.json b
   B  coverage gaps        - intents no existing test covers, for new tests
   C  weak signals         - per kind and risk, and which kinds co-occur: compound hard cases
 Verdicts are leads, not evidence: a page cites a trace excerpt you checked, never a verdict.
+Lane A keeps a questions list per trace in lanes.json and a separate row per question in triage.md.
+Reports also read saved verdicts with the older human_question string as a one-item list.
 
 Model: relai.toml [triage] (provider, model, base_url, api_key_env) is required; it is never taken
 from [judge], so a capable judge model is not silently used for one call per trace. Use a cheap model.
@@ -65,12 +68,15 @@ Decide, citing short verbatim quotes:
 - closest_test: the id of the existing test whose scenario is closest to this run, or "" if none
   is close (the run's situation is not covered).
 - needs_human: true when a person should judge this run (a likely failure, or an expectation the
-  requirements do not settle); human_question: the one question to ask them, or "".
+  requirements do not settle).
+- human_questions: a list of separately answerable questions for that person, one per independent
+  decision, or [] when none. Each question should make sense on its own. Preserve distinct choices
+  within a run so related questions can be batched without merging their answers.
 Be conservative: flag only what the run shows."""
 
 SCHEMA = {"type": "object", "additionalProperties": False,
           "required": ["intent", "outcome", "failure", "evidence", "weak_signals", "risks", "requirements",
-                       "closest_test", "needs_human", "human_question"],
+                       "closest_test", "needs_human", "human_questions"],
           "properties": {
               "intent": {"type": "string"}, "outcome": {"type": "string", "enum": ["success", "failure", "unclear"]},
               "failure": {"type": "string"},
@@ -86,7 +92,7 @@ SCHEMA = {"type": "object", "additionalProperties": False,
               "risks": {"type": "array", "items": {"type": "string"}},
               "requirements": {"type": "array", "items": {"type": "string"}},
               "closest_test": {"type": "string"}, "needs_human": {"type": "boolean"},
-              "human_question": {"type": "string"}}}
+              "human_questions": {"type": "array", "items": {"type": "string"}}}}
 
 
 def first_line(text: str, label: str) -> str:
@@ -241,7 +247,11 @@ def cmd_run(args, relai_dir: Path) -> int:
 def cmd_report(args, relai_dir: Path) -> int:
     d = out_dir(relai_dir, args.ingest)
     rows = [json.loads(ln) for ln in (d / "verdicts.jsonl").read_text(encoding="utf-8").splitlines() if ln.strip()]
-    lane_a = [r for r in rows if r.get("needs_human") or r.get("outcome") in ("failure", "unclear")]
+    for r in rows:
+        if "human_questions" not in r:
+            r["human_questions"] = [r["human_question"]] if r.get("human_question") else []
+    lane_a = [r for r in rows if r.get("needs_human") or r["human_questions"]
+              or r.get("outcome") in ("failure", "unclear")]
     lane_a.sort(key=lambda r: (r.get("outcome") != "failure", bool(r.get("risks")), r["id"]))
     intents = collections.defaultdict(lambda: {"n": 0, "failures": 0, "weak": 0, "tests": collections.Counter()})
     for r in rows:
@@ -266,7 +276,7 @@ def cmd_report(args, relai_dir: Path) -> int:
                     examples[(a, b)].append(r["id"])
     compound = [(p, c) for p, c in pairs.most_common() if c >= 2][:15]
     lanes = {"A": [{"id": r["id"], "outcome": r.get("outcome"), "failure": r.get("failure"),
-                    "question": r.get("human_question"), "risks": r.get("risks")} for r in lane_a],
+                    "questions": r["human_questions"], "risks": r.get("risks")} for r in lane_a],
              "B": [{"intent": k, "traces": v["n"], "failures": v["failures"]} for k, v in gaps],
              "C": {"kinds": dict(kinds), "co_occurring": [{"pair": list(p), "traces": c, "examples": examples[p]}
                                                          for p, c in compound]}}
@@ -274,8 +284,9 @@ def cmd_report(args, relai_dir: Path) -> int:
     out = [f"# Triage: {args.ingest}", "", f"{len(rows)} traces triaged. Verdicts are leads; check a trace before citing it.", "",
            f"## A. Needs your judgment ({len(lane_a)})", "", "| Trace | Outcome | What happened | Question | Risks |",
            "| --- | --- | --- | --- | --- |"]
-    out += [f"| {r['id']} | {r.get('outcome')} | {r.get('failure') or '-'} | {r.get('human_question') or '-'} | "
-            f"{', '.join(r.get('risks') or []) or 'none known'} |" for r in lane_a[:50]]
+    out += [f"| {r['id']} | {r.get('outcome')} | {r.get('failure') or '-'} | {question} | "
+            f"{', '.join(r.get('risks') or []) or 'none known'} |"
+            for r in lane_a[:50] for question in r["human_questions"] or ["-"]]
     out += ["", f"## B. Coverage gaps: intents with no close test ({len(gaps)})", "",
             "| Intent | Traces | Failures | With weak signals |", "| --- | --- | --- | --- |"]
     out += [f"| {k} | {v['n']} | {v['failures']} | {v['weak']} |" for k, v in gaps[:30]]

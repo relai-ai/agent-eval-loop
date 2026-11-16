@@ -102,8 +102,9 @@ the `eval` skill, and ask what only comes up later (mocks, prompts) together whe
 - Which configuration to integrate, only when several are plausible as real use.
 - How interactive permission prompts should be answered in trials, only when the agent asks a
   person for them.
-- Once you know every dependency trials cannot reach or must not call, approval for all the mocks
-  together, and how to handle each action with real side effects ([mocks](mocks.md)).
+- Once you know which dependencies trials cannot reach or must not call, batch related mock
+  choices and side-effect destinations, keeping each independent decision separately answerable
+  in its own prompt or labeled row ([mocks](mocks.md)). Reuse approval for choices already covered.
 
 Secrets are not questions: name each variable the agent or the judge needs and tell the user to
 make it available through the project's credential mechanism or `relai/.env`. Never ask for

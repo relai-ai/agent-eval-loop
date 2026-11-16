@@ -338,7 +338,7 @@ class OutboundRedactionTest(unittest.TestCase):
             self.calls.append((headers, body))
             verdict = {"intent": "synthetic", "outcome": "success", "failure": "", "evidence": [],
                        "weak_signals": [], "risks": [], "requirements": [], "closest_test": "",
-                       "needs_human": False, "human_question": ""}
+                       "needs_human": False, "human_questions": []}
             return {"choices": [{"message": {"content": json.dumps(verdict)}}]}
         self.judge.post = post
         self.repo.write("relai/relai.toml", '''
@@ -585,6 +585,8 @@ class TriageTest(unittest.TestCase):
         triage = load("triage")
         verdicts = {
             "t0": {"outcome": "failure", "failure": "transferred", "risks": ["early-transfer"], "closest_test": "",
+                   "human_questions": ["Should this refund require a transfer?",
+                                       "Should the agent check delivery status first?"],
                    "weak_signals": [{"kind": "premature-escalation", "note": "n", "quote": "q"},
                                     {"kind": "skipped-check", "note": "n", "quote": "q"}], "intent": "Refund"},
             "t1": {"outcome": "success", "failure": "", "risks": [], "closest_test": "",
@@ -598,7 +600,7 @@ class TriageTest(unittest.TestCase):
             tid = prompt.rsplit("Run ", 1)[1].split(":", 1)[0]
             if tid == "t3":
                 raise RuntimeError("provider down")
-            base = {"evidence": [], "requirements": [], "needs_human": False, "human_question": ""}
+            base = {"evidence": [], "requirements": [], "needs_human": False, "human_questions": []}
             self.assertIn("early-transfer", prompt)
             self.assertIn("orders:", prompt)
             return {**base, **verdicts[tid]}, "cheap", {"cost": 0.002}
@@ -616,12 +618,41 @@ class TriageTest(unittest.TestCase):
         triage.cmd_report(type("A", (), {"ingest": "t1"})(), self.repo.relai)
         lanes = json.loads((d / "lanes.json").read_text())
         self.assertEqual([a["id"] for a in lanes["A"]], ["t0"])
+        self.assertEqual(lanes["A"][0]["questions"], verdicts["t0"]["human_questions"])
+        report = (d / "triage.md").read_text()
+        question_rows = [line for line in report.splitlines() if line.startswith("| t0 |")]
+        self.assertEqual(len(question_rows), 2)
+        for row, question in zip(question_rows, verdicts["t0"]["human_questions"]):
+            self.assertIn(f"| {question} |", row)
         self.assertEqual([b["intent"] for b in lanes["B"]], ["refund"])
         pair = lanes["C"]["co_occurring"][0]
         self.assertEqual(pair["traces"], 2)
         self.assertIn("signal:premature-escalation", pair["pair"])
         self.assertTrue((d / "triage.md").is_file())
         self.assertEqual(json.loads((d / "verdicts.jsonl").read_text().splitlines()[0])["cost_usd"], 0.002)
+
+    def test_report_keeps_legacy_and_new_questions_when_an_ingest_resumes(self):
+        triage = load("triage")
+        rows = [
+            {"id": "old", "outcome": "unclear", "human_question": "Is this refund allowed?"},
+            {"id": "new", "outcome": "success", "needs_human": False,
+             "human_questions": ["Should a receipt be required?", "May the agent offer store credit?"]},
+            {"id": "failed", "outcome": "failure", "human_questions": []},
+            {"id": "done", "outcome": "success", "human_question": ""},
+        ]
+        path = self.repo.write("relai/work/discover/mixed/verdicts.jsonl",
+                               "\n".join(json.dumps(row) for row in rows) + "\n")
+        saved = path.read_text()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(triage.cmd_report(SimpleNamespace(ingest="mixed"), self.repo.relai), 0)
+        lanes = json.loads((path.parent / "lanes.json").read_text())
+        questions = {row["id"]: row["questions"] for row in lanes["A"]}
+        self.assertEqual(questions, {"old": [rows[0]["human_question"]],
+                                     "new": rows[1]["human_questions"], "failed": []})
+        report_rows = [line for line in (path.parent / "triage.md").read_text().splitlines()
+                       if line.startswith(("| old |", "| new |", "| failed |"))]
+        self.assertEqual(len(report_rows), 4)
+        self.assertEqual(path.read_text(), saved, "reporting must not rewrite saved verdicts")
 
 
 class AnyProviderTest(unittest.TestCase):

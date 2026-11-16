@@ -61,7 +61,10 @@ removes only declared secret values. Redaction does not itself authorize externa
   marker. Treat these as partial views, disclose truncation, and inspect the full source before
   relying on a lead. Adjust the bound or processing strategy when omitted material matters.
 - `report --ingest <id>` writes `triage.md` and `lanes.json`. These remain leads, not evidence;
-  the agent may regroup or prioritize them for the request.
+  the agent may regroup or prioritize them for the request. Verdicts store `human_questions` as a
+  list of separately answerable questions. Lane A preserves them as `questions` in `lanes.json`
+  and one row per question in `triage.md`. Reports accept the older `human_question` string in
+  saved verdicts as a one-item list, so an ingest can resume with both formats.
 
 ## Verify leads and coverage
 

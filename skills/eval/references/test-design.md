@@ -23,8 +23,10 @@ How to design each test for the `eval` skill, whose Rules bind; this adds the me
 ## Ask the user
 
 - When the target, expected outcome or how to evaluate it is still ambiguous after reading the
-  code and wiki, including criteria a run log suggests but feedback does not state. Ask every
-  question at once, recommendation first.
+  code and wiki, including criteria a run log suggests but feedback does not state. Batch related
+  questions in manageable groups, recommendation first, with each independent decision in a
+  separate prompt or labeled row, as the
+  [shared user-interaction guidance](../../start/template/README.md#working-with-the-user) describes.
 - Whether an ambiguous change request updates an existing test or needs a new one.
 
 ## Approach
