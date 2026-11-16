@@ -58,7 +58,10 @@ the repository and its test setup.
   paths fall inside. `new_files_ok` lists where new files are welcome (new test files).
 - `restore`: files that can steer a test run but are often changed for good reasons
   (`pyproject.toml`, `setup.cfg`, `package.json`): put back before any command runs, never held
-  against the agent.
+  against the agent. Lockfiles and vendored dependencies steer a run too: restore them unless a
+  correct fix may need a dependency change, and then leave the change to `review-ready`.
+  Restoring a lockfile does not undo packages the agent already installed, so commands that
+  depend on it install from it first. A large vendored folder makes every task's snapshot large.
 - `allowed_changes`: protected or restored files the correct fix itself must change. Health shows
   the need: the oracle fails.
 - `ignore_changes`: what the image build or test run leaves untracked. It does not exempt
@@ -91,6 +94,19 @@ the defenses hold only for files the task lists, so list them. It is not a sandb
 allows, run the agent as a non-root user (`[agent].user`), and then set `[verifier] user = "root"`:
 Harbor does not fall back to root, and a non-root verifier records no reward (`check_task.py`
 checks it).
+
+Two more paths reach the verifier's commands from outside the listed files:
+
+- **Toolchain configuration.** In the workspace (a project `.npmrc`, `.cargo/config.toml`,
+  `go.work`), list it under `restore`. In the home folder (Go's `go env -w`, a user `.npmrc` or
+  `pip.conf`), it reaches the verifier when the agent runs as root or shares its home: have the
+  hidden-test, suite and build commands set it aside, for example `GOENV=off`,
+  `NPM_CONFIG_USERCONFIG=/dev/null` or `PIP_CONFIG_FILE=/dev/null`, and confirm with the
+  real-fix check that they still pass.
+- **Running as root.** The verifier runs as root, which passes every file-permission check, so a
+  test about permissions or the user's identity passes whatever the code does. Run such a test
+  as a non-root user (`runuser`, `setpriv` or `su`, whichever the image has; create the user in
+  the Dockerfile when the agent runs as root), or record that it checks nothing.
 
 `params.json` keys are in `relai/docs/files.md`; expected values live there, never in code.
 

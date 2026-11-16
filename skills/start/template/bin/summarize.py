@@ -34,6 +34,10 @@ is set (SCORED otherwise, NOT SCORED with no scored attempt), then named warning
 attempts were not scored. Output describes observations, not acceptance or confidence. --details prints full tables;
 --json always writes the complete evidence. observed_change is higher, lower, equal or
 not-comparable; numeric noise/se fields are reference estimates only.
+For an agent-neutral coding task, each test also reports its solved rate: attempts whose headline
+check ([metadata.relai.coding].primary) scored full marks, apart from the mean over every recorded
+check. From Harbor's trial timings it reports time per phase (environment setup, which includes any
+image build, agent setup, the agent's work and the verifier), and the agent's cost per solved task.
 Safe on a run still in progress: a job whose trials are not all finished gets a line with trials
 finished of the total the runner recorded, trials started but not finished, and trials not started.
 Writes nothing except --json.
@@ -42,6 +46,7 @@ Writes nothing except --json.
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import math
 import statistics
@@ -57,6 +62,8 @@ from _common import (  # noqa: E402
 DEFINITIONS_UNAVAILABLE = "original evaluator definitions are unavailable"
 SHOWN = 5  # concise output lists at most this many warnings or problems, then says how many more
 STATUSES = ("scored", "evaluator error", "judges pending", "runtime failure", "unscored", "task not found")
+# trials whose headline check counts toward the solved rate: the agent ran, whatever its judges' state
+SOLVED_STATUSES = ("scored", "evaluator error", "judges pending")
 
 
 def find_results(paths: list[Path]):
@@ -159,6 +166,31 @@ def valid_number(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
+PHASES = ("environment_setup", "agent_setup", "agent_execution", "verifier")
+
+
+def seconds(timing) -> float | None:
+    """Seconds between a Harbor TimingInfo's started_at and finished_at, or None when either is missing."""
+    if not isinstance(timing, dict):
+        return None
+    try:
+        start = datetime.datetime.fromisoformat(str(timing["started_at"]).replace("Z", "+00:00"))
+        end = datetime.datetime.fromisoformat(str(timing["finished_at"]).replace("Z", "+00:00"))
+    except (KeyError, TypeError, ValueError):
+        return None
+    try:
+        value = (end - start).total_seconds()
+    except TypeError:  # one timestamp has a time zone and the other does not
+        return None
+    return value if value >= 0 else None
+
+
+def trial_timing(result: dict) -> dict:
+    timing = {phase: seconds(result.get(phase)) for phase in PHASES}
+    timing["total"] = seconds(result)
+    return timing
+
+
 def runner_label(result: dict) -> str:
     """Stable measurement identity; candidate paths/settings may vary without changing it."""
     kind = result.get("runner") or "harbor"
@@ -199,7 +231,7 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
             warnings.append(f"trajectory JSON could not be read ({type(exc).__name__})")
     base = {"trial": trial_dir.name, "dir": str(trial_dir), "checksum": result.get("task_checksum"),
             "exception": exception, "score": None, "evaluators": {}, "usage": usage,
-            "runner": runner_label(result), "warnings": warnings}
+            "runner": runner_label(result), "warnings": warnings, "timing": trial_timing(result), "primary": None}
     if task_path is None:
         return {**base, "test": Path(raw_path).name or result.get("task_name", "?"), "task_path": raw_path,
                 "status": "task not found",
@@ -211,7 +243,10 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
         toml = None
     # an agent-neutral coding task is scored from the workspace, so an agent Harbor records without an ATIF
     # trajectory (or the oracle) can still be scored; evaluators that need the trajectory are "not recorded"
-    neutral = bool(((toml or {}).get("metadata", {}).get("relai", {}) or {}).get("agent_neutral"))
+    relai_meta = (toml or {}).get("metadata", {}).get("relai", {}) or {}
+    neutral = bool(relai_meta.get("agent_neutral"))
+    coding = relai_meta.get("coding") if isinstance(relai_meta.get("coding"), dict) else {}
+    base["primary"] = coding.get("primary") if isinstance(coding.get("primary"), str) else None
     if recorded_evaluators(result.get("evaluator_definitions")):
         evaluators = result["evaluator_definitions"]
         base["evaluator_source"] = "recorded"
@@ -369,8 +404,24 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
                     agg["errors"] += 1
                 else:
                     agg["pending"] += 1
+        primary = next((r["primary"] for r in recs if r.get("primary")), None)
+        solved = None
+        if primary:
+            counted = [r["evaluators"][primary] for r in recs if r["status"] in SOLVED_STATUSES
+                       and r["evaluators"].get(primary, {}).get("state") == "scored"]
+            full = sum(normalized(o["score"], o["min"], o["max"]) >= 1.0 for o in counted)
+            solved = {"evaluator": primary, "solved": full, "scored": len(counted),
+                      "rate": full / len(counted) if counted else None,
+                      "attempts": len(recs), "cost_reported": len(costs), "cost_usd": sum(costs) if costs else None}
+        timing = {}
+        for phase in PHASES + ("total",):
+            values = [r["timing"][phase] for r in recs if valid_number((r.get("timing") or {}).get(phase))]
+            timing[phase] = {"n": len(values), "mean": statistics.fmean(values) if values else None,
+                             "sum": sum(values) if values else None}
         summary["tests"][name] = {
             "attempts": len(recs),
+            "solved": solved,
+            "timing": timing,
             "trials": recs,
             "status_counts": {s: sum(r["status"] == s for r in recs) for s in STATUSES},
             "mean": statistics.fmean(scored) if scored else None,
@@ -397,6 +448,24 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
         parts = name.split("/")
         group = "/".join(parts[:2]) if parts[0] == "benchmarks" and len(parts) > 2 else parts[0]
         groups.setdefault((group, test["split"] or "development"), []).append(test["mean"])
+    coding = [t["solved"] for t in summary["tests"].values() if t["solved"]]
+    solved_tests = [s for s in coding if s["scored"]]
+    attempts_solved = sum(s["solved"] for s in solved_tests)
+    # the agent cost of every attempt on a coding test, failed ones included, over the attempts that solved theirs;
+    # only when every one of those attempts reported its cost, since a partial sum would read too low
+    coding_attempts = sum(s["attempts"] for s in coding)
+    cost_reported = sum(s["cost_reported"] for s in coding)
+    cost = sum(s["cost_usd"] or 0.0 for s in coding)
+    summary["solved"] = None if not solved_tests else {
+        "tests": len(solved_tests), "attempts": sum(s["scored"] for s in solved_tests), "solved": attempts_solved,
+        "mean_rate": statistics.fmean(s["rate"] for s in solved_tests),
+        "cost_per_solved_task": cost / attempts_solved if attempts_solved and cost_reported == coding_attempts else None,
+        "cost_reported": cost_reported, "coding_attempts": coding_attempts}
+    summary["timing"] = {}
+    for phase in PHASES + ("total",):
+        values = [r["timing"][phase] for r in records if valid_number((r.get("timing") or {}).get(phase))]
+        summary["timing"][phase] = {"n": len(values), "mean": statistics.fmean(values) if values else None,
+                                    "max": max(values) if values else None, "sum": sum(values) if values else None}
     summary["splits"] = [{"group": g, "split": s, "tests": len(m), "scored": sum(v is not None for v in m),
                           "mean": statistics.fmean([v for v in m if v is not None]) if any(v is not None for v in m) else None}
                          for (g, s), m in sorted(groups.items())]
@@ -420,6 +489,17 @@ def fmt(value) -> str:
 
 USAGE_LABELS = {"cost_usd": "cost", "n_input_tokens": "input tokens", "n_output_tokens": "output tokens",
                 "n_cache_tokens": "cache tokens"}
+
+
+TIMING_LABELS = (("environment_setup", "environment setup (includes image build)"), ("agent_setup", "agent setup"),
+                 ("agent_execution", "agent"), ("verifier", "verifier"), ("total", "total"))
+
+
+def duration(value) -> str:
+    if value is None:
+        return "-"
+    minutes, secs = divmod(round(value), 60)
+    return f"{minutes}m{secs:02d}s" if minutes else f"{secs}s"
 
 
 def capped(lines: list[str], details: bool, more: str = "--details or JSON") -> list[str]:
@@ -474,10 +554,29 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
         print(f"Note: {summary['definitions_unavailable']} attempt(s) were scored with their test's current task.toml "
               "evaluators, because the runner did not record the definitions it used (normal for Harbor runs).")
     print(f"Coverage: {len(summary['tests'])} test(s)")
+    solved = summary.get("solved")
+    if solved:
+        line = (f"Solved (headline check at full marks): {solved['solved']} of {solved['attempts']} attempts on "
+                f"{solved['tests']} coding test(s); mean of per-test solved rates {solved['mean_rate']:.2f}. "
+                "The per-test mean below averages every recorded check, so it can be lower on tests every attempt solved.")
+        print(line)
+        if solved["cost_per_solved_task"] is not None:
+            print(f"Agent cost per solved task: ${solved['cost_per_solved_task']:.4f} (the cost of all "
+                  f"{solved['coding_attempts']} attempts on coding tests over the {solved['solved']} that solved their task)")
+        else:
+            print(f"Agent cost per solved task: not computed (cost reported for {solved['cost_reported']} of "
+                  f"{solved['coding_attempts']} attempts on coding tests, or none solved)")
+    timing = summary.get("timing") or {}
+    shown = [(label, timing.get(phase) or {}) for phase, label in TIMING_LABELS]
+    if any(t.get("n") for _, t in shown):
+        print("Time per trial, mean (longest): " + ", ".join(
+            f"{label} {duration(t['mean'])} ({duration(t['max'])})" for label, t in shown if t.get("n"))
+            + f" ({max(t['n'] for _, t in shown)}/{summary['trials']} trials timed)")
     if not details:
         print(f"Pass mark: {mark:.2f}" if mark is not None else
               "Pass mark: not set yet, so no PASS or FAIL (choose it with the user; see the eval skill's measure guide)")
         rows = [f"  {verdict(t, mark):<10} {name}  mean {fmt(t['mean'])} ({t['scored']}/{t['attempts']} scored)"
+                + (f", solved {t['solved']['solved']}/{t['solved']['scored']}" if (t.get("solved") or {}).get("scored") else "")
                 for name, t in summary["tests"].items()]
         for line in rows if len(rows) <= 30 else rows[:30] + [f"  ... and {len(rows) - 30} more (--details)"]:
             print(line)
@@ -489,10 +588,13 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
         print("Full test/evaluator evidence: --details; complete machine-readable evidence: --json <path>.")
         return
     print()
-    print("| Test | Attempts | Scored | Mean | Observed stdev | Full marks |")
-    print("| --- | --- | --- | --- | --- | --- |")
+    print("| Test | Attempts | Scored | Mean | Observed stdev | Full marks | Solved | Agent time (mean) |")
+    print("| --- | --- | --- | --- | --- | --- | --- | --- |")
     for name, t in summary["tests"].items():
-        print(f"| {name} | {t['attempts']} | {t['scored']} | {fmt(t['mean'])} | {fmt(t['stdev'])} | {t['full_marks']} |")
+        solved_cell = f"{t['solved']['solved']}/{t['solved']['scored']}" if (t.get("solved") or {}).get("scored") else "-"
+        agent = (t.get("timing") or {}).get("agent_execution") or {}
+        print(f"| {name} | {t['attempts']} | {t['scored']} | {fmt(t['mean'])} | {fmt(t['stdev'])} | {t['full_marks']} "
+              f"| {solved_cell} | {duration(agent.get('mean'))} |")
     print()
     if any(r["group"].startswith("benchmarks/") or r["split"] != "development" for r in summary["splits"]):
         print("| Group | Split | Tests | Scored | Mean |")
@@ -569,10 +671,20 @@ def compare(base: dict, cand: dict) -> dict:
         rows.append({"test": name, "baseline": b["mean"], "candidate": c["mean"], "delta": delta,
                      "noise": noise, "observed_change": change,
                      "baseline_scored": b["scored"], "candidate_scored": c["scored"],
-                     "attempts": f"{b['scored']}/{c['scored']}"})
+                     "attempts": f"{b['scored']}/{c['scored']}",
+                     "baseline_solved": solved_pair(b), "candidate_solved": solved_pair(c)})
     return {"rows": rows, "overall": overall(rows),
             "baseline only": sorted(set(base["tests"]) - set(cand["tests"])),
             "candidate only": sorted(set(cand["tests"]) - set(base["tests"]))}
+
+
+def solved_pair(test: dict) -> dict | None:
+    solved = test.get("solved") or {}
+    return {"solved": solved["solved"], "scored": solved["scored"]} if solved.get("scored") else None
+
+
+def solved_cell(pair) -> str:
+    return f"{pair['solved']}/{pair['scored']}" if pair else "-"
 
 
 def comparison_warnings(base: dict, cand: dict) -> list[str]:
@@ -621,11 +733,24 @@ def overall(rows: list[dict]) -> dict | None:
 def print_comparison(comparison: dict, details: bool) -> None:
     print("\n## Observed comparison")
     if details:
-        print("| Test | Baseline | Candidate | Delta | Spread reference (1 s.e.) | Scored attempts | Observed change |")
-        print("| --- | --- | --- | --- | --- | --- | --- |")
+        print("| Test | Baseline | Candidate | Delta | Spread reference (1 s.e.) | Scored attempts | Observed change "
+              "| Solved (baseline) | Solved (candidate) |")
+        print("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
         for row in comparison["rows"]:
             print(f"| {row['test']} | {fmt(row['baseline'])} | {fmt(row['candidate'])} | {fmt(row['delta'])} | "
-                  f"{fmt(row.get('noise'))} | {row['attempts']} | {row['observed_change']} |")
+                  f"{fmt(row.get('noise'))} | {row['attempts']} | {row['observed_change']} "
+                  f"| {solved_cell(row.get('baseline_solved'))} | {solved_cell(row.get('candidate_solved'))} |")
+    paired = [r for r in comparison["rows"] if r.get("baseline_solved") and r.get("candidate_solved")]
+    if paired:
+        def rate(pair):
+            return pair["solved"] / pair["scored"]
+        more = sum(rate(r["candidate_solved"]) > rate(r["baseline_solved"]) for r in paired)
+        fewer = sum(rate(r["candidate_solved"]) < rate(r["baseline_solved"]) for r in paired)
+        print(f"Solved (headline check at full marks), paired over {len(paired)} coding test(s): baseline "
+              f"{sum(r['baseline_solved']['solved'] for r in paired)} of {sum(r['baseline_solved']['scored'] for r in paired)} "
+              f"attempts, candidate {sum(r['candidate_solved']['solved'] for r in paired)} of "
+              f"{sum(r['candidate_solved']['scored'] for r in paired)}; the candidate solved more often on {more} "
+              f"and less often on {fewer}. The changes below compare means over every recorded check.")
     counts = {key: sum(row["observed_change"] == key for row in comparison["rows"])
               for key in ("higher", "lower", "equal", "not-comparable")}
     print("Matched tests: " + ", ".join(f"{key} {value}" for key, value in counts.items()))

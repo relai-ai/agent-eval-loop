@@ -27,9 +27,9 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
 
 ## Reading the results
 
-- **Solved** is the primary evaluator at full marks (its per-attempt scores in
-  `summarize.py --json`), per task, averaged over attempts; the mean over every recorded check
-  goes beside it, and the pass rule once `[scoring].pass_mark` is set. An agent can solve more and pass less (it fixes the bug but
+- **Solved** is the primary evaluator at full marks, per task, averaged over attempts;
+  `summarize.py` prints it per test and overall, apart from the mean over every recorded check,
+  which goes beside it, and the pass rule once `[scoring].pass_mark` is set. An agent can solve more and pass less (it fixes the bug but
   edits tests or skips verification). Show scored/attempted counts and missing-result reasons;
   unknown scores are not failures. Rerun missing evidence when useful and authorized, or limit
   the conclusion to what was recorded.
@@ -53,8 +53,10 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   judgments to what the trajectory supports ([safe process](checks.md#safe-process-shared-evaluator)).
 - **Contamination**: report separately the tasks whose fix was public before a model's training
   cutoff.
-- Cost (or plan usage) per solved task and time per trial go beside the scores. State units and
-  distinguish agent time from feedback overhead where measured. Preserve per-run setup/evaluator
+- Cost (or plan usage) per solved task and time per trial go beside the scores; `summarize.py`
+  prints both from the run records, with environment setup (which includes image builds) apart
+  from the agent's time. State units and distinguish agent time from feedback overhead where
+  measured. Preserve per-run setup/evaluator
   identity and available contents/revisions; do not infer a subscription bill from recorded USD
   or causation from a sequence of setup edits alone.
 
@@ -113,8 +115,9 @@ are written. A requirement that one setup's instruction file states (run the lin
 the bare variant, since whether the file helps the agent meet it is what the comparison
 measures. A rule that does not apply to the code at the start commit (one the start commit's own
 guidance contradicts, or about code it does not have yet), or that the team did not approve as a
-requirement, grades no setup. Report judge scores apart
-from the solved rate. When an instruction file tells agents to stop or decline (for example, on
+requirement, grades no setup. Report judge scores apart from the solved rate, and say that a
+judge reading the trajectory may see which setup ran (the agent names or quotes its instruction
+file). When an instruction file tells agents to stop or decline (for example, on
 unsolicited contributions), keep the request identical across variants and report any stop as
 its own finding.
 

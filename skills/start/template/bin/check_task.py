@@ -1042,6 +1042,18 @@ def read_verifier_outputs(verifier: Path, case: str, report: Report):
     return rewards, feedback, errors
 
 
+SYNCED_FOLDERS = {"Mobile Documents", "iCloud Drive", "iCloudDrive", "CloudStorage", "Dropbox", "OneDrive",
+                  "Google Drive", "GoogleDrive", "Box Sync"}
+
+
+def synced_folder(path: Path) -> str | None:
+    """The folder in path that a file-sync client manages (iCloud Drive, Dropbox, OneDrive, Google Drive, Box), if any."""
+    for part in path.resolve().parts:
+        if part in SYNCED_FOLDERS or part.startswith(("OneDrive - ", "Dropbox (")):
+            return part
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("tasks", nargs="+", help="task directories (for example relai/tests/<id>)")
@@ -1070,6 +1082,10 @@ def main() -> int:
         suite.note("--cloud checks the bundled Harbor builder only; validate native hosting through its own integration")
     if native and isolation == "host":
         suite.note("host execution requires explicit authorization and reviewed containment; the launcher is not a sandbox")
+    if synced := synced_folder(relai_dir):
+        suite.note(f"relai/ is inside {synced!r}, a synced folder: run records under relai/work change throughout a "
+                   "run and task folders hold large repository bundles, so syncing them costs bandwidth and can "
+                   "catch files mid-write; move the eval project out of it, or exclude relai/work from syncing")
     scan_secrets([relai_dir / "relai.toml"] if (relai_dir / "relai.toml").is_file() else [],
                  secret_values(relai_dir), relai_dir, suite)
     loaded = {} if args.no_harbor or native or suite.errors else harbor_load(tasks, harbor_version(relai_dir))
