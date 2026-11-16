@@ -489,6 +489,23 @@ class SummarizeTest(Base):
         self.assertIn("scored, but the runner recorded AgentTimeoutError", result.stdout)
         self.assertIn("1 errored trial", result.stdout)
 
+    def test_run_in_progress_counts_unfinished_trials(self):
+        job = harbor_job(self.repo.root / "runs" / "p", "job", 5)
+        harbor_trial(job, "t1", self.task, {"looks-up-order": 1.0}, feedback={"looks-up-order": "ok"})
+        (job / "t2").mkdir()  # Harbor writes config.json when a trial starts, result.json when it ends
+        (job / "t2" / "config.json").write_text(json.dumps({"trial_name": "t2"}))
+        (job / "t3").mkdir()  # a result being written is not finished yet
+        (job / "t3" / "config.json").write_text(json.dumps({"trial_name": "t3"}))
+        (job / "t3" / "result.json").write_text("")
+        result = self.repo.run("summarize.py", str(self.repo.root / "runs" / "p"))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Run job: 1 of 5 trials finished, 2 not finished (running or interrupted), 2 not started",
+                      result.stdout)
+        self.assertNotIn("%", result.stdout)
+        done = harbor_job(self.repo.root / "runs" / "d", "job", 1)
+        harbor_trial(done, "t1", self.task, {"looks-up-order": 1.0}, feedback={"looks-up-order": "ok"})
+        self.assertNotIn("trials finished", self.repo.run("summarize.py", str(self.repo.root / "runs" / "d")).stdout)
+
     def test_comparison_and_notice_when_test_changed(self):
         for name, score, checksum in (("base", 0.0, "c1"), ("cand", 1.0, "c1"), ("changed", 1.0, "c2")):
             job = harbor_job(self.repo.root / "runs" / name, "job", 3)

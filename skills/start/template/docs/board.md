@@ -40,7 +40,8 @@ The sections:
 - **Wiki:** counts of requirements, risks and open questions, and per risk its impact / confidence
   / triggerability, status, and the tests that probe it (from `covers` and the page's `## Probes`).
 - **Tests:** the runner, isolation and pass mark ("not set yet" until it is chosen); per test, its split, whether it is frozen, its
-  latest mean against the pass mark, and its recent runs (flaky when they both pass and fail).
+  latest mean against the pass mark, and its recent runs (flaky when they both pass and fail;
+  counts as in `../README.md`, *Counts come from records*).
   Per benchmark: development cases played of total, the held-out sample's mean, final-split runs,
   cost per case and fidelity, never case by case. Coverage spans history; performance summaries
   identify their contributing revision. Mixed or unknown revisions retain counts and a notice
@@ -58,7 +59,9 @@ The sections:
   estimated. Use the active agreement: `records/loop/state.json`'s contract during a loop, otherwise
   `records/improve/plan.json`. Show the applicable ceiling and actual consumption since its `since`
   time, including candidates and delegated work. Missing resource measurements are unknown, not
-  zero. Do not invent or duplicate a budget; show recent entries from `changes.md`.
+  zero. Do not invent or duplicate a budget; show recent entries from `changes.md`. For runs,
+  copy trial and judge spend from `bin/summarize.py` where it applies (`../README.md`, *Counts come
+  from records*), and add spend it does not read, such as triage, from its own records.
 
 Lengths of history and the agreement threshold are in `../README.md`, Defaults.
 

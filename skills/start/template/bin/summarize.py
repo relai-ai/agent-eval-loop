@@ -34,6 +34,8 @@ is set (SCORED otherwise, NOT SCORED with no scored attempt), then named warning
 attempts were not scored. Output describes observations, not acceptance or confidence. --details prints full tables;
 --json always writes the complete evidence. observed_change is higher, lower, equal or
 not-comparable; numeric noise/se fields are reference estimates only.
+Safe on a run still in progress: a job whose trials are not all finished gets a line with trials
+finished of the total the runner recorded, trials started but not finished, and trials not started.
 Writes nothing except --json.
 """
 
@@ -75,6 +77,23 @@ def find_results(paths: list[Path]):
                 jobs.append((path.parent, data))
     unique = {str(d.resolve()): (d, r) for d, r in trials}
     return list(unique.values()), jobs
+
+
+def unfinished_trials(job_dir: Path) -> int:
+    """Trials that started but have no readable result yet (running, interrupted, or mid-write): Harbor writes
+    config.json with trial_name when a trial starts and result.json only when it ends; the native runner
+    creates agent/, verifier/ and logs/ first."""
+    count = 0
+    for child in job_dir.iterdir():
+        try:
+            if not child.is_dir() or child.is_symlink() or "trial_name" in read_json_dict(child / "result.json"):
+                continue
+            started = "trial_name" in read_json_dict(child / "config.json") or \
+                all((child / sub).is_dir() for sub in ("agent", "verifier", "logs"))
+        except OSError:
+            continue  # removed by the runner while being read
+        count += started
+    return count
 
 
 def wrapped_records(paths: list[Path]) -> list[dict]:
@@ -310,7 +329,9 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
         summary["status_counts"][rec["status"]] += 1
     for job_dir, job in jobs:
         stats = job.get("stats") or {}
+        finished = sum(1 for rec in records if rec.get("dir") and Path(rec["dir"]).parent == job_dir)
         summary["jobs"].append({"dir": str(job_dir), "n_total_trials": job.get("n_total_trials"),
+                                "n_finished_trials": finished, "n_unfinished_trials": unfinished_trials(job_dir),
                                 "n_errored_trials": stats.get("n_errored_trials"),
                                 "n_completed_trials": stats.get("n_completed_trials"),
                                 "cost_usd": stats.get("cost_usd")})
@@ -421,6 +442,16 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
     print("Runner: " + ", ".join("native" if r == "native:native" else r for r in summary["runners"]))
     print(f"Trials: {summary['trials']} (" + ", ".join(f"{k} {v}" for k, v in counts.items() if v) + ")")
     for job in summary["jobs"]:
+        total, done, open_ = job.get("n_total_trials"), job.get("n_finished_trials", 0), job.get("n_unfinished_trials", 0)
+        known = isinstance(total, int) and not isinstance(total, bool) and total >= done + open_
+        if open_ or (known and done < total):
+            # counts only; a native run records its total when a batch ends, so a later batch shows none
+            line = f"{done} of {total} trials finished" if known else f"{done} trials finished"
+            if open_:
+                line += f", {open_} not finished (running or interrupted)"
+            if known and total > done + open_:
+                line += f", {total - done - open_} not started"
+            print(f"Run {Path(job['dir']).name}: {line}")
         if job.get("n_errored_trials"):
             print(f"Run {Path(job['dir']).name}: {job['n_errored_trials']} errored trial(s)")
     if summary["usage"]:

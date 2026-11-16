@@ -34,6 +34,10 @@ limits carry forward; a new iteration does not reset the budget.
 - spend against the approved budget;
 - iterations, observed results and the decisions still needed from you.
 
+To follow a run yourself while it is going, run `python3 relai/bin/summarize.py <run dir>`. It
+reads the run records and shows trials finished of the total, trials not finished, outcomes and
+recorded cost, without estimates.
+
 Questions wait for a natural decision point: the end of `discover`; the start of an `eval` build, its scenario approval and grader preview; `coding-evals` scope, task and check approval and the budget before the first paid run; the first time LLM judges are scored; or a loop iteration's summary. You can hand build approvals to an independent review instead. Only a blocking safety call or conflicting requirement interrupts dependent work. The full list is in the [project contract](../skills/start/template/README.md#working-with-the-user).
 
 ## Check tests and graders

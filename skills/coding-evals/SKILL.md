@@ -131,9 +131,8 @@ for a guided batch or suitable app view of tasks and scoring. Surface consequent
 questions even when the chosen task subset can proceed, explaining excluded coverage and
 possible follow-up; record resolution or explicit deferral in the existing items.
 
-Long steps (image builds, health runs, trials) stay visible: say what is running, how far along it
-is (tasks or trials done of the total), spend so far and where results land, and update
-`STATUS.md` at milestones.
+Long steps (image builds, health runs, trials) follow *Counts come from records* and *Cost before
+spend* in [working with the user](../start/template/README.md#working-with-the-user).
 
 Beyond those points, ask only when it blocks the work: when a session has no clear outcome (as
 feedback in `relai/feedback.md`), when an instruction cannot be written without giving the fix
