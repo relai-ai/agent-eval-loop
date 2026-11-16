@@ -57,8 +57,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # copied beside relai/bin/_common.py
-from _common import declared_evaluators, dir_digest, load_toml  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import declared_evaluators, dir_digest, load_toml
 
 BASE_ENV = ("PATH", "HOME", "LANG", "TMPDIR")
 PLACEHOLDERS = ("task_dir", "trial_dir", "test_id", "attempt")
@@ -122,7 +122,7 @@ def run_trial(task_dir: Path, attempt: int, out: Path, command: list[str], cwd: 
     if isinstance(existing, dict) and not (retry_failed and failed(existing)):
         return existing
     if trial.exists():
-        shutil.rmtree(trial)  # stale files from an interrupted or retried trial must not be scored
+        shutil.rmtree(trial)
     for sub in ("agent", "verifier", "logs"):
         (trial / sub).mkdir(parents=True)
     started = time.monotonic()
@@ -163,7 +163,7 @@ def run_trial(task_dir: Path, attempt: int, out: Path, command: list[str], cwd: 
         exception = "TrialTimeout"
     except InterruptedError:
         exception = "TrialInterrupted"
-    except Exception as exc:  # a broken task.toml or launch failure is this trial's runtime failure
+    except Exception as exc:
         exception = f"LaunchError: {type(exc).__name__}: {exc}"[:500]
     rewards = read_json(trial / "verifier" / "reward.json")
     usage = read_json(trial / "agent" / "usage.json")
@@ -220,7 +220,7 @@ def main() -> int:
         parser.error("give the per-trial command after --")
     if args.attempts < 1 or args.first_attempt < 1 or args.concurrency < 1 or args.timeout <= 0:
         parser.error("attempts, first-attempt, concurrency and timeout must be positive")
-    tasks = list(dict.fromkeys(Path(raw).resolve() for raw in args.tests))  # duplicates would share a trial
+    tasks = list(dict.fromkeys(Path(raw).resolve() for raw in args.tests))
     missing = [str(t) for t in tasks if not (t / "task.toml").is_file()]
     if missing:
         parser.error("no task.toml in: " + ", ".join(missing))

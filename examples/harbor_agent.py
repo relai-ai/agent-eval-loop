@@ -35,7 +35,7 @@ from harbor.models.agent.context import AgentContext
 LAUNCHER = Path(__file__).with_name("launcher.py")
 CONTAINER_LAUNCHER = "/tmp/relai/launcher.py"
 TRAJECTORY = "/logs/agent/trajectory.json"
-SETTINGS = {"RELAI_TRAJECTORY_PATH", "RELAI_TURN_TIMEOUT", "RELAI_HIDE_ENV", "RELAI_USER_SIM_BASE_URL"}  # not secrets; never redacted
+SETTINGS = {"RELAI_TRAJECTORY_PATH", "RELAI_TURN_TIMEOUT", "RELAI_HIDE_ENV", "RELAI_USER_SIM_BASE_URL"}
 
 
 class EvalsAgent(BaseAgent):
@@ -59,7 +59,7 @@ class EvalsAgent(BaseAgent):
             raise ValueError("set RELAI_ADAPTER_COMMAND (harbor run --ae RELAI_ADAPTER_COMMAND=...)")
         scenario = self._option("RELAI_SCENARIO", "/app/scenario.json")
         env = {"RELAI_TRAJECTORY_PATH": TRAJECTORY}
-        for name in ("RELAI_TURN_TIMEOUT", "RELAI_HIDE_ENV", "RELAI_USER_SIM_BASE_URL"):  # launcher settings
+        for name in ("RELAI_TURN_TIMEOUT", "RELAI_HIDE_ENV", "RELAI_USER_SIM_BASE_URL"):
             if value := self._option(name):
                 env[name] = value
         for name in filter(None, (n.strip() for n in (self._option("RELAI_PASS_ENV") or "").split(","))):
@@ -72,7 +72,7 @@ class EvalsAgent(BaseAgent):
             if not value:
                 raise ValueError(f"RELAI_USER_SIM_KEY_ENV names {sim_key_env}, which is not set in Harbor's "
                                  "environment; set it (or pass it with --ae) so the simulated user can call its model")
-            env["RELAI_USER_SIM_KEY"] = value  # the launcher keeps this from the adapter
+            env["RELAI_USER_SIM_KEY"] = value
 
         result = await environment.exec(
             command=(f"python3 {CONTAINER_LAUNCHER} --scenario {shlex.quote(scenario)} "
@@ -80,7 +80,7 @@ class EvalsAgent(BaseAgent):
             env=env,
         )
         log = (result.stdout or "") + (result.stderr or "")
-        for name in env:  # never leave values in the host-side log
+        for name in env:
             if name not in SETTINGS and len(env[name]) >= 8:
                 log = log.replace(env[name], f"[redacted {name}]")
         (self.logs_dir / "launcher.log").write_text(log, encoding="utf-8")

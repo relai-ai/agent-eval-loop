@@ -30,7 +30,7 @@ class ComparisonTest(unittest.TestCase):
     def test_overall_paired_delta_describes_equal_mean_without_inference(self):
         tasks = [self.task] + [self.repo.task(f"t{i}") for i in range(1, 6)]
         base_scores = [0.0, 1.0, 0.5, 0.0, 1.0, 0.5]
-        cand_scores = [1.0, 0.0, 0.5, 0.5, 1.0, 0.0]  # mixed per-test changes, zero mean
+        cand_scores = [1.0, 0.0, 0.5, 0.5, 1.0, 0.0]
         for name, scores in (("b", base_scores), ("c", cand_scores)):
             job = harbor_job(self.repo.root / "runs" / name, "job", len(tasks))
             for task, score in zip(tasks, scores):

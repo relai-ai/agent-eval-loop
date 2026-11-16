@@ -29,7 +29,7 @@ from pathlib import Path
 
 HOSTS = ("claude", "codex")
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
-PATCH_TOOLS = {"apply_patch"}  # Codex: tool_input.command holds the patch text
+PATCH_TOOLS = {"apply_patch"}
 PATCH_PATH = re.compile(r"^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+?)\s*$", re.MULTILINE)
 JUNK_DIRS = {"__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", ".tox", ".nox",
              "node_modules", ".venv", "venv", ".git", ".hg", ".svn"}
@@ -91,7 +91,7 @@ def frozen_entry(path: Path, relai_dir: Path) -> tuple[str, dict] | None:
         if key in tests:
             inside = rel.parts[depth:]
             if inside == ("README.md",) or any(part in JUNK_DIRS for part in inside[:-1]):
-                return None  # outside the digest: editing it does not change the frozen test
+                return None
             return key, tests[key]
     return None
 
@@ -118,7 +118,6 @@ def guard_frozen(event: dict, host: str) -> dict | None:
             "alone does not show the test is wrong. Once a repair is agreed and recorded in relai/decisions.md, `freeze.py <test> --begin-repair "
             "--reason \"...\"` stops this check asking before each edit until the test is re-frozen.")
     if host == "codex":
-        # Codex cannot ask the user from a hook, so the edit goes ahead and the agent is told.
         context = (f"RELAI warning: this edit changes a frozen test: {tests} (relai/frozen.json). {rule} "
                    "If the user has not agreed to this repair, tell them now that the test changed, and "
                    "revert the edit if they do not want it.")
@@ -153,7 +152,7 @@ def run_checker(relai_dir: Path, script: str, *args: str) -> str | None:
 
 
 def check_edit(event: dict, host: str) -> dict | None:
-    checks: dict[tuple, tuple] = {}  # (relai dir, script, args) in first-seen order
+    checks: dict[tuple, tuple] = {}
     edited = []
     for path in edited_paths(event):
         relai_dir = relai_dir_of(path)
@@ -164,7 +163,6 @@ def check_edit(event: dict, host: str) -> dict | None:
         if task:
             task_arg = task.relative_to(relai_dir.parent).as_posix()
             checks.setdefault((relai_dir, "check_task.py", task_arg, "--no-harbor"), ())
-        # Tests cite wiki ids in [metadata.relai].covers, so a task.toml edit can break the wiki check too.
         if path.relative_to(relai_dir).parts[:1] == ("wiki",) or (task and path.name == "task.toml"):
             checks.setdefault((relai_dir, "check_wiki.py"), ())
     reports = [r for r in (run_checker(*key) for key in checks) if r]
@@ -211,10 +209,10 @@ def main() -> int:
         return 0
     hook = HOOKS[args[0]]
     if hook is check_edit and sys.version_info < (3, 11):
-        hook = old_python_notice  # the checkers need Python 3.11+; tell the user once instead of failing
+        hook = old_python_notice
     try:
         output = hook(json.load(sys.stdin), host)
-    except Exception:  # fail open: a hook must never block work because of its own error
+    except Exception:
         return 0
     if output:
         print(json.dumps(output))

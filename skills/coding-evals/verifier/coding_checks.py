@@ -57,7 +57,6 @@ import traceback
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-# Never counted as the agent's changes: running Python tests leaves them, and the verifier clears them anyway.
 DEFAULT_IGNORE = ["**/__pycache__/**", "**/*.pyc"]
 SKIP_WALK = {".git", "__pycache__"}
 OUTPUT_TAIL = 1500
@@ -118,7 +117,7 @@ class Task:
         self.setup_manifest = self.params.get("setup_manifest") or {}
         self.ignore = DEFAULT_IGNORE + list(self.params.get("ignore_changes") or [])
         self.protected = list(self.params.get("protected") or [])
-        self.tracked_globs = self.protected + list(self.params.get("restore") or [])  # what the snapshot holds
+        self.tracked_globs = self.protected + list(self.params.get("restore") or [])
         self.manifest = self.params.get("protected_manifest") or {}
         self._restored = None
         self.history_error = None
@@ -136,12 +135,12 @@ class Task:
             except CheckError as exc:
                 self.setup_error = str(exc)
                 raise
-            self.changes = self._changes()  # captured before any check runs or restores anything
+            self.changes = self._changes()
             self.diff = self._git("diff", "--cached", "--text", "--no-color", "--no-ext-diff", "--no-textconv",
                                   self.baseline, "--", *self.changes, index=True, literal=True) if self.changes else ""
         except CheckError as exc:
             self.history_error = str(exc)
-        try:  # read now, before any check puts files back, so the order of checks does not matter
+        try:
             self.initial_state, self.state_error = self._protected_state(), None
         except CheckError as exc:
             self.initial_state, self.state_error = {}, str(exc)
@@ -151,14 +150,13 @@ class Task:
         self.facts.update(files_changed=sorted(self.changes), start_commit=self.start,
                           history_error=self.history_error)
 
-    # ---- git, through a throwaway repository ---------------------------------------------------
     def _git(self, *args: str, index: bool = False, check: bool = True, literal: bool = False, work_tree=None,
              git_dir=None, stdin: bytes | None = None) -> str:
         home = self._git_dir.parent / (self._git_dir.name + "-home")
         home.mkdir(exist_ok=True)
         env = {**os.environ, **CLEAN_GIT_ENV, "GIT_DIR": str(git_dir or self._git_dir),
                "GIT_WORK_TREE": str(work_tree or self.workspace),
-               "HOME": str(home), "XDG_CONFIG_HOME": str(home)}  # older git ignores GIT_CONFIG_GLOBAL
+               "HOME": str(home), "XDG_CONFIG_HOME": str(home)}
         if index:
             env["GIT_INDEX_FILE"] = str(self._git_dir / "relai-index")
         if literal:
@@ -268,7 +266,7 @@ class Task:
             keep = []
             for d in dirs:
                 if os.path.islink(os.path.join(current, d)):
-                    yield rel + d  # a symlinked directory is an entry, never followed
+                    yield rel + d
                 elif d not in SKIP_WALK:
                     keep.append(d)
             dirs[:] = keep
@@ -299,7 +297,6 @@ class Task:
             raise
         return proc.returncode, (out or "") + (err or "")
 
-    # ---- scoring -------------------------------------------------------------------------------
     def score(self, evaluator_id: str, value: float, feedback: str) -> None:
         if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
             raise ValueError(f"{evaluator_id}: score must be a finite number")
@@ -313,7 +310,7 @@ class Task:
     def guard(self, evaluator_id: str, check, *args, **kwargs):
         try:
             check(evaluator_id, *args, **kwargs)
-        except Exception as exc:  # a crash says nothing about the agent
+        except Exception as exc:
             detail = str(exc) if isinstance(exc, CheckError) else traceback.format_exc(limit=3)
             self.rewards.pop(evaluator_id, None)
             self.feedback.pop(evaluator_id, None)
@@ -337,7 +334,6 @@ class Task:
             return True
         return False
 
-    # ---- protected and restored files (from the filesystem and tests/protected/) ---------------
     def _protected_state(self) -> dict:
         """{path: changed|deleted|added} for snapshot files that differ from the start commit's, and for symlinks
         put where a snapshot folder was."""
@@ -349,7 +345,7 @@ class Task:
         state, present = {}, set()
         for path in self._walk():
             full = self.workspace / path
-            if full.is_symlink() and full.is_dir():  # a symlinked folder: never followed, and never kept
+            if full.is_symlink() and full.is_dir():
                 if matches(path + "/x", self.tracked_globs) or any(m.startswith(path + "/") for m in self.manifest):
                     state[path] = "changed"
                 continue
@@ -443,7 +439,7 @@ class Task:
         """Copy the hidden test files (tests/hidden/...) into the workspace, over anything there."""
         hidden = (self.params.get("hidden_tests") or {}).get("files") or {}
         outside = [t for t in hidden.values() if not matches(t, self.protected)]
-        if outside:  # only the snapshot area is put back, so hidden tests outside it would stay for the suite
+        if outside:
             raise CheckError(f"hidden test paths {', '.join(outside)} are outside params.json's protected globs")
         for source, target in hidden.items():
             src = HERE / source
@@ -468,7 +464,7 @@ class Task:
         try:
             code, output = self.run(command, timeout)
         finally:
-            if install:  # take the hidden tests out again, so the next command runs against the original tests
+            if install:
                 self._restored = None
                 self.restore_protected(record=False)
         self.facts[key] = {"command": command, "exit_code": code, "output_tail": tail(output, 600)}
@@ -496,7 +492,6 @@ class Task:
         """The project still builds (or type-checks, or lints, as params.json's build.command says)."""
         self.guard(evaluator_id, self._command_check, "build", "Build")
 
-    # ---- exact checks on what changed ----------------------------------------------------------
     def in_scope(self, evaluator_id: str) -> None:
         """Every changed file matches scope.allowed, and no more files changed than scope.max_files."""
         def check(eid):

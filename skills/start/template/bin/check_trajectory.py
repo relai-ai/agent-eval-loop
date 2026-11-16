@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import HARBOR_PYTHON, Report, harbor_version, runner_settings, relai_root  # noqa: E402
+from _common import HARBOR_PYTHON, Report, harbor_version, runner_settings, relai_root
 
 
 def message_text(message) -> str:
@@ -89,7 +89,6 @@ def check(doc: dict, report: Report, turns: int | None, previous: dict | None) -
         if not any(s.get("source") == "agent" for s in following):
             preview = message_text(step.get("message"))[:80]
             if index == len(steps) - 1 or not any(s.get("source") == "user" for s in steps[index + 1:]):
-                # A closing user message (a goodbye or a simulator's stop signal) needs no reply.
                 report.note(f"the last user step ({preview!r}) has no reply; fine if it ends the conversation")
                 continue
             answered = False

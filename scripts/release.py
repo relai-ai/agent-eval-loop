@@ -83,7 +83,6 @@ def bump(root: Path, target: str, dry_run: bool = False) -> None:
     updates["uv.lock"] = replace_toml_version(
         (root / "uv.lock").read_text(encoding="utf-8"),
         r'^\[\[package\]\]\nname = "agent-eval-loop"\n.*?(?=^\[\[package\]\]|\Z)', target)
-    # Validate every replacement before writing any file; dependency entries stay unchanged.
     for name, content in updates.items():
         if not dry_run:
             (root / name).write_text(content, encoding="utf-8")

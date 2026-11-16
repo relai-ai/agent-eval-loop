@@ -21,7 +21,6 @@ class CiRunnerTest(unittest.TestCase):
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(case)
         with tempfile.TemporaryDirectory() as directory:
             summary = Path(directory) / "summary.md"
-            # Job summaries append without destroying earlier step output.
             summary.write_text("Earlier output\n", encoding="utf-8")
             output = io.StringIO()
             status = ci_runner.run_tests(suite, summary, output)

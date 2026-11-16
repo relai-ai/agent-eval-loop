@@ -43,9 +43,9 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # copied beside relai/bin/_common.py
-from _common import evals_config, load_toml, redact, relai_root  # noqa: E402
-import judge  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import evals_config, load_toml, redact, relai_root
+import judge
 
 KINDS = ("unverified-claim", "skipped-check", "silent-assumption", "announced-not-done", "premature-escalation",
          "partial-completion", "policy-edge", "user-frustration", "repeated-or-wasted-call", "ignored-error", "other")
@@ -96,7 +96,7 @@ def first_line(text: str, label: str) -> str:
 
 def context(relai_dir: Path, context_file: str | None = None) -> str:
     lines = []
-    if context_file:  # the agent's own policy or system prompt, so the triager knows what it was told
+    if context_file:
         lines += ["What the agent was told (its policy or instructions):", Path(context_file).read_text(encoding="utf-8"), ""]
     lines.append("Requirements:")
     for page in sorted((relai_dir / "wiki" / "requirements").glob("*.md")):
@@ -142,8 +142,6 @@ def load_input(path: Path) -> list[dict]:
     return rows
 
 
-# Traces run triages without --yes. It mirrors relai/README.md, Defaults ("Triage pilot"); a project
-# that changes that default changes it here too, in its own copy of this script.
 PILOT = 20
 
 
@@ -212,7 +210,7 @@ def cmd_run(args, relai_dir: Path) -> int:
             line = json.dumps({"id": str(row["id"]), "model": model, "meta": row.get("meta"), "usage": usage,
                                "cost_usd": judge.cost_of(usage), **verdict}, ensure_ascii=False)
             target, key = verdicts, "ok"
-        except Exception as exc:  # recorded, never a verdict
+        except Exception as exc:
             line = json.dumps({"id": str(row["id"]), **metadata,
                                "error": redact(f"{type(exc).__name__}: {exc}", secrets)})
             target, key = errors, "error"

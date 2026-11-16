@@ -47,7 +47,7 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import (  # noqa: E402
+from _common import (
     ENV_EXAMPLE_NAMES, HARBOR_PYTHON, JUNK_DIRS, Report, declared_evaluators, dir_digest,
     evals_config, relai_root, expand_globs, file_sha256, frozen_state, load_toml, normalized, repo_root,
     scan_secrets, secret_values, test_key, walk_files, runner_settings, pass_mark, harbor_version,
@@ -151,7 +151,7 @@ def check_static(task: Path, relai_dir: Path, report: Report, native: bool = Fal
         return {}
     try:
         config = load_toml(toml_path)
-    except Exception as exc:  # tomllib raises TOMLDecodeError
+    except Exception as exc:
         report.error(f"task.toml does not parse: {exc}")
         return {}
 
@@ -187,7 +187,7 @@ def check_static(task: Path, relai_dir: Path, report: Report, native: bool = Fal
     if harness.is_dir():
         scan_secrets(walk_files(harness, JUNK_DIRS), values, relai_dir, report)
     if not native:
-        if not neutral:  # a coding task's workspace is a pinned repository, not the agent's live source
+        if not neutral:
             check_live_copies(task, relai_dir, report)
         check_task_images(task, config, relai_dir, report, cloud=cloud)
 
@@ -202,10 +202,10 @@ def is_agent_neutral(config: dict) -> bool:
 
 
 SHA_RE = re.compile(r"^[0-9a-f]{7,64}$")
-LEAK_MIN_BYTES = 20  # smaller files (an empty __init__.py) match by chance
+LEAK_MIN_BYTES = 20
 
 
-BUNDLE_NOTE_BYTES = 100 * 1024 * 1024  # adjustable: when a task's history is worth a look at the eval project's size
+BUNDLE_NOTE_BYTES = 100 * 1024 * 1024
 
 
 def nested_eval_state(clone: Path, head: str) -> tuple[list[str], list[str]]:
@@ -337,8 +337,6 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
         image_user = users[-1] if users else None
     else:
         image_user = None
-    # The verifier stops leftover processes, puts protected files back and writes /logs/verifier, so it needs
-    # root; unset, Harbor runs it as the image's default user, and a non-root verifier quietly records no reward.
     verifier_user = (config.get("verifier") or {}).get("user")
     effective = verifier_user if verifier_user is not None else image_user
     if (effective is not None and not is_root(effective)) or (verifier_user is None and agent.get("user") is not None
@@ -402,7 +400,6 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
         report.error("tests/test.sh must clear /logs/verifier and run verify.py isolated (python3 -I -S), as the "
                      "plugin's verifier test.sh does: the agent can write there before the verifier runs")
 
-    # Nothing the agent can see may be a copy of what scores it or of the answer.
     hidden_files = {}
     for folder in (tests_dir, task / "solution"):
         for path in walk_files(folder, JUNK_DIRS) if folder.is_dir() else []:
@@ -437,7 +434,7 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
                         "repository carries a similar copy; see the coding-evals skill on where tasks live")
         if present:
             report.error(f"{bundle.name} contains the fix commit {fix[:10]}: the agent could read the answer from history")
-        if isinstance(start, str) and not any(h.startswith(start) for h in heads):  # heads are full ids
+        if isinstance(start, str) and not any(h.startswith(start) for h in heads):
             report.error(f"{bundle.name}'s head is {', '.join(h[:10] for h in heads) or 'missing'}, not the start "
                          f"commit {start[:10]}")
 
@@ -524,7 +521,7 @@ def has_judges(tasks: list[Path]) -> bool:
         try:
             if any(ev.get("type") == "judge" for ev in declared_evaluators(load_toml(task / "task.toml"))):
                 return True
-        except Exception:  # check_static reports the parse error
+        except Exception:
             continue
     return False
 
@@ -572,7 +569,7 @@ def check_harbor(relai_dir: Path, report: Report, judged: bool = False, cloud: b
         return
     root = repo_root(relai_dir)
 
-    def inside(rel) -> bool:  # a clean clone holds only what is under the repository root
+    def inside(rel) -> bool:
         return isinstance(rel, str) and (root / rel).resolve().is_relative_to(root.resolve())
 
     paths = harbor.get("pythonpath", [])
@@ -627,7 +624,6 @@ def check_harbor(relai_dir: Path, report: Report, judged: bool = False, cloud: b
         report.error(f"[harbor.image].context {context!r} is not a directory under the repository root")
     elif isinstance(dockerfile, str):
         context_dir, recipe = root / context, root / dockerfile
-        # The ignore files both Docker (BuildKit) and Modal read.
         ignores = (recipe.with_name(recipe.name + ".dockerignore"), context_dir / ".dockerignore")
         if any(p.is_file() for p in ignores):
             return
@@ -721,7 +717,7 @@ def check_dockerfile(text: str, where: str, harness: str | None, report: Report,
         elif cloud and op in ("COPY", "ADD", "RUN"):
             for option in args:
                 if not option.startswith("--"):
-                    break  # options come before sources and commands
+                    break
                 if option.startswith("--from=") and op != "RUN":
                     source, label = option.split("=", 1)[1], f"{where}: {op} {option}"
                 elif option.startswith("--mount="):
@@ -875,11 +871,11 @@ def check_task_images(task: Path, config: dict, relai_dir: Path, report: Report,
 
 
 HARBOR_LOAD_TIMEOUT_SEC = 600
-HARBOR_SKIPPED = "__skipped__"  # why Harbor's loading did not run, when it did not
+HARBOR_SKIPPED = "__skipped__"
 
 
 def harbor_load(tasks: list[Path], version: str | None) -> dict:
-    if not version:  # check_harbor reports a missing version
+    if not version:
         return {HARBOR_SKIPPED: "no [harbor].version in relai.toml"}
     if not shutil.which("uv"):
         return {HARBOR_SKIPPED: "uv is not installed"}
@@ -951,8 +947,6 @@ def run_verifier(task: Path, config: dict, report: Report, fixture: Path | None)
         report.note("no code evaluators; judges are scored after the trial, so --verifier only checks that test.sh runs")
     empty_scores: list[float] = []
     for case in ("normal", "empty-reply"):
-        # Stage under relai/work/tmp: VM-based engines (Colima, Podman machine and others) may share only
-        # the home directory with the VM, so a bind mount from the system temp directory arrives empty.
         stage = relai_root() / "work" / "tmp"
         stage.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="relai-verifier-", dir=stage) as tmp:
@@ -966,11 +960,10 @@ def run_verifier(task: Path, config: dict, report: Report, fixture: Path | None)
             for directory in (logs, logs / "agent", logs / "verifier"):
                 directory.chmod(0o777)
             mounts = ["-v", f"{logs}:/logs"]
-            if not separate:  # shared mode: Harbor uploads tests/; mount a writable copy
+            if not separate:
                 tests_copy = Path(tmp) / "tests"
                 shutil.copytree(task / "tests", tests_copy)
                 mounts += ["-v", f"{tests_copy}:/tests"]
-            # Like Harbor: make test.sh executable, run it, capture its output.
             script = ("chmod +x /tests/test.sh 2>/dev/null; "
                       "if [ -x /tests/test.sh ]; then /tests/test.sh; else sh /tests/test.sh; fi "
                       "> /logs/verifier/test-stdout.txt 2>&1; echo $? > /logs/verifier/exit-code.txt")

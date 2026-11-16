@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 PLUGIN = Path(__file__).resolve().parent.parent
 TEMPLATE = PLUGIN / "skills" / "start" / "template"
-EXAMPLES = PLUGIN / "examples"  # copied into relai/bin/ or relai/harness/ when chosen
+EXAMPLES = PLUGIN / "examples"
 
 GOOD_TASK_TOML = """\
 artifacts = ["/logs/agent/trajectory.json"]
@@ -61,7 +61,6 @@ out.joinpath("feedback.json").write_text(json.dumps({"looks-up-order": "replied"
 """
 
 
-# A Harbor release for tests that run Harbor; projects record their own in relai.toml [harbor].version.
 HARBOR_TEST_VERSION = "0.25.0"
 
 
@@ -77,7 +76,6 @@ class Repo:
     """A temporary repository with relai/ installed the way the start skill installs it."""
 
     def __init__(self) -> None:
-        # Provider tests must use fixture keys, never credentials inherited from the developer.
         self._provider_env = patch.dict(os.environ, {name: "" for name in
             ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY")})
         self._provider_env.start()

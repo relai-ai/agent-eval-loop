@@ -4,7 +4,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 
-# Local credentials; sanitized example files can be committed.
 .env
 .env.*
 !.env.example

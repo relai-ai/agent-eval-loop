@@ -54,15 +54,14 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import (  # noqa: E402
+from _common import (
     declared_evaluators, dir_digest, evals_config, relai_root, frozen_state, load_json, load_toml, normalized,
     pass_mark, resolve_task_dir, test_key,
 )
 
 DEFINITIONS_UNAVAILABLE = "original evaluator definitions are unavailable"
-SHOWN = 5  # concise output lists at most this many warnings or problems, then says how many more
+SHOWN = 5
 STATUSES = ("scored", "evaluator error", "judges pending", "runtime failure", "unscored", "task not found")
-# trials whose main check counts toward the solved rate: the agent ran, whatever its judges' state
 SOLVED_STATUSES = ("scored", "evaluator error", "judges pending")
 
 
@@ -98,7 +97,7 @@ def unfinished_trials(job_dir: Path) -> int:
             started = "trial_name" in read_json_dict(child / "config.json") or \
                 all((child / sub).is_dir() for sub in ("agent", "verifier", "logs"))
         except OSError:
-            continue  # removed by the runner while being read
+            continue
         count += started
     return count
 
@@ -180,7 +179,7 @@ def seconds(timing) -> float | None:
         return None
     try:
         value = (end - start).total_seconds()
-    except TypeError:  # one timestamp has a time zone and the other does not
+    except TypeError:
         return None
     return value if value >= 0 else None
 
@@ -241,8 +240,6 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
         toml = load_toml(task_path / "task.toml")
     except Exception:
         toml = None
-    # an agent-neutral coding task is scored from the workspace, so an agent Harbor records without an ATIF
-    # trajectory (or the oracle) can still be scored; evaluators that need the trajectory are "not recorded"
     relai_meta = (toml or {}).get("metadata", {}).get("relai", {}) or {}
     neutral = bool(relai_meta.get("agent_neutral"))
     coding = relai_meta.get("coding") if isinstance(relai_meta.get("coding"), dict) else {}
@@ -260,8 +257,6 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
     feedback = read_json_dict(trial_dir / "verifier" / "feedback.json")
     errors = read_json_dict(trial_dir / "verifier" / "errors.json")
     crashed = bool(exception) and result.get("verifier_result") is None
-    # Harbor grades the untouched workspace even when the agent never reached its model, which would read
-    # as a real 0: an exception with recorded token counts that are all zero is a runtime failure
     tokens = [usage[k] for k in ("n_input_tokens", "n_output_tokens") if valid_number(usage[k])]
     if exception and tokens and not any(tokens):
         crashed = True
@@ -305,7 +300,7 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
     recorded = {k: o for k, o in outcomes.items() if o["state"] != "not recorded"}
     states = {o["state"] for o in recorded.values()}
     if crashed or (not has_trajectory and not neutral):
-        status = "runtime failure"  # judge files written for a crashed run never make it scored
+        status = "runtime failure"
     elif not recorded:
         status = "unscored"
     elif "error" in states:
@@ -451,8 +446,6 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
     coding = [t["solved"] for t in summary["tests"].values() if t["solved"]]
     solved_tests = [s for s in coding if s["scored"]]
     attempts_solved = sum(s["solved"] for s in solved_tests)
-    # the agent cost of every attempt on a coding test, failed ones included, over the attempts that solved theirs;
-    # only when every one of those attempts reported its cost, since a partial sum would read too low
     coding_attempts = sum(s["attempts"] for s in coding)
     cost_reported = sum(s["cost_reported"] for s in coding)
     cost = sum(s["cost_usd"] or 0.0 for s in coding)
@@ -525,7 +518,6 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
         total, done, open_ = job.get("n_total_trials"), job.get("n_finished_trials", 0), job.get("n_unfinished_trials", 0)
         known = isinstance(total, int) and not isinstance(total, bool) and total >= done + open_
         if open_ or (known and done < total):
-            # counts only; a native run records its total when a batch ends, so a later batch shows none
             line = f"{done} of {total} trials finished" if known else f"{done} trials finished"
             if open_:
                 line += f", {open_} not finished (running or interrupted)"
@@ -624,9 +616,9 @@ def frozen_warnings(relai_dir: Path, summary: dict) -> list[str]:
     for name, test in summary["tests"].items():
         if test["status_counts"]["task not found"] == test["attempts"]:
             continue
-        if name.startswith("harness/"):  # the smoke test checks the harness and is never frozen
+        if name.startswith("harness/"):
             continue
-        if str(test["task_path"]).startswith("wrapped:"):  # pinned by its benchmark commit instead
+        if str(test["task_path"]).startswith("wrapped:"):
             continue
         entry = frozen.get(name)
         if not entry:
@@ -654,7 +646,7 @@ def evidence_warnings(summary: dict) -> list[str]:
                             if not warning.startswith(DEFINITIONS_UNAVAILABLE))
         unavailable = sum(any(w.startswith(DEFINITIONS_UNAVAILABLE) for w in trial.get("warnings", []))
                           for trial in test["trials"])
-        if unavailable:  # one entry per test, printed as a single note rather than a warning
+        if unavailable:
             warnings.append(f"{name}: {unavailable} attempt(s): {DEFINITIONS_UNAVAILABLE}; scores use current "
                             "task.toml evaluator types and bounds")
     return warnings
@@ -703,7 +695,7 @@ def comparison_warnings(base: dict, cand: dict) -> list[str]:
 
 
 def print_warnings(warnings: list[str], label: str, details: bool) -> None:
-    warnings = [w for w in warnings if DEFINITIONS_UNAVAILABLE not in w]  # shown once as a note above
+    warnings = [w for w in warnings if DEFINITIONS_UNAVAILABLE not in w]
     if not warnings:
         return
     print(f"{label}: {len(warnings)} (advisory)")

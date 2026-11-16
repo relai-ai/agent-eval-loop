@@ -51,8 +51,8 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # copied beside relai/bin/_common.py
-from _common import (  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import (
     declared_evaluators, evals_config, relai_root, load_json, load_toml, redact, redaction_values,
     resolve_task_dir, secret_values,
 )
@@ -104,7 +104,7 @@ def post(url: str, headers: dict, body: dict, attempts: int = 4) -> dict:
     raise RuntimeError("unreachable")
 
 
-OPENAI_COMPATIBLE = {  # provider -> (chat completions URL, key variable)
+OPENAI_COMPATIBLE = {
     "openai": ("https://api.openai.com/v1/chat/completions", "OPENAI_API_KEY"),
     "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY"),
 }
@@ -146,8 +146,6 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
     """Return verdict/model/usage; optionally retain billed response metadata before parsing fails."""
     provider = config.get("provider", "anthropic")
     if provider != "anthropic":
-        # Any OpenAI-compatible chat completions API: openai, openrouter, or "openai-compatible" with
-        # base_url (for example a LiteLLM or vLLM server) and api_key_env naming the key variable.
         if provider in OPENAI_COMPATIBLE:
             url, key_name = OPENAI_COMPATIBLE[provider]
         elif provider == "openai-compatible":
@@ -161,7 +159,7 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
                 "response_format": {"type": "json_schema",
                                     "json_schema": {"name": name, "strict": True, "schema": schema}}}
         if provider == "openrouter":
-            body["usage"] = {"include": True}  # OpenRouter then reports the call's cost
+            body["usage"] = {"include": True}
         data = post(url, {"authorization": f"Bearer {api_key(key_name, relai_dir)}"}, body)
         if response_metadata is not None:
             response_metadata.update(model=data.get("model", model), usage=data.get("usage") or {},
@@ -171,8 +169,6 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
             raise RuntimeError(f"the judge model refused: {message['refusal']}")
         return json.loads(message.get("content") or "{}"), data.get("model", model), data.get("usage") or {}
     model = config.get("model") or sys.exit(MISSING_MODEL)
-    # Claude Opus 5.5 rejects forced tool use, so the JSON shape comes from structured output.
-    # fallbacks="default" re-runs a policy-declined request on a suitable model in the same call.
     data = post("https://api.anthropic.com/v1/messages",
                 {"x-api-key": api_key("ANTHROPIC_API_KEY", relai_dir), "anthropic-version": "2026-10-21",
                  "anthropic-beta": "server-side-fallback-2026-07-01"},
@@ -193,7 +189,7 @@ MISSING_MODEL = ("error: set model in relai.toml's [judge] table (or [triage] fo
                  "default, so choose one deliberately: judging needs a capable model, triage a cheap one")
 
 
-INPUT_LIMIT = 60_000  # characters per input other than the trajectory; longer ones are cut in the middle, and the judge is told
+INPUT_LIMIT = 60_000
 
 
 def clip(text: str) -> str:
@@ -214,7 +210,7 @@ def judge_inputs(ev: dict, task: Path, trial_dir: Path | None, trajectory: dict 
                 raise ValueError("no ATIF trajectory for this trial (the agent's runs are not recorded in ATIF), so "
                                  "this judge cannot score it")
             text, label = json.dumps(trajectory, indent=1), "Trajectory"
-            parts.append(f"{label}:\n{redact(text, secrets)}")  # whole, as judges have always seen it
+            parts.append(f"{label}:\n{redact(text, secrets)}")
             continue
         elif name == "instruction":
             text, label = (task / "instruction.md").read_text(encoding="utf-8"), "Task instruction"
@@ -256,7 +252,7 @@ def judge_one(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: d
         if not feedback:
             return {**metadata, "error": "judge returned no feedback"}
         return {**metadata, "score": score, "feedback": feedback}
-    except Exception as exc:  # recorded as an evaluator error, never as a score
+    except Exception as exc:
         return {**metadata, "error": redact(f"{type(exc).__name__}: {exc}", secrets)}
 
 
@@ -345,7 +341,7 @@ def main() -> int:
         toml = load_toml(task / "task.toml")
         neutral = bool((toml.get("metadata", {}).get("relai", {}) or {}).get("agent_neutral"))
         if crashed or (not trajectory_path.is_file() and not neutral):
-            continue  # a run that never finished is a runtime failure, not something to grade
+            continue
         trajectory = load_json(trajectory_path) if trajectory_path.is_file() else None
         for ev in declared_evaluators(toml):
             if ev.get("type") != "judge":
@@ -354,7 +350,7 @@ def main() -> int:
             if out.exists() and not args.force:
                 try:
                     if "error" not in load_json(out):
-                        continue  # keep earlier scores; earlier errors are retried
+                        continue
                 except (OSError, json.JSONDecodeError):
                     pass
             result = judge_one(config, relai_dir, task, ev, trajectory, secrets, trial_dir)

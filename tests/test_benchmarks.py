@@ -157,10 +157,10 @@ class SamplingAndRecordTest(unittest.TestCase):
         self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
         nxt = self.batch(10)
         unplayed = [c for c in nxt if c not in first]
-        self.assertEqual(len(unplayed), 6)  # most of the batch is new cases
-        self.assertEqual(set(nxt) - set(unplayed), set(first))  # ~30% earlier failures to fix, ~20% passes to recheck
+        self.assertEqual(len(unplayed), 6)
+        self.assertEqual(set(nxt) - set(unplayed), set(first))
         self.assertEqual(len(self.batch(4)), 4)
-        self.assertEqual(len(self.batch(40)), 12)  # never more than the development split
+        self.assertEqual(len(self.batch(40)), 12)
 
     def test_record_refuses_another_benchmark_commit(self):
         run = wrapped_run(self.repo, "r1", [("d0", "train", "scored", 1.0)], commit="zzz9999")

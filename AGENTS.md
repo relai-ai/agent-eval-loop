@@ -3,6 +3,13 @@
 Before changing this plugin, read [DESIGN_PRINCIPLES.md](DESIGN_PRINCIPLES.md) and follow it.
 For the current architecture and its rationale, see [DESIGN.md](DESIGN.md).
 
+## Keep code and configuration free of comments
+
+Do not add comments to source code or configuration, including inline comments, in shipped
+code, examples or tests. Use clear names and put explanations in documentation. Shebangs and
+docstrings are allowed. Preserve comment-like text inside strings when it is program data or
+a test fixture.
+
 ## Write in clear, plain language
 
 Write the README, docs and skills for a technical reader who is new to this plugin. Say what

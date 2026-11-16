@@ -49,9 +49,9 @@ class GuardFrozenTest(HookBase):
 
     def test_silent_for_unfrozen_tests_readmes_and_other_files(self):
         task = self.repo.task()
-        self.assertIsNone(self.hook("guard-frozen", task / "task.toml"))  # not frozen yet
+        self.assertIsNone(self.hook("guard-frozen", task / "task.toml"))
         self.repo.run("freeze.py", str(task))
-        self.assertIsNone(self.hook("guard-frozen", task / "README.md"))  # outside the digest
+        self.assertIsNone(self.hook("guard-frozen", task / "README.md"))
         self.assertIsNone(self.hook("guard-frozen", self.repo.relai / "decisions.md"))
         self.assertIsNone(self.hook("guard-frozen", self.repo.root / "src" / "agent.py"))
         self.assertIsNone(self.hook("guard-frozen", task / "task.toml", tool="Read"))
@@ -185,7 +185,7 @@ class CodexTest(HookBase):
         out = self.hook("guard-frozen", None, tool="apply_patch", host="codex",
                         tool_input=patch("Update File: src/agent.py", "Update File: relai/tests/orders/task.toml"))
         out = out["hookSpecificOutput"]
-        self.assertNotIn("permissionDecision", out)  # Codex runs the tool anyway on "ask"
+        self.assertNotIn("permissionDecision", out)
         self.assertIn("RELAI warning", out["additionalContext"])
         self.assertIn("tests/orders", out["additionalContext"])
 

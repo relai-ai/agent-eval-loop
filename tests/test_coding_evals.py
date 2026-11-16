@@ -222,7 +222,6 @@ class CodingEvalsTest(unittest.TestCase):
     def bundle(self) -> Path:
         return make_bundle(self.src, self.tmp / "repo.bundle")
 
-    # ---- the task checks ----------------------------------------------------------------------
     def check(self, task: Path) -> subprocess.CompletedProcess:
         return self.project.run("check_task.py", str(task), "--no-harbor")
 
@@ -231,7 +230,7 @@ class CodingEvalsTest(unittest.TestCase):
         ran = self.check(task)
         self.assertEqual(ran.returncode, 0, ran.stdout)
         self.assertIn("PASS: relai.toml", ran.stdout)
-        (task / "tests" / "test.sh").write_text("#!/bin/bash\npython3 /tests/verify.py\n")  # not isolated
+        (task / "tests" / "test.sh").write_text("#!/bin/bash\npython3 /tests/verify.py\n")
         ran = self.check(task)
         self.assertNotEqual(ran.returncode, 0)
         self.assertIn("run verify.py isolated", ran.stdout)
@@ -239,17 +238,16 @@ class CodingEvalsTest(unittest.TestCase):
     def test_ignore_changes_over_protected_or_restored_paths_is_a_warning(self):
         task = fill_task(self.project, self.src, self.bundle())
         params = json.loads((task / "tests" / "params.json").read_text())
-        params["ignore_changes"] = ["build/**", "*.log"]  # outside protected and restore
+        params["ignore_changes"] = ["build/**", "*.log"]
         (task / "tests" / "params.json").write_text(json.dumps(params))
         ran = self.check(task)
         self.assertEqual(ran.returncode, 0, ran.stdout)
         self.assertNotIn("never exempts", ran.stdout)
-        # what a build might write: inside a tracked folder, under it by wildcard, or a tracked file by wildcard
         for ignored in (["tests/build/out.bin"], ["**/*.bin"], ["pyproject.toml"], ["*.toml"]):
             params["ignore_changes"] = ignored
             (task / "tests" / "params.json").write_text(json.dumps(params))
             ran = self.check(task)
-            self.assertEqual(ran.returncode, 0, ran.stdout)  # a warning: the task still runs
+            self.assertEqual(ran.returncode, 0, ran.stdout)
             self.assertIn("never exempts", ran.stdout, ignored)
 
     def test_check_task_matches_paths_as_the_verifier_does(self):
@@ -272,7 +270,6 @@ class CodingEvalsTest(unittest.TestCase):
             for path in paths:
                 self.assertEqual(bool(checker.glob_regex(pattern).match(path)),
                                  bool(verifier.glob_regex(pattern).match(path)), (pattern, path))
-        # an eval project inside a file-sync client's folder gets a note
         self.assertEqual(checker.synced_folder(Path("/Users/me/Library/CloudStorage/Dropbox/work/relai")), "CloudStorage")
         self.assertEqual(checker.synced_folder(Path("/home/me/Dropbox (Team)/relai")), "Dropbox (Team)")
         self.assertIsNone(checker.synced_folder(Path("/home/me/src/dropbox-clone/relai")))
@@ -287,7 +284,6 @@ class CodingEvalsTest(unittest.TestCase):
 
     def test_leaks_and_missing_safeguards_are_errors(self):
         task = fill_task(self.project, self.src, self.bundle())
-        # a hidden test visible to the agent, a bundle with the fix, no leak guard, a separate verifier
         shutil.copyfile(task / "tests" / "hidden" / "test_mean.py", task / "environment" / "test_mean.py")
         leaky = self.tmp / "leaky.bundle"
         sh(self.src["repo"], "git", "bundle", "create", str(leaky), "main")
@@ -295,7 +291,7 @@ class CodingEvalsTest(unittest.TestCase):
         docker = (task / "environment" / "Dockerfile").read_text()
         (task / "environment" / "Dockerfile").write_text(docker.replace(f"RUN ! git -C /app cat-file -e {self.src['fix']} 2>/dev/null\n", ""))
         toml = (task / "task.toml").read_text().replace('[verifier]\n', '[verifier]\nenvironment_mode = "separate"\n')
-        toml = toml.replace('public = false', 'public = true')  # a public fix on an open network
+        toml = toml.replace('public = false', 'public = true')
         (task / "task.toml").write_text(toml)
         (task / "solution" / "solve.sh").unlink()
         out = self.check(task).stdout
@@ -320,7 +316,6 @@ class CodingEvalsTest(unittest.TestCase):
         (task / "environment" / "Dockerfile").write_text(docker)
 
     def test_a_start_commit_holding_the_eval_project_is_an_error(self):
-        # the eval project lives in the source repository, and a later task starts after relai/ was committed
         repo = self.src["repo"]
         (repo / "relai" / "bin").mkdir(parents=True)
         (repo / "relai" / "README.md").write_text("<!-- relai project contract -->\n# RELAI\n")
@@ -350,7 +345,6 @@ class CodingEvalsTest(unittest.TestCase):
         self.assertIn("must be a code evaluator that reads the workspace", self.check(task).stdout)
 
 
-    # ---- the verifier library, run as the verifier would --------------------------------------
     def workspace(self, bundle: Path) -> Path:
         ws = Path(tempfile.mkdtemp(prefix="ws-", dir=self.tmp))
         shutil.rmtree(ws)
@@ -367,7 +361,7 @@ class CodingEvalsTest(unittest.TestCase):
         tests = Path(tempfile.mkdtemp(prefix="tests-", dir=self.tmp)) / "tests"
         shutil.copytree(task / "tests", tests)
         (logs / "verifier").mkdir()
-        (logs / "verifier" / "reward.json").write_text('{"fixes-the-bug": 1.0}')  # planted: must not survive
+        (logs / "verifier" / "reward.json").write_text('{"fixes-the-bug": 1.0}')
         script = f"import runpy, sys; sys.path.append({str(tests)!r}); runpy.run_path({str(tests / 'verify.py')!r}, run_name='__main__')"
         ran = subprocess.run([sys.executable, "-I", "-S", "-c", script], cwd=tests, capture_output=True, text=True,
                              env={**os.environ, "RELAI_WORKSPACE": str(ws), "RELAI_LOGS": str(logs)})
@@ -386,15 +380,15 @@ class CodingEvalsTest(unittest.TestCase):
         fixed = self.workspace(bundle)
         sh(fixed, "git", "apply", str(task / "solution" / "fix.patch"))
         (fixed / "__pycache__").mkdir()
-        (fixed / "__pycache__" / "calc.cpython-312.pyc").write_bytes(b"\0")  # what running the tests leaves
-        result = self.verify(task, fixed)  # the oracle: no trajectory
+        (fixed / "__pycache__" / "calc.cpython-312.pyc").write_bytes(b"\0")
+        result = self.verify(task, fixed)
         for ev in ("fixes-the-bug", "no-regressions", "tests-untouched", "in-scope"):
             self.assertEqual(result["reward"][ev], 1.0, result["feedback"].get(ev))
         self.assertEqual(result["errors"], {})
         self.assertEqual(result["facts"]["files_changed"], ["calc.py"])
-        untouched = self.verify(task, self.workspace(bundle))  # nop
+        untouched = self.verify(task, self.workspace(bundle))
         self.assertEqual(untouched["reward"]["fixes-the-bug"], 0.0)
-        self.assertEqual(untouched["reward"]["no-regressions"], 1.0)  # the suite runs without the hidden tests
+        self.assertEqual(untouched["reward"]["no-regressions"], 1.0)
         self.assertIn("Full marks", untouched["feedback"]["fixes-the-bug"])
         self.assertEqual(untouched["diff"], "(no changes)\n")
 
@@ -403,15 +397,14 @@ class CodingEvalsTest(unittest.TestCase):
         bundle = self.bundle()
         task = fill_task(self.project, self.src, bundle)
         ws = self.workspace(bundle)
-        # The "agent" breaks add(), then edits the existing test to match and skips it, never fixing mean().
         (ws / "calc.py").write_text(CALC.replace("return a + b", "return a - b"))
         (ws / "tests" / "test_calc.py").write_text(
             "import pytest\nfrom calc import add\n\n\n@pytest.mark.skip\ndef test_add():\n    assert add(2, 3) == -1\n")
-        (ws / "notes.txt").write_text("scratch\n")  # an untracked file outside the scope
-        (ws / "tests" / "test_é.py").write_text("def test_accent():\n    assert 1\n")  # a non-ASCII protected path
+        (ws / "notes.txt").write_text("scratch\n")
+        (ws / "tests" / "test_é.py").write_text("def test_accent():\n    assert 1\n")
         (ws / "tests" / "test_new.py").write_text("import pytest\nx = 1\n++x\n\n\n@pytest.mark.skip\ndef test_x():\n    pass\n")
         sh(ws, "git", "add", "-A")
-        sh(ws, "git", "commit", "-qm", "wip")  # committing cannot move the start the verifier diffs from
+        sh(ws, "git", "commit", "-qm", "wip")
         steps = [{"source": "user", "message": "fix mean"},
                  {"source": "agent", "message": "", "tool_calls": [
                      {"tool_call_id": "1", "function_name": "Edit", "arguments": {"file_path": "calc.py"}}]},
@@ -425,9 +418,9 @@ class CodingEvalsTest(unittest.TestCase):
         self.assertEqual(reward["in-scope"], 0.0)
         self.assertIn("notes.txt", feedback["in-scope"])
         self.assertEqual(reward["fixes-the-bug"], 0.0)
-        self.assertEqual(reward["no-regressions"], 0.0)  # the original test_add runs again, and add() is broken
+        self.assertEqual(reward["no-regressions"], 0.0)
         self.assertIn("tests/test_é.py", feedback["tests-untouched"])
-        self.assertNotIn("tests/test_new.py", feedback["tests-untouched"])  # new test files are welcome
+        self.assertNotIn("tests/test_new.py", feedback["tests-untouched"])
         self.assertEqual(result["facts"]["restored_before_running"],
                          ["tests/test_calc.py", "tests/test_new.py", "tests/test_é.py"])
         self.assertIn("notes.txt", result["diff"])
@@ -435,8 +428,6 @@ class CodingEvalsTest(unittest.TestCase):
 
     @unittest.skipUnless(have_pytest(), "pytest is not installed on this host")
     def test_extending_a_restored_test_file_costs_nothing(self):
-        # Existing tests in restore (checks.md: the repository's developers add tests by editing existing
-        # test files), and the hidden tests at a new protected path in the same folder.
         bundle = self.bundle()
         task = fill_task(self.project, self.src, bundle)
         params = json.loads((task / "tests" / "params.json").read_text())
@@ -450,19 +441,19 @@ class CodingEvalsTest(unittest.TestCase):
         self.assertEqual(ran.returncode, 0, ran.stderr + ran.stdout)
         ws = self.workspace(bundle)
         sh(ws, "git", "apply", str(task / "solution" / "fix.patch"))
-        with open(ws / "tests" / "test_calc.py", "a") as f:  # the agent adds a regression case to an existing file
+        with open(ws / "tests" / "test_calc.py", "a") as f:
             f.write("\n\ndef test_mean_of_empty():\n    from calc import mean\n    assert mean([]) == 0.0\n")
         result = self.verify(task, ws)
         for ev in ("fixes-the-bug", "no-regressions", "tests-untouched"):
             self.assertEqual(result["reward"][ev], 1.0, result["feedback"].get(ev))
         self.assertIn("tests/test_calc.py", result["facts"]["restored_before_running"])
-        self.assertIn("test_mean_of_empty", result["diff"])  # judges still see the added test
-        weakened = self.workspace(bundle)  # breaks add() and edits its test to match: restoring catches it
+        self.assertIn("test_mean_of_empty", result["diff"])
+        weakened = self.workspace(bundle)
         (weakened / "calc.py").write_text(CALC_FIXED.replace("return a + b", "return a - b"))
         (weakened / "tests" / "test_calc.py").write_text(TEST_CALC.replace("== 5", "== -1"))
         result = self.verify(task, weakened)
         self.assertEqual(result["reward"]["no-regressions"], 0.0)
-        self.assertEqual(result["reward"]["tests-untouched"], 1.0)  # covers only CI and runner files here
+        self.assertEqual(result["reward"]["tests-untouched"], 1.0)
 
     @unittest.skipUnless(have_pytest(), "pytest is not installed on this host")
     def test_a_planted_conftest_cannot_make_the_tests_pass_even_when_hidden_from_git(self):
@@ -472,14 +463,14 @@ class CodingEvalsTest(unittest.TestCase):
         cheat = ("import pytest\n\n\n@pytest.hookimpl(hookwrapper=True)\ndef pytest_runtest_makereport(item, call):\n"
                  "    outcome = yield\n    outcome.get_result().outcome = 'passed'\n")
         (ws / "tests" / "conftest.py").write_text(cheat)
-        (ws / "conftest.py").write_text(cheat)  # at the root too, outside the protected globs
+        (ws / "conftest.py").write_text(cheat)
         (ws / ".git" / "info" / "exclude").write_text("conftest.py\ntests/conftest.py\n")
-        (ws / "tests" / ".gitignore").write_text("*\n")  # hides itself and everything under tests/
+        (ws / "tests" / ".gitignore").write_text("*\n")
         marker = self.tmp / "fsmonitor-ran"
         hook = self.tmp / "fsmonitor.sh"
         hook.write_text(f"#!/bin/sh\ntouch {marker}\n")
         hook.chmod(0o755)
-        sh(ws, "git", "config", "core.fsmonitor", str(hook))  # agent code the verifier must never run
+        sh(ws, "git", "config", "core.fsmonitor", str(hook))
         result = self.verify(task, ws)
         self.assertEqual(result["reward"]["fixes-the-bug"], 0.0, result["feedback"]["fixes-the-bug"])
         self.assertEqual(result["reward"]["tests-untouched"], 0.0)
@@ -503,34 +494,31 @@ class CodingEvalsTest(unittest.TestCase):
         (ws / "tests" / "test_calc.py").unlink()
         (ws / "tests" / "test_calc.py").symlink_to("/dev/null")
         result = self.verify(task, ws)
-        self.assertEqual(result["reward"]["fixes-the-bug"], 0.0)  # a hang is a failure, never left out
+        self.assertEqual(result["reward"]["fixes-the-bug"], 0.0)
         self.assertIn("did not finish", result["feedback"]["fixes-the-bug"])
         self.assertIn("tests/test_calc.py (changed)", result["feedback"]["tests-untouched"])
         shutil.rmtree(ws / ".git")
         result = self.verify(task, ws)
         self.assertEqual(result["reward"]["in-scope"], 0.0)
         self.assertIn("history", result["feedback"]["in-scope"])
-        self.assertIn("fixes-the-bug", result["reward"])  # the hidden tests still run
+        self.assertIn("fixes-the-bug", result["reward"])
 
     @unittest.skipUnless(have_pytest(), "pytest is not installed on this host")
     def test_config_symlink_bytecode_and_attribute_attacks_fail(self):
         bundle = self.bundle()
         task = fill_task(self.project, self.src, bundle)
         ws = self.workspace(bundle)
-        # pytest configuration that loads a plugin forcing every test to pass
         (ws / "relai_helper.py").write_text(
             "import pytest\n\n\n@pytest.hookimpl(hookwrapper=True)\ndef pytest_runtest_makereport(item, call):\n"
             "    outcome = yield\n    outcome.get_result().outcome = 'passed'\n")
         (ws / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = "-p relai_helper"\n')
         (ws / "setup.cfg").write_text("[tool:pytest]\naddopts = -p relai_helper\n")
-        # stale bytecode planted where the tests live, a binary attribute hiding an added skip
         (ws / "tests" / "__pycache__").mkdir()
         (ws / "tests" / "__pycache__" / "planted.pyc").write_bytes(b"\0")
         (ws / "tests" / ".gitattributes").write_text("*.py binary\n")
         (ws / "tests" / "test_é.py").write_text("import pytest\n\n\n@pytest.mark.skip\ndef test_accent():\n    assert True\n")
         (ws / ":x_test.py").write_text("import pytest\n\n\n@pytest.mark.skip\ndef test_x():\n    pass\n")
         (ws / "tests" / "run.sh").chmod(0o644)
-        # files the image left behind, ignored by the start commit's rules, and an edited .gitignore
         (ws / ".env").write_text("TOKEN=not-for-the-diff\n")
         (ws / "build").mkdir()
         (ws / "build" / "x.so").write_bytes(b"\0")
@@ -541,7 +529,7 @@ class CodingEvalsTest(unittest.TestCase):
         reward, facts = result["reward"], result["facts"]
         self.assertEqual(reward["fixes-the-bug"], 0.0, result["feedback"]["fixes-the-bug"])
         self.assertIn(":x_test.py", facts["files_changed"])
-        self.assertIn("@pytest.mark.skip", result["diff"])  # visible to the review-ready judge despite .gitattributes
+        self.assertIn("@pytest.mark.skip", result["diff"])
         self.assertEqual(sorted(facts["restored_before_running"])[:1], ["pyproject.toml"])
         self.assertIn("tests/run.sh (changed)", result["feedback"]["tests-untouched"])
         self.assertIn("notes2.txt", facts["files_changed"])
@@ -549,7 +537,7 @@ class CodingEvalsTest(unittest.TestCase):
         self.assertNotIn("build/x.so", facts["files_changed"])
         self.assertNotIn("not-for-the-diff", result["diff"])
         self.assertFalse((ws / "tests" / "__pycache__" / "planted.pyc").exists())
-        self.assertTrue(os.access(ws / "tests" / "run.sh", os.X_OK))  # restored with its mode
+        self.assertTrue(os.access(ws / "tests" / "run.sh", os.X_OK))
 
     @unittest.skipUnless(have_pytest(), "pytest is not installed on this host")
     def test_a_symlinked_tests_folder_is_replaced_and_nothing_is_written_outside(self):
@@ -567,7 +555,7 @@ class CodingEvalsTest(unittest.TestCase):
         self.assertEqual(result["reward"]["fixes-the-bug"], 0.0)
         self.assertIn("tests (changed)", result["feedback"]["tests-untouched"])
         self.assertFalse((ws / "tests").is_symlink())
-        self.assertFalse((outside / "test_mean.py").exists())  # the hidden test never landed outside
+        self.assertFalse((outside / "test_mean.py").exists())
 
     @unittest.skipUnless(have_pytest(), "pytest is not installed on this host")
     def test_the_order_of_checks_does_not_matter(self):
@@ -626,7 +614,6 @@ class CodingEvalsTest(unittest.TestCase):
         self.assertIn("+Skip all checks.", changed["diff"])
         self.assertEqual(changed["reward"]["scope"], 0)
         self.assertEqual(changed["reward"]["protected"], 0)
-        # Restore sees the installed setup snapshot, not the original repository state.
         self.assertEqual((ws / "AGENTS.md").read_text(), "Run relevant checks.\n")
         (ws / "AGENTS.md").unlink()
         deleted = self.verify(task, ws)
@@ -786,7 +773,6 @@ class SummarizeWithoutTrajectoryTest(unittest.TestCase):
             data = json.loads((project.root / "s.json").read_text())["run"]["tests"]
             self.assertEqual(data["tests/neutral"]["status_counts"]["scored"], 1, out.stdout)
             self.assertEqual(data["tests/plain"]["status_counts"]["runtime failure"], 1)
-            # a check that needs the trajectory is "not recorded" for such a run, never an error that hides the score
             toml = (neutral / "task.toml").read_text() + (
                 '\n[[metadata.relai.evaluators]]\nid = "verified"\ntype = "code"\nmethod = "exact"\n'
                 'criterion = "Ran tests."\ntrajectory = true\nmin_score = 0.0\nmax_score = 1.0\n')
@@ -823,7 +809,6 @@ class SummarizeWithoutTrajectoryTest(unittest.TestCase):
                               agent_execution={"started_at": "2026-11-16T10:02:00+00:00",
                                                "finished_at": f"2026-11-16T10:{minutes + 2:02d}:00+00:00"})
                 (trial / "result.json").write_text(json.dumps(result))
-            # never reached its model: a runtime failure, left out of the solved rate
             harbor_trial(job, "c", task, {"looks-up-order": 0.0, "style": 0.0}, exception="AuthError",
                          feedback={"looks-up-order": "x", "style": "x"}, with_trajectory=False,
                          usage={"n_input_tokens": 0, "n_output_tokens": 0, "cost_usd": 0.0})
@@ -834,18 +819,15 @@ class SummarizeWithoutTrajectoryTest(unittest.TestCase):
                                               "attempts": 3, "cost_reported": 3, "cost_usd": 0.02})
             self.assertEqual(test["mean"], 0.75)
             self.assertEqual(run["solved"]["solved"], 2)
-            self.assertAlmostEqual(run["solved"]["cost_per_solved_task"], 0.01)  # $0.02 over 3 attempts, 2 solved
+            self.assertAlmostEqual(run["solved"]["cost_per_solved_task"], 0.01)
             self.assertEqual(run["timing"]["agent_execution"]["mean"], 300.0)
             self.assertEqual(run["timing"]["environment_setup"]["n"], 2)
             self.assertIn("Solved (main check at full marks): 2 of 2 attempts", out.stdout)
             self.assertIn("mean 0.75 (2/3 scored), solved 2/2", out.stdout)
             self.assertIn("agent 5m00s (6m00s)", out.stdout)
             self.assertIn("Agent cost per solved task: $0.0100", out.stdout)
-            # the paired comparison reports solved counts beside the means
             out = project.run("summarize.py", str(job), "--baseline", str(job))
             self.assertIn("paired over 1 coding test(s): baseline 2 of 2 attempts, candidate 2 of 2", out.stdout)
-            # a non-coding test stays out of the solved rate and its cost; a main check that errored is not
-            # counted as solved or unsolved; an attempt without a reported cost stops the cost per solved task
             plain = project.task("plain")
             harbor_trial(job, "d", plain, {"looks-up-order": 1.0}, feedback={"looks-up-order": "ok"},
                          judges={"explains": {"score": 1.0, "feedback": "ok"}}, usage={"cost_usd": 5.0})
@@ -855,7 +837,7 @@ class SummarizeWithoutTrajectoryTest(unittest.TestCase):
                          with_trajectory=False, usage={"n_input_tokens": 5, "n_output_tokens": 5})
             out = project.run("summarize.py", str(job), "--json", str(project.root / "s.json"))
             run = json.loads((project.root / "s.json").read_text())["run"]
-            self.assertEqual(run["tests"]["tests/solved"]["solved"]["scored"], 3)  # a, b and f; e errored
+            self.assertEqual(run["tests"]["tests/solved"]["solved"]["scored"], 3)
             self.assertIsNone(run["tests"]["tests/plain"]["solved"])
             self.assertEqual(run["solved"]["tests"], 1)
             self.assertIsNone(run["solved"]["cost_per_solved_task"])

@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import dir_digest, relai_root, frozen_state, test_key  # noqa: E402
+from _common import dir_digest, relai_root, frozen_state, test_key
 
 
 def all_tests(relai_dir: Path) -> list[Path]:

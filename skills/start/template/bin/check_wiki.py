@@ -22,7 +22,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import Report, relai_root, load_toml  # noqa: E402
+from _common import Report, relai_root, load_toml
 
 KINDS = ("requirements", "risks", "open-questions")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -35,7 +35,7 @@ def check_links(page: Path, relai_dir: Path, report: Report) -> None:
     for target in LINK_RE.findall(page.read_text(encoding="utf-8", errors="replace")):
         raw = target.strip("<>")
         if re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", raw) or raw.startswith("//"):
-            continue  # external targets are outside this local-file check
+            continue
         link = urlsplit(raw)
         if not link.path:
             continue
@@ -142,7 +142,7 @@ def main() -> int:
         base = relai_dir / kind
         if not base.is_dir():
             continue
-        for toml_path in sorted(base.rglob("task.toml")):  # benchmark rows sit at benchmarks/<id>/rows/<n>/
+        for toml_path in sorted(base.rglob("task.toml")):
             try:
                 covers = load_toml(toml_path).get("metadata", {}).get("relai", {}).get("covers", []) or []
             except Exception as exc:

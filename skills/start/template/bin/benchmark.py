@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import fail, relai_root  # noqa: E402
+from _common import fail, relai_root
 
 ROLES = ("development", "held-out", "final")
 DEFAULT_MAP = {"train": "development", "training": "development", "dev": "held-out", "val": "held-out",
@@ -201,7 +201,7 @@ def case_ids(ledger: dict) -> dict[str, str]:
 
 
 def results(relai_dir: Path, bench: str, runs: list[str], ledger: dict) -> tuple[dict, list[str]]:
-    from summarize import summarize  # imported here so `init` and `batch` need nothing else
+    from summarize import summarize
     summary = summarize([Path(r) for r in runs], relai_dir)
     prefix, out, problems = f"benchmarks/{bench}/", {}, []
     aliases = case_ids(ledger)
@@ -322,7 +322,7 @@ def coverage(ledger: dict) -> dict:
 
 def coverage_line(cov: dict) -> str:
     dev, sample = cov["roles"]["development"], cov["held_out_sample"]
-    fmt = lambda v: "-" if v is None else f"{v:.2f}"  # noqa: E731
+    fmt = lambda v: "-" if v is None else f"{v:.2f}"
     def assessment(stats):
         agents = ", ".join(agent or "unknown" for agent in stats["agents"])
         if stats["warning"]:

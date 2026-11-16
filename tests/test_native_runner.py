@@ -40,7 +40,7 @@ class NativeRunnerTest(unittest.TestCase):
         self.repo = Repo()
         self.task = self.repo.task().resolve()
         self.repo.write("relai/harness/run_trial.py", TRIAL_COMMAND)
-        shutil.copy(REFERENCE / "native_runner.py", self.repo.relai / "bin")  # how a user installs the example
+        shutil.copy(REFERENCE / "native_runner.py", self.repo.relai / "bin")
         self.out = self.repo.root / "evals" / "work" / "runs" / "native"
 
     def tearDown(self) -> None:
@@ -82,7 +82,7 @@ class NativeRunnerTest(unittest.TestCase):
         self.assertIn("Runner: native", summary.stdout)
         self.assertIn("1 errored trial", summary.stdout)
         kept = self.runner(attempts="2")
-        self.assertIn("1 runtime failure", kept.stdout)  # finished trials are kept, not rerun
+        self.assertIn("1 runtime failure", kept.stdout)
         retried = self.runner("--retry-failed", attempts="2")
         self.assertIn("0 runtime failure", retried.stdout)
 
@@ -94,7 +94,6 @@ class NativeRunnerTest(unittest.TestCase):
         self.assertEqual(len(self.trials()), 2)
 
     def test_evaluator_definitions_are_captured_before_the_command_runs(self):
-        # Omitted bounds are materialized before a command can change the current task file.
         config = self.task / "task.toml"
         config.write_text(config.read_text().replace("min_score = 0.0\n", "").replace("max_score = 1.0\n", ""))
         script = self.repo.relai / "harness/run_trial.py"
@@ -116,7 +115,7 @@ class NativeRunnerTest(unittest.TestCase):
     def test_stale_files_from_an_interrupted_trial_are_not_scored(self):
         self.runner()
         trial_dir, _ = self.trials()[(str(self.task), 1)]
-        (trial_dir / "result.json").unlink()  # as if killed before the result was written
+        (trial_dir / "result.json").unlink()
         rerun = self.runner(env={"MODE": "fail"}, tail=())
         self.assertEqual(rerun.returncode, 0, rerun.stderr)
         _, data = self.trials()[(str(self.task), 1)]
@@ -148,7 +147,7 @@ class NativeRunnerTest(unittest.TestCase):
         self.runner()
         first = self.out
         self.out = self.repo.root / "evals" / "work" / "runs" / "candidate"
-        self.runner(tail=("--candidate-config",))  # same runner, different command (e.g. a worktree)
+        self.runner(tail=("--candidate-config",))
         same = self.repo.run("summarize.py", str(self.out), "--baseline", str(first))
         self.assertEqual(same.returncode, 0, same.stdout)
         self.out = self.repo.root / "evals" / "work" / "runs" / "other"
@@ -162,7 +161,7 @@ class NativeRunnerTest(unittest.TestCase):
         self.assertEqual(len(self.trials()), 1)
         refused = self.runner(tail=("--extra",), attempts="2")
         self.assertEqual(refused.returncode, 2)
-        self.assertEqual(len(self.trials()), 1)  # attempt 2 was not started
+        self.assertEqual(len(self.trials()), 1)
 
 
     def test_runner_identity_change_refuses_resume_before_new_trials(self):

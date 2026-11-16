@@ -59,7 +59,7 @@ class CheckTaskTest(Base):
 
     def test_json_secret_diagnostics_include_names_and_labels_but_not_values(self):
         canary = "synthetic-checker-credential-0123456789"
-        pattern_canary = "AKIA" + "0" * 16  # Synthetic match for the AWS access-key pattern.
+        pattern_canary = "AKIA" + "0" * 16
         self.repo.write("relai/.env", f"AUDIT_TEST_KEY={canary}\n")
         task = self.repo.task()
         (task / "environment" / "config.json").write_text(
@@ -68,7 +68,6 @@ class CheckTaskTest(Base):
         result = self.repo.run("check_task.py", str(task), "--json", "--no-harbor")
 
         self.assertEqual(result.returncode, 1)
-        # The CLI emits a suite report followed by one JSON document per task.
         _, end = json.JSONDecoder().raw_decode(result.stdout)
         report = json.loads(result.stdout[end:])
         self.assertFalse(report["ok"])
@@ -474,7 +473,6 @@ class SummarizeTest(Base):
                      judges={"explains": {"score": 0.0, "feedback": "judged a crashed run"}})
         harbor_trial(job, "t6", self.task, {"looks-up-order": 0.0}, exception="AgentTimeoutError",
                      feedback={"looks-up-order": "timed out"}, judges={"explains": {"score": 0.0, "feedback": "x"}})
-        # graded, but the agent never reached its model: the untouched workspace's 0 is not the agent's score
         harbor_trial(job, "t7", self.task, {"looks-up-order": 0.0}, exception="NonZeroAgentExitCodeError",
                      feedback={"looks-up-order": "untouched"}, judges={"explains": {"score": 0.0, "feedback": "x"}},
                      usage={"n_input_tokens": 0, "n_output_tokens": 0, "cost_usd": 0.0})
@@ -492,9 +490,9 @@ class SummarizeTest(Base):
     def test_run_in_progress_counts_unfinished_trials(self):
         job = harbor_job(self.repo.root / "runs" / "p", "job", 5)
         harbor_trial(job, "t1", self.task, {"looks-up-order": 1.0}, feedback={"looks-up-order": "ok"})
-        (job / "t2").mkdir()  # Harbor writes config.json when a trial starts, result.json when it ends
+        (job / "t2").mkdir()
         (job / "t2" / "config.json").write_text(json.dumps({"trial_name": "t2"}))
-        (job / "t3").mkdir()  # a result being written is not finished yet
+        (job / "t3").mkdir()
         (job / "t3" / "config.json").write_text(json.dumps({"trial_name": "t3"}))
         (job / "t3" / "result.json").write_text("")
         result = self.repo.run("summarize.py", str(self.repo.root / "runs" / "p"))
@@ -815,7 +813,7 @@ class CloudBuildTest(Base):
 
     def test_subagent_judges_are_flagged_for_a_hosted_runner(self):
         self.declare_harness()
-        judged_task = self.repo.task()  # GOOD_TASK_TOML declares a judge evaluator
+        judged_task = self.repo.task()
         code_only = self.repo.task("codes", toml=GOOD_TASK_TOML.split("[[metadata.relai.evaluators]]\nid = \"explains\"")[0])
         module = self.load()
         self.assertTrue(module.has_judges([code_only, judged_task]))

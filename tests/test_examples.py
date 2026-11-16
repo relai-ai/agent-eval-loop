@@ -22,7 +22,7 @@ from helpers import EXAMPLES, TEMPLATE, Repo, harbor_trial, trajectory
 def load(name: str):
     spec = importlib.util.spec_from_file_location(f"example_{name}", EXAMPLES / f"{name}.py")
     module = importlib.util.module_from_spec(spec)
-    sys.path.insert(0, str(TEMPLATE / "bin"))  # examples are copied beside _common.py
+    sys.path.insert(0, str(TEMPLATE / "bin"))
     spec.loader.exec_module(module)
     return module
 
@@ -373,7 +373,6 @@ class OutboundRedactionTest(unittest.TestCase):
             base_url = "https://offline.invalid/v1"
             api_key_env = "AUDIT_PROVIDER_KEY"
         ''')
-        # Exercise the transport's HTTP-body diagnostic, then its real callers and writers.
         self.judge = load("judge")
         self.triage.judge = self.judge
         def fail(*args, **kwargs):
@@ -419,7 +418,7 @@ class OutboundRedactionTest(unittest.TestCase):
             base_url = "https://offline.invalid/v1"
             api_key_env = "AUDIT_PROVIDER_KEY"
         ''')
-        self.judge = load("judge")  # Restore the real transport, mocked only at urlopen.
+        self.judge = load("judge")
         error = urllib.error.HTTPError("https://offline.invalid", 400, "bad request", {},
                                        io.BytesIO(("diagnostic echoed " + canary).encode()))
         output, stderr = io.StringIO(), io.StringIO()
@@ -513,7 +512,7 @@ class TriageTest(unittest.TestCase):
             self.assertEqual(triage.cmd_run(args, self.repo.relai), 2)
         self.assertIn("--yes", stderr.getvalue())
         self.assertIn("--limit 20", stderr.getvalue())
-        args.limit = 20  # the pilot runs without --yes
+        args.limit = 20
         with patch.object(triage.judge, "call_model_full", return_value=({"outcome": "success"}, "cheap", {})), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(triage.cmd_run(args, self.repo.relai), 0)
@@ -612,7 +611,7 @@ class TriageTest(unittest.TestCase):
         self.assertIn("provider down", (d / "errors.jsonl").read_text())
         verdicts_before = (d / "verdicts.jsonl").read_text()
         triage.judge.call_model_full = fake
-        triage.cmd_run(args, self.repo.relai)  # resume: only t3 is retried (and fails again)
+        triage.cmd_run(args, self.repo.relai)
         self.assertEqual((d / "verdicts.jsonl").read_text(), verdicts_before)
         triage.cmd_report(type("A", (), {"ingest": "t1"})(), self.repo.relai)
         lanes = json.loads((d / "lanes.json").read_text())

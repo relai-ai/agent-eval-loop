@@ -13,7 +13,6 @@ from pathlib import Path
 
 HARBOR_PYTHON = "3.12"
 
-# Directories that never belong in a task, a build context or a snapshot.
 JUNK_DIRS = {
     "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", ".tox", ".nox",
     "node_modules", ".venv", "venv", ".git", ".hg", ".svn",
@@ -33,7 +32,7 @@ PRIVATE_KEY_BLOCK = re.compile(
     r"-----BEGIN (?P<label>[A-Z ]*PRIVATE KEY)-----.*?-----END (?P=label)-----", re.DOTALL
 )
 
-TEXT_SCAN_LIMIT = 2 * 1024 * 1024  # skip larger files when scanning for secrets
+TEXT_SCAN_LIMIT = 2 * 1024 * 1024
 
 
 @dataclass
