@@ -1,8 +1,9 @@
 # Harbor: things that fail silently
 
 Run Harbor as `relai/docs/harbor.md` describes. Everything below was observed in Harbor 0.25.0's
-source; none of it raises an error that explains itself. When `[harbor].version` is newer, re-check
-a note against that release before relying on it, and update this file.
+source, unless a note names another release; none of it raises an error that explains itself.
+When `[harbor].version` is newer, re-check a note against that release before relying on it,
+and update this file.
 
 - **Exit status lies.** `harbor run` exits 0 even when every trial errored. Read each
   trial's `result.json` (`exception_info`, `verifier_result`), or run `summarize.py`. A trial whose
@@ -77,7 +78,9 @@ a note against that release before relying on it, and update this file.
 - **`-p` takes one path.** Pass a directory of tasks and filter with `-i <glob>`, or list the
   tasks in a job config (`-c job.yaml`, repeatable; `harbor job schema` prints its schema). Directories
   that are not valid tasks are skipped without a message, and unknown `task.toml` keys are
-  ignored, so check the trial count.
+  ignored, so check the trial count. Observed in 0.26.0: `-i` matches task directory names, not
+  `[task].name`, and a filter that matches nothing runs zero trials; the same command with
+  `--dry-run` prints the trial count (tasks × attempts) and fails when no task matches.
 - **Local engines differ.** `-e docker` drives whatever engine the `docker` CLI points at
   (Docker Desktop, OrbStack, Colima, Rancher Desktop). `-e podman` never gates startup on
   healthchecks, so a task compose file with `depends_on: condition: service_healthy` hangs.

@@ -51,7 +51,11 @@ relai/tests/<id>/
    optional when a tag meets the reproducibility requirement. Use the toolchain the start
    commit pins, `git`, `curl`, `bash` (agents install with them) and `python3` 3.8+ (the
    verifier). The repository at `/app` as the working directory, dependencies installed from its
-   lockfile, and the leak guard `RUN ! git -C /app cat-file -e <fix commit>`. Never install a
+   lockfile, and the leak guard `RUN ! git -C /app cat-file -e <fix commit>`. A rewritten history
+   (a setup variant, a shortened history) changes commit ids but not file contents, so also
+   guard on content: on the host, take the blob id of each file the fix adds or changes
+   (`git rev-parse <fix>:<path>`) and add `RUN ! git -C /app cat-file -e <blob>`, skipping any
+   blob the start history already holds (a revert restores an earlier version). Never install a
    later release of the project itself.
 4. **Request.** `instruction.md`: the developer's words, redacted, with no file names, diagnosis
    or approach they did not give; or, when they left none, a symptom written from the source
@@ -69,8 +73,10 @@ relai/tests/<id>/
    run, so cost grows with its runtime. When it is slow, offer the runner's own selection of
    tests related to the changed files (`vitest related`, `jest --findRelatedTests`) as the user's
    choice, stating its limit (a regression outside the selection goes unseen), and record it.
-8. **Globs and the snapshot.** `protected`: the existing tests and CI files; hidden test paths
-   fall inside. `scope.allowed`: where any correct fix may go, generously. Then run
+8. **Globs and the snapshot.** `protected`: CI files, and the existing tests unless
+   [checks](checks.md) puts them in `restore`. Every hidden test path must match `protected`
+   (the verifier refuses otherwise); with the existing tests in `restore`, list the hidden files'
+   own paths. `scope.allowed`: where any correct fix may go, generously. Then run
    `coding_checks.py protect` (its docstring).
 9. **Evaluators.** The standard set and the project's shared evaluators ([checks](checks.md)),
    plus the lesson's checks; declare each in `task.toml` under the id `verify.py` or the judge
@@ -78,7 +84,7 @@ relai/tests/<id>/
 10. **Check.** `python3 relai/bin/check_task.py relai/tests/<id>`.
 11. **Validate.** Establish environment readiness, evaluator validity and oracle/nop health
     as below; record the evidence in the task record.
-12. **Preview the checks, review, freeze.**
+12. **Review, preview the checks, freeze.**
 
 ## Validation
 
@@ -92,6 +98,11 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   intentional differences from verifier commands. Failures due to the starting bug are expected;
   setup must allow normal verification, including required cache and output writes. Check with
   the reference fix when needed to distinguish baseline behavior from an environment defect.
+  Then list what the image and those commands left in the workspace (`git status --porcelain
+  --ignored`). A file under a `protected` or `restore` glob (a binary that `make` writes into a
+  script folder) is deleted before the verifier's commands, which can break them, and under
+  `protected` it also scores every agent that runs the documented commands as changing tests.
+  Exclude it from those globs or stop creating it; `new_files_ok` stops only the score.
 - **Evaluator validity.** Identify an assumption the tests share with the reference fix and
   demonstrate that a requirement-consistent alternative passes, using another solution or a
   targeted executable probe. Cite why the request permits it and record the observed result;
@@ -101,7 +112,11 @@ legitimate solution passes. Before freezing, collect evidence for all three:
 - **Health controls.** Run Harbor's `oracle` and `nop` agents on the final task, then
   `summarize.py`: the reference fix must score every outcome check at full marks and untouched
   code must fail the primary check. Investigate unexpected scores rather than assuming the
-  reference fix or evaluator is right. These controls call no model.
+  reference fix or evaluator is right. A hidden-test command that chains cases (`a && b`) shows
+  only the first failure: run each case alone on the untouched code and record which fail; a
+  case that passes there shows nothing about the fix. Resolve the findings from validation and
+  the independent review before rerunning the controls, since each round repeats the full suite
+  in every graded run. These controls call no model.
 
 ## Trusted commands and offline preparation
 

@@ -7,8 +7,8 @@ Judge on evidence you can quote.
 
 Read: `relai/README.md` and `relai/docs/files.md`; the task directory (`task.toml`,
 `instruction.md`, `environment/Dockerfile`, `solution/`, everything under `tests/`); the
-*Evidence* section of its README; its latest oracle and nop runs; the wiki pages it covers;
-and its source (the session, pull request or commit named in `origin`), if you can reach it.
+*Evidence* section of its README; its latest oracle and nop runs, when they exist; the wiki
+pages it covers; and its source (the session, pull request or commit named in `origin`), if you can reach it.
 Skip the README's *Author notes* and any other design rationale or proposed verdicts; form your
 own conclusions from the requirements and artifacts.
 
@@ -32,13 +32,15 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 4. **Validated environment and controls.** Inspect the [validation evidence](task-format.md#validation)
    for the final task: documented commands ran in a fresh environment as the agent user, with
    baseline failures explained; the reference fix passes every outcome check and untouched code
-   fails the primary check. Verifier health is not evidence for omitted agent commands.
+   fails the primary check. Verifier health is not evidence for omitted agent commands. If health
+   or validation results do not exist yet, mark this check pending and say what you need.
 5. **Honest suite.** Tests that already fail at the start commit are deselected and listed in the
    README; the suite passes with the reference fix; it does not depend on the network. The suite and
    hidden-test commands call the test runner directly, or through a script inside the protected
    globs, so the agent cannot redefine them.
-6. **Protected snapshot.** `protected` covers the existing tests, CI files and every file that
-   configures this repository's test runner, `restore` the files that can steer a run, the hidden
+6. **Protected snapshot.** `protected` covers CI files, every file that configures this
+   repository's test runner and the existing tests (or `restore` holds them, where
+   [checks](checks.md) puts them there), `restore` the files that can steer a run, the hidden
    test paths fall inside `protected`, and `tests/protected/` with its manifest was written by
    `coding_checks.py protect` from the start commit; `tests/test.sh` and `tests/coding_checks.py`
    are the plugin's verifier, or an adapted copy that `decisions.md` explains and whose verifier

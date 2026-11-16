@@ -60,8 +60,9 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
 Only when the user wants to compare different coding agents. The tasks need no change; what
 differs between agents is what they read, what is recorded and what they cost.
 
-- **What each agent reads.** Agents read different instruction files (Claude Code `CLAUDE.md` and
-  `.claude/`, Codex and many others `AGENTS.md`). Each task's README lists the agent instruction
+- **What each agent reads.** Agents read different instruction files (such as `CLAUDE.md` and
+  `.claude/`, or `AGENTS.md`), and which ones depends on the agent and its version (*Setups*).
+  Each task's README lists the agent instruction
   files its workspace already holds at the start commit; when they favor some agents, say so and
   offer a bare variant that removes them, or matched setups. Compare either bare against bare, or
   each agent with its **matched setup**: the same team guidance written into each agent's own
@@ -95,15 +96,29 @@ the setup declaration/manifest and its snapshot differ as intended. A bare varia
 setup; when the start commit already holds guidance, the variant also removes it from the
 workspace and from every commit in its history (rewritten as in [task-format](task-format.md)
 step 2, its new start recorded), since the agent can read it from git. Before running a variant,
-confirm from the agent version's documentation or a trial's trajectory that it loads the
-variant's files: agents differ, and one that reads only its own file (such as `CLAUDE.md`) reaches
-`AGENTS.md` or shared skills only through an import or link. A variant the agent never reads
-measures nothing. Check these differences before comparing, run the same agent and attempts, and compare
-task by task.
+confirm from a trial that the agent loaded the variant's files, and that the bare variant loaded
+none: agents differ, and one may reach a file only through an import or link. A runner's
+trajectory can leave out instructions loaded at startup, so also check the agent's own session
+log. A variant the agent never reads measures nothing. Check these differences before comparing,
+run the same agent and attempts, and compare task by task.
+
+Keep grading fair to every setup, and settle it before freezing (a later rubric change follows
+the *Frozen tests* rule). A judge standard taken from one setup's instruction file, or from one
+version of it at a task's start commit, scores agents for following or not seeing that file:
+keep only standards that hold for every compared setup and start commit, and report judges
+apart from the solved rate. When an instruction file tells agents to stop or decline (for
+example, on unsolicited contributions), keep the request identical across variants and report
+any stop as its own finding.
+
+Report per setup, beside the solved rate, the validation commands each run executed (tests,
+lint, build) from its record. A task every setup solves separates nothing on the solved rate:
+fix the task set before seeing the compared setups' results, and add attempts when a task's
+outcome varies.
 
 **Which parts help.** One variant per part left out (a section of an instruction file, a skill, a
 hook, an MCP server). Trials grow as parts × tasks × attempts, so run it on the tasks that
-separated setups before, and show the cost first. Per part report helps, hurts, or no measurable
+separated setups before (a subset chosen from earlier results: report it as selection evidence,
+as in *Improving a setup*), and show the cost first. Per part report helps, hurts, or no measurable
 effect at this sample size.
 
 ## Improving a setup

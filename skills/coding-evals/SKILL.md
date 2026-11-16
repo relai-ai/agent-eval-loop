@@ -41,6 +41,28 @@ compare, or an agreement covers it.
 To improve a team's setup against these tasks, use the [improve skill](../improve/SKILL.md) with the
 setup files as its scope ([comparing](references/comparing.md)).
 
+## Keep the user oriented
+
+At every checkpoint and long step, show the stages the request covers, mark the current one,
+and say what comes next and when the user is needed:
+
+1. Pick tasks · 2. Build · 3. Self-test · 4. Second-opinion review (alongside 3) ·
+5. User sign-off · 6. Lock · 7. Pilot run · 8. Full run · 9. Report
+
+In messages to the user, use these plain names and say once what each proves; files and runner
+commands keep the technical terms.
+
+| Say | Technical term | What it proves |
+| --- | --- | --- |
+| real-fix check | oracle run | the reference fix scores full marks on every outcome check |
+| do-nothing check | nop run | the untouched code fails the primary check |
+| self-test | health (oracle and nop runs) | both checks above, through the runner, with no model |
+| alternative-fix check | evaluator validity | a different correct fix also passes |
+| second-opinion review | independent review | a reviewer that did not build the task audits it |
+| lock | freeze | later changes need a recorded reason and a fresh review |
+| headline check | primary check | the check the solved rate is reported on |
+| run | trial | one agent working one task once |
+
 ## Done when
 
 - **Scope** (as much as the request needs): `relai.toml` records `[coding_evals]`
@@ -58,9 +80,11 @@ setup files as its scope ([comparing](references/comparing.md)).
     nop run (the untouched code) failed the primary check; the agent's working environment and
     evaluator validity were also checked ([validation](references/task-format.md#validation)).
     These checks call no model.
-  - **Checks previewed:** the user, or the delegated reviewer, approved the preview below.
-  - A fresh review ([review-coding-task](references/review-coding-task.md)) approved each task;
-    `freeze.py` ran.
+  - **Reviewed:** a fresh review ([review-coding-task](references/review-coding-task.md)) approved
+    each task; each finding was fixed or recorded with a reason, and blocking fixes were confirmed,
+    before the check preview.
+  - **Checks previewed:** the user, or the delegated reviewer, approved the preview below, which
+    includes the review's verdict and what changed after it; `freeze.py` ran.
 - **Run:** every version run (one is enough) ran the same frozen tasks with the same attempts and
   judges were scored; you reported, per version, the primary check's solved rate and the mean over
   recorded checks, with pass or fail beside it once `[scoring].pass_mark` is set, with scored/attempted counts
@@ -113,15 +137,17 @@ setup files as its scope ([comparing](references/comparing.md)).
 
 Carry forward scope, budget and approvals from the request, `relai/decisions.md`, the wiki or an
 agreement. Combine unresolved scope and task selection in one checkpoint when the evidence is
-ready; ask about check previews once validation is ready, unless already covered or delegated.
+ready; ask about check previews once validation and the independent review are done, unless
+already covered or delegated.
 Approval of a task list alone does not approve unseen scoring. When nothing says how
 involved the user wants to be, offer at the first checkpoint to delegate task-list and check
 approval to a fresh independent review, reporting the results afterwards
 ([delegated approvals](../start/template/README.md#working-with-the-user)); record the choice in
 `decisions.md`. Present discovered facts first
-([scope](references/scope.md)); ask only about uncovered choices or material changes. What to
-compare and the run budget change the runs, not the tasks: ask them when the request raises them
-or before the first paid run, and keep building meanwhile. After the first run, show the
+([scope](references/scope.md)); ask only about uncovered choices or material changes. The run
+plan ([scope](references/scope.md), *Ask the run plan*) changes the runs, not the tasks: when
+paid runs are planned, ask it at the task-list checkpoint and the full-run budget after the
+pilot; keep building meanwhile. After the first run, show the
 real-trial judge checks. Name the credentials needed as instructions (export them, use the team's secrets tool, or add them
 to `relai/.env`) and continue work
 that does not need them.
@@ -131,7 +157,8 @@ for a guided batch or suitable app view of tasks and scoring. Surface consequent
 questions even when the chosen task subset can proceed, explaining excluded coverage and
 possible follow-up; record resolution or explicit deferral in the existing items.
 
-Long steps (image builds, health runs, trials) stay visible: say what is running, how far along it
+Long steps (image builds, health runs, trials) stay visible: say what is running, about how long
+it takes and why (an image build, the full suite in every graded run), how far along it
 is (tasks or trials done of the total), spend so far and where results land, and update
 `STATUS.md` at milestones.
 
@@ -157,18 +184,25 @@ and validity risks, including what the fix's tests pin ([sources](references/sou
 the fix's tests*). Show a compact task table (source, request, what failing looks like) and the
 estimated disk use, with real failures and corrections first. State that building and health checks call no model, and
 estimate trial cost or plan usage and time, with tasks × versions × attempts, as information.
-Unless already authorized, obtain task selection approval before building; run budget is
-approved before the first paid run.
+Unless already authorized, obtain task selection approval before building; the pilot is
+approved with the run plan, and the full-run budget after the pilot.
 
 **Before freezing**, add the [validation evidence](references/task-format.md#validation), each
 hidden test's assertion, protected/restored/scope globs and judge rubrics to that same record,
-using links where the artifacts already say it. Preview every judge's rubric summary and any
-unexpected control score; summarize expected scores per task. Following the shared
+using links where the artifacts already say it. Start the fresh independent
+[review](references/review-coding-task.md) once a task passes `check_task.py`; it can run
+alongside the health and validity checks, marking the controls pending until their results
+exist, and the reviewer or a scoped follow-up review closes that check once they do. Resolve
+each finding (fix it, or record why not), have the reviewer or a fresh review
+scoped to the change confirm blocking fixes, record the reviewed revision, and rerun only the
+checks the fixes affect, so the user approves a reviewed task once. Then preview every judge's
+rubric summary, the review's verdict and what changed after it, and any unexpected control
+score; summarize expected scores per task. Following the shared
 [decision-effort rule](../start/template/README.md#working-with-the-user), ask about scoring and
-coverage choices still needing approval, in manageable subsets. Resolve defects and obtain a
-fresh independent [review](references/review-coding-task.md), then freeze only the approved,
-validated subset. A delegated reviewer can cover preview approval and independent review in one
-pass when both are delegated; unresolved tasks stay pending.
+coverage choices still needing approval, in manageable subsets. If sign-off changes a task,
+review the change before freezing. Freeze only the approved, validated subset. A delegated
+reviewer can cover preview approval and independent review in one pass when both are delegated;
+unresolved tasks stay pending.
 
 ## After the first run
 
