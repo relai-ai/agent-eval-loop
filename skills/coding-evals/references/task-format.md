@@ -74,7 +74,9 @@ relai/tests/<id>/
    `coding_checks.py protect` (its docstring).
 9. **Evaluators.** The standard set and the project's shared evaluators ([checks](checks.md)),
    plus the lesson's checks; declare each in `task.toml` under the id `verify.py` or the judge
-   uses.
+   uses. Link each applicable repository requirement to its evaluator in the task record;
+   process requirements must reach a judge with `trajectory` in its inputs
+   ([repository requirements](checks.md#repository-requirements)).
 10. **Check.** `python3 relai/bin/check_task.py relai/tests/<id>`.
 11. **Validate.** Establish environment readiness, evaluator validity and oracle/nop health
     as below; record the evidence in the task record.
@@ -98,6 +100,11 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   merely different code or a hypothetical pass is insufficient. Control incidental time,
   randomness and initialization state in fixtures. Where ordering matters, ensure timestamps and
   insertion order express the intended scenario; do not impose an order the request leaves open.
+  Preview process judges on synthetic run records that satisfy and violate each applicable rule,
+  keeping the final output identical where possible. For a required lint run after edits, include
+  a successful run, a skipped run and a run followed by another relevant edit. Also check a
+  conditional rule when it does not apply, a blocked command and an incomplete recording, using
+  the evidence limits in [safe process](checks.md#safe-process-shared-evaluator).
 - **Health controls.** Run Harbor's `oracle` and `nop` agents on the final task, then
   `summarize.py`: the reference fix must score every outcome check at full marks and untouched
   code must fail the primary check. Investigate unexpected scores rather than assuming the

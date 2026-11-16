@@ -45,9 +45,13 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    tests passed.
 7. **Right checks.** The primary check reads the workspace. Code checks settle exact facts;
    judgments about what the agent did are judges. The lesson from the source (what went wrong in the session, what the
-   revert fixed) has a check, and nothing is checked that the source does not support.
+   revert fixed) has a check, and nothing is checked that the source does not support. Each
+   applicable repository requirement maps to an evaluator with the needed inputs: process
+   requirements reach a trajectory judge, not only `review-ready`.
 8. **Fair judges.** Each rubric states its standards and what full and zero marks need; the
-   review-ready standards come from the team's real review comments or approved requirements.
+   repository requirements cite their sources and applicability. Inspect process-judge previews
+   showing compliance and violations with the same output, where possible, plus inapplicable
+   rules, blocked commands and missing evidence. A verifier's command cannot prove the agent ran it.
 9. **Agent-neutral.** Nothing in the workspace, instruction or checks favors one agent: no agent's
    config files beyond what the repository had at the start commit, no tool names in checks. The
    README lists the agent instruction files the start commit holds.

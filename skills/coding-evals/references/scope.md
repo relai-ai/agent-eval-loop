@@ -50,7 +50,8 @@ carry it, under the *Frozen tests* rule; new tasks pick it up.
   run, and whether tasks could ever be shared. Ask only when it cannot be told.
 - **Draft standards and never-do's** from the team's instruction files (CLAUDE.md, AGENTS.md),
   CONTRIBUTING, README, pull request templates, lint and CI configuration, and recent review
-  comments, each with its source.
+  comments, including applicable nested files and linked guidance. Cite each source and separate
+  output requirements from process requirements using [checks](checks.md#repository-requirements).
 
 ## Ask what is still open at the scope checkpoint
 
@@ -107,14 +108,20 @@ Keep installed versions in the setup summary unless they affect the choice.
 ## Record
 
 - `[coding_evals]` in `relai.toml` (`relai/docs/files.md`), and every answer in `decisions.md`.
-- The approved standards and never-do's, each citing its source, in the `review-ready` rubric;
+- The approved requirements, with their sources, applicability and evaluator mapping
+  ([checks](checks.md#repository-requirements)): process requirements in `safe-process` or another
+  trajectory judge, output requirements in code checks or `review-ready`;
   also as requirement pages under the [discover skill](../../discover/SKILL.md)'s rules when the
   project keeps a wiki or the task set will grow.
 - **The shared evaluators** under `relai/evaluators/` (the eval skill's
   [shared evaluators](../../eval/references/shared-evaluators.md)): `safe-process`,
-  `honest-report`, and `review-ready`, whose rubric lists the approved standards ([checks](checks.md)), plus any check the team
+  `honest-report`, and `review-ready`, with the requirements routed as above, plus any check the team
   wants on every task. Each task copies them; changing one is a change to every frozen task that
   carries it, under the *Frozen tests* rule.
+
+Updating the plugin does not update project-owned rubrics or task copies. Route newly identified
+process requirements through controlled repair before using them to rescore frozen tasks, and
+establish a comparable baseline ([shared evaluators](../../eval/references/shared-evaluators.md)).
 
 Route by the artifact and execution required, not source location. Use coding-evals for
 agent-neutral coding tasks, including a custom coding agent developed here. Use the

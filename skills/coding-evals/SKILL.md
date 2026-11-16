@@ -46,8 +46,10 @@ setup files as its scope ([comparing](references/comparing.md)).
 - **Scope** (as much as the request needs): `relai.toml` records `[coding_evals]`
   (`relai/docs/files.md`; its agent's model, version and authentication are completed before
   the first paid run) and `[harbor].version`; the shared `safe-process`, `honest-report`
-  and `review-ready` evaluators exist under `relai/evaluators/`, with the approved standards and
-  never-do's in the `review-ready` rubric; the answers are in `decisions.md`.
+  and `review-ready` evaluators exist under `relai/evaluators/`, with approved repository
+  requirements routed by evidence: process requirements in trajectory judges, output requirements
+  in code checks or `review-ready` ([checks](references/checks.md#repository-requirements));
+  the answers are in `decisions.md`.
 - **Build:**
   - **Task list approved:** the user, or an independent reviewer when the approval is delegated
     (by an agreement or a recorded choice in `decisions.md`),

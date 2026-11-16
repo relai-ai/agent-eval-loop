@@ -33,7 +33,8 @@ The request is the linked issue as its author wrote it; with no
 issue, write what a developer would have asked from the description's *what*, never its *how*,
 mark it `request = "symptom"` and show it with the task list. Its added or changed tests become hidden tests; its source changes are the
 reference fix. Reverted pull requests make strong tasks: check what the revert says broke. Review
-comments feed the review-ready rubric ([checks](checks.md)).
+comments feed output or process criteria according to the evidence needed
+([checks](checks.md#repository-requirements)).
 
 ## Git history
 
