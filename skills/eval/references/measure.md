@@ -112,7 +112,9 @@ judge checks per judge evaluator to `relai/feedback.md` (how many: Defaults): pi
 the judge graded and its feedback, and recommend agree or disagree. Ask them at the end of that run,
 while it is fresh, with the question tool (inside the `loop` skill, in the iteration's digest). A
 judge the board flags for low agreement is repaired ([shared-evaluators](shared-evaluators.md)) and its
-runs rescored, not trusted.
+runs rescored, not trusted. When one judge score decides whether a test passes at the pass mark
+and its feedback calls the case borderline, score it again with a second fresh judge; when the
+two disagree, report the case as a judge check rather than choosing between them.
 
 For protected-only runs, do not open trajectories or copy their feedback into optimizer-visible
 judge checks. If content inspection is needed, use the existing isolated reviewer procedure and

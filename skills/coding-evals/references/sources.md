@@ -31,7 +31,10 @@ integrated PR commit as the fix. Confirm the range contains the intended changes
 start predates the fix; skip ambiguous ranges rather than guessing from the final commit alone.
 The request is the linked issue as its author wrote it; with no
 issue, write what a developer would have asked from the description's *what*, never its *how*,
-mark it `request = "symptom"` and show it with the task list. Its added or changed tests become hidden tests; its source changes are the
+mark it `request = "symptom"` and show it with the task list. When the issue also asks the
+maintainers for something other than the change (to be assigned, to add a label, whether it is a
+bug), an agent may answer that instead of writing code: add one clearly marked maintainer line
+asking for the change, as a maintainer accepting the issue would, and record it in the README. Its added or changed tests become hidden tests; its source changes are the
 reference fix. Reverted pull requests make strong tasks: check what the revert says broke. Review
 comments feed output or process criteria according to the evidence needed
 ([checks](checks.md#repository-requirements)).

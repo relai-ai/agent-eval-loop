@@ -90,8 +90,14 @@ paid run is next. Skip what is already answered:
    bare or each with a matched setup ([comparing](comparing.md), *Comparing agents*).
 2. **Each agent's model, version and sign-in** (*Find out first*), attempts per task, and
    `[judge].mode` (API or subagent judges).
-3. **The pilot**: one trial per version run ([comparing](comparing.md), *Before any paid run*),
-   with its estimated cost.
+3. **The pilot**: one attempt of each task per version run ([comparing](comparing.md), *Before
+   any paid run*), with its estimated cost.
+
+When the run will go unattended, ask with the run plan whether you may repair, under the
+*Frozen tests* rule, a defect that changes only how a check grades something it does not measure
+(a tool's cache counted as a stray file, a restored test that no longer compiles beside a correct
+fix), with its review and re-grade. Changes to the request, the workspace or what a check
+measures wait for the user.
 
 After the pilot, ask the **full-run budget** from its measured cost: trials = tasks × versions ×
 attempts, at the cost (or plan usage and time) per trial the pilot measured. When the request,
@@ -113,12 +119,13 @@ list might read:
 > (using each plan's allowance), API keys (incurring API charges), or decide before running.
 > You can choose differently for each agent.
 >
-> **Pilot:** one trial per agent on one task first, estimated at $1-3 in total, to measure the real
-> cost before the full run. Approve it, or name another limit.
+> **Pilot:** one attempt of each of the 12 tasks per agent first, estimated at $15-25 in total, to
+> measure the real cost and catch task defects before the full run. Approve it, or name another
+> limit.
 
 After the pilot, the budget question:
 
-> **Budget:** one trial on one task cost about $0.80; 12 tasks × 2 agents × 3 attempts is about
+> **Budget:** the pilot's 24 trials cost about $19, or $0.80 each; 12 tasks × 2 agents × 3 attempts is about
 > $58. Approve up to $60, or name another limit. The tasks are frozen and the pilot ran.
 
 This illustrates presentation, not fixed defaults: use the discovered facts and agreed scope.

@@ -15,7 +15,8 @@ own conclusions from the requirements and artifacts.
 Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 
 1. **Faithful request.** With `request = "verbatim"`, `instruction.md` is the developer's request
-   as given (redacted), with no file name, diagnosis, approach or test name they did not give. With
+   as given (redacted), with no file name, diagnosis, approach or test name they did not give, and
+   at most the marked maintainer line [sources](sources.md) allows. With
    `request = "symptom"`, it states only the symptom a developer would report, agrees with the
    source, and gives nothing of how the fix works. Either way, a correction the developer made in
    reaction to an agent's mistake is not in it; it is a check instead.
