@@ -93,14 +93,14 @@ paid run is next. Skip what is already answered:
 3. **The pilot**: one attempt of each task per version run ([comparing](comparing.md), *Before
    any paid run*), with its estimated cost.
 
-When the run will go unattended, ask with the run plan whether you may repair, under the
-*Frozen tests* rule, a defect that changes only how a check grades something it does not measure
-(a tool's cache counted as a stray file, a restored test that no longer compiles beside a correct
-fix), with its review and re-grade. Changes to the request, the workspace or what a check
-measures wait for the user.
+When the run will go unattended, ask with the run plan whether you may make repairs that fix how
+a check grades without changing what it measures, such as a tool's cache counted as a stray file,
+under the *Frozen tests* rule with its review and re-grade. Changes to the request, the workspace
+or what a check measures wait for the user.
 
 After the pilot, ask the **full-run budget** from its measured cost: trials = tasks × versions ×
-attempts, at the cost (or plan usage and time) per trial the pilot measured. When the request,
+attempts, less the pilot's trials when they count, at the cost (or plan usage and time) per trial
+the pilot measured. When the request,
 `decisions.md` or an agreement already set a budget that covers that estimate, report the
 estimate and continue without asking; ask when there is none or the estimate exceeds it. With a
 subscription, say that runs count against the plan's usage limits and that the user should check
@@ -125,8 +125,9 @@ list might read:
 
 After the pilot, the budget question:
 
-> **Budget:** the pilot's 24 trials cost about $19, or $0.80 each; 12 tasks × 2 agents × 3 attempts is about
-> $58. Approve up to $60, or name another limit. The tasks are frozen and the pilot ran.
+> **Budget:** the pilot's 24 trials cost about $19, or $0.80 each, and count as the first of 3
+> attempts; the other two attempts on 12 tasks × 2 agents are about $39. Approve up to $40, or
+> name another limit. The tasks are frozen and the pilot ran.
 
 This illustrates presentation, not fixed defaults: use the discovered facts and agreed scope.
 Keep installed versions in the setup summary unless they affect the choice.

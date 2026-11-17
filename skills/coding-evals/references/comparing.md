@@ -7,11 +7,11 @@ or with a subscription its plan usage and time); when the set is too large for t
 least one task from each repository and each builder. This pilot is itself paid: state its
 expected cost and get the user's yes (or a covering agreement) first, then use it to estimate the
 full run for the budget question. It also shows that the agent installs, reaches its model
-and does work, so a trial with no model calls is fixed before any larger run. Health runs score
-only the reference fix and the untouched code, so the pilot is the first time an agent's own work
-meets the checks: treat a check that every version fails on a task, or a trial that changed no
-code, as a suspected task defect, and read those trajectories before the full run. Then follow
-"Cost before spend" in `relai/README.md`.
+and does work, so a trial with no model calls is fixed before any larger run. The pilot is the
+first run of an agent's own work against the checks, so treat a check that every version fails
+on a task, or a trial that changed no code, as a suspected task defect, and read those
+trajectories before the full run. When no task changes after the pilot, its trials count as the
+full run's first attempt. Then follow "Cost before spend" in `relai/README.md`.
 Choose attempts for the decision, observed variability and budget; coding agents can vary between
 runs. Reuse deterministic work only when it preserves the uncertainty being measured.
 
@@ -60,7 +60,7 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   changes anything the agent sees (the request, the workspace) sets aside every version's
   trials on that task, not only those that went wrong, and re-runs them all. A check that fails
   only while many trials share the machine (an integration suite under load) is a runner
-  defect: replay the diff on an idle machine to re-grade it, and lower concurrency for that task.
+  defect: re-grade it by replaying the diff on an idle machine.
 - **Contamination**: report separately the tasks whose fix was public before a model's training
   cutoff.
 - Cost (or plan usage) per solved task and time per trial go beside the scores; `summarize.py`
@@ -69,9 +69,9 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   measured. Preserve per-run setup/evaluator
   identity and available contents/revisions; do not infer a subscription bill from recorded USD
   or causation from a sequence of setup edits alone. Some agents record no cost for some models:
-  then read the provider key's usage before and after each version's run, giving each version
-  its own key or its own time window, and report that difference as its cost. A split of a shared
-  total by token counts is an estimate; label it so.
+  then run versions one at a time on a shared key, or give each its own key, and report the
+  change in the key's usage over each version's run as its cost. Without either record, the cost
+  is unknown (`relai/README.md`, *Counts come from records*).
 
 ## Comparing agents
 
