@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -88,6 +89,21 @@ class StatusTest(unittest.TestCase):
         self.assertIn("wiki/", result.stdout)
         self.assertNotIn("STATUS.json", result.stdout)
         self.assertIn('next   "Use RELAI\'s improve skill to fix tests/orders"', result.stdout)
+
+    def test_receipt_files_when_relai_is_below_the_git_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            top = Path(directory)
+            subprocess.run(["git", "-C", str(top), "init", "-q"], check=True)
+            relai = top / "sub" / "relai"
+            relai.parent.mkdir()
+            shutil.copytree(self.repo.relai, relai)
+            (relai / "wiki/risks").mkdir(parents=True, exist_ok=True)
+            (relai / "wiki/risks/a.md").write_text("# Risk A\nStatus: confirmed\n")
+            result = subprocess.run([sys.executable, str(relai / "bin/status.py"), "--receipt"],
+                                    capture_output=True, text=True, cwd=top / "sub")
+            self.assertIn("files  ", result.stdout, result.stderr)
+            self.assertIn("wiki/", result.stdout)
+            self.assertNotIn("sub/", result.stdout)
 
     def test_stage_names_match_the_board_and_the_coding_evals_skill(self):
         sys.path.insert(0, str(TEMPLATE / "bin"))

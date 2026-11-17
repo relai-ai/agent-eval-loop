@@ -220,21 +220,26 @@ def grid(relai: Path, run: Path | None) -> str:
     if info.get("agent_cost_usd") is not None:
         foot += f" · agent {money(info['agent_cost_usd'])} so far"
     legend = ("✓ at or above the pass mark · ✗ below" if mark is not None else "scores (no pass mark set)")
-    return "\n".join(lines + [foot, legend + " · ⚠ invalid or evaluator error · · judges pending"])
+    return "\n".join(lines + [foot, legend + " · ⚠ invalid or evaluator error · · judges pending · ? test not found"])
 
 
 def changed_files(relai: Path) -> list[str]:
     try:
-        out = subprocess.run(["git", "-C", str(relai.parent), "status", "--porcelain", "--untracked-files=all", "--", str(relai)],
+        prefix = subprocess.run(["git", "-C", str(relai), "rev-parse", "--show-prefix"],
+                                capture_output=True, text=True, timeout=30)
+        out = subprocess.run(["git", "-C", str(relai), "status", "--porcelain", "--untracked-files=all", "--", "."],
                              capture_output=True, text=True, timeout=30)
     except (OSError, subprocess.TimeoutExpired):
         return []
-    if out.returncode:
+    if prefix.returncode or out.returncode:
         return []
+    base = prefix.stdout.strip()
     found: list[str] = []
     for line in out.stdout.splitlines():
-        path = Path(line[3:].strip().strip('"').split(" -> ")[-1])
-        parts = path.parts[1:] if path.parts[:1] == (relai.name,) else path.parts
+        raw = line[3:].strip().strip('"').split(" -> ")[-1]
+        if not raw.startswith(base):
+            continue
+        parts = Path(raw[len(base):]).parts
         if not parts or parts[0] in ("work", "STATUS.json"):
             continue
         name = parts[0] if len(parts) == 1 else "/".join(parts[:2 if parts[0] == "records" else 1]) + "/"
