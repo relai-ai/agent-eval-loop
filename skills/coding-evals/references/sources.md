@@ -33,8 +33,11 @@ The request is the linked issue as its author wrote it; with no
 issue, write what a developer would have asked from the description's *what*, never its *how*,
 mark it `request = "symptom"` and show it with the task list. When the issue also asks the
 maintainers for something other than the change (to be assigned, to add a label, whether it is a
-bug), an agent may answer that instead of writing code: add one clearly marked maintainer line
-asking for the change, as a maintainer accepting the issue would, and record it in the README. Its added or changed tests become hidden tests; its source changes are the
+bug), an agent may answer that instead of writing code. Show it with the task, as for findings in
+*Read the fix's tests*. Recommend one clearly marked maintainer line under the issue asking for
+the change, as a maintainer accepting the issue would, unless the team hands issues to its agent
+as they are, where recognizing the request is part of the work; then recommend keeping the issue
+as it is. Record the choice in `decisions.md` once per repository, and an added line in the README. Its added or changed tests become hidden tests; its source changes are the
 reference fix. Reverted pull requests make strong tasks: check what the revert says broke. Review
 comments feed output or process criteria according to the evidence needed
 ([checks](checks.md#repository-requirements)).
