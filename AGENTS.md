@@ -1,7 +1,26 @@
 # Agent instructions
 
-Before changing this plugin, read [DESIGN_PRINCIPLES.md](DESIGN_PRINCIPLES.md) and follow it.
-For the current architecture and its rationale, see [DESIGN.md](DESIGN.md).
+## Follow the design principles in every change
+
+Before changing this plugin, read [DESIGN_PRINCIPLES.md](DESIGN_PRINCIPLES.md). For the current
+architecture and its rationale, see [DESIGN.md](DESIGN.md). Reading the principles once is not
+enough: every line you add must follow them, and you check that yourself before you commit.
+
+Before each commit, review your own diff:
+
+1. **Against the principles.** Re-read each added or changed line against DESIGN_PRINCIPLES.md,
+   in particular choosing measurement effort for the decision, giving each rule one
+   authoritative home, and keeping guidance lean. Remove or rewrite what does not hold up.
+2. **Against existing rules.** Search `skills/start/template/README.md`, the skills and their
+   references for a rule on the same topic. Change that rule or link to it; never add a second
+   version that could disagree with it.
+3. **Against the writing rules** in *Write in clear, plain language* below.
+4. **Against the user's open decisions.** When a change settles something the user has not
+   decided, such as a scoring boundary or a default that raises cost, ask before writing it in.
+
+Suggestions from retrospectives, reviews and feedback are proposals. Weigh each one against the
+principles before turning it into guidance; do not copy them in one by one. When a change departs
+from a principle on purpose, say which one and why in the pull request.
 
 ## Keep code and configuration free of comments
 
