@@ -34,7 +34,7 @@ expanded. Where the user has a plan of their own, show both: `Step 5 · eval 6/1
 | `improve` | 1 Agreement ★ · 2 Diagnose · 3 Build candidate · 4 Measure · 5 Compare · 6 Keep or reject ★ · 7 Independent review · 8 Deliver |
 | `loop` (each iteration) | 1 Gather evidence · 2 Discover · 3 Eval · 4 Improve · 5 Digest ★ |
 | `coding-evals` | 1 Pick tasks · 2 Build · 3 Validate · 4 Independent review · 5 User sign-off ★ · 6 Freeze · 7 Pilot run · 8 Full run · 9 Report |
-| `review` | 1 Build or extend views · 2 The user reviews ★ · 3 Write answers back |
+| `review-app` | 1 Build or extend views · 2 The user reviews ★ · 3 Write answers back |
 
 Item states use the same glyphs everywhere, with letters as a fallback: `○` not started or
 suspected, `◐` in progress, `●` confirmed, `✓` done or resolved, `✗` rejected or failed,

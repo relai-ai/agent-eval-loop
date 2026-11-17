@@ -283,7 +283,7 @@ RELAI is something the user steers, not a black box.
   next and when the user is needed, plus the user's own plan step when one exists. Progress
   updates in between name only the current stage.
 - **Review app at decision points.** Decisions that need evidence to judge are reviewed in a
-  project review app, built with the `review` skill at the first such decision and extended at
+  project review app, built with the `review-app` skill at the first such decision and extended at
   later ones: risk dispositions, open questions, feedback on runs, scenarios, the grader check,
   judge checks, the pass mark, candidates and loop digests. Preferences (budget, attempts,
   go or stop) stay in chat. Build it by default and say what it costs in time; when a decision is
@@ -328,7 +328,7 @@ RELAI is something the user steers, not a black box.
   needed and recommend a manageable first batch; offer a guided chat walkthrough or a suitable
   existing app, with the relevant location and what to do there. File links supplement this
   invitation rather than assigning an unexplained document-reading task. Check the app's actual
-  capabilities: if review or annotation is missing, extend it with the `review` skill (see
+  capabilities: if review or annotation is missing, extend it with the `review-app` skill (see
   *Review app at decision points*). Keep chat available and do not make app construction a
   prerequisite for useful work. When approval is needed, ask for the current subset's
   concrete decision rather than only offering help later.

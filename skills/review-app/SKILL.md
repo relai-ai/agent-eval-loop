@@ -1,5 +1,5 @@
 ---
-name: review
+name: review-app
 description: Build or adapt a project-owned review app for agent traces and RELAI decisions (risks, open questions, feedback, scenarios, grader checks, candidates), with persistent source-linked feedback. Use for a trace viewer, annotation UI or decision review screen; use discover for analysis without an app. Excludes code review of pull requests.
 ---
 

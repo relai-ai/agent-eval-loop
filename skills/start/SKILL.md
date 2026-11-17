@@ -8,7 +8,7 @@ description: Orient users on RELAI's capabilities, current eval status and next 
 RELAI helps teams understand and improve agent behavior. Choose the smallest useful workflow:
 
 - [discover](../discover/SKILL.md): requirements, risks and open questions from code, docs or traces.
-- [review](../review/SKILL.md): build or adapt a UI for traces and source-linked feedback, and
+- [review-app](../review-app/SKILL.md): build or adapt a UI for traces and source-linked feedback, and
   for the decisions other skills ask you (risks, questions, scenarios, grader checks, candidates).
 - [eval](../eval/SKILL.md): build missing evaluations, reuse a benchmark, or measure current behavior.
 - [improve](../improve/SKILL.md): a direct fix, regression check, or measured behavioral, cost or latency improvement.

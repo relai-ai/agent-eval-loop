@@ -36,7 +36,7 @@ STAGES = {
     "loop": ["Gather evidence", "Discover", "Eval", "Improve", "Digest"],
     "coding-evals": ["Pick tasks", "Build", "Validate", "Independent review", "User sign-off", "Freeze", "Pilot run",
                      "Full run", "Report"],
-    "review": ["Build or extend views", "The user reviews", "Write answers back"],
+    "review-app": ["Build or extend views", "The user reviews", "Write answers back"],
 }
 RISK_GLYPHS = {"proposed": ("○", "suspected"), "admitted": ("◐", "selected"), "confirmed": ("●", "confirmed"),
                "refined": ("◐", "narrowed"), "resolved": ("✓", "resolved"), "rejected": ("✗", "rejected"),

@@ -195,7 +195,7 @@ running the agent under test or making additional model calls.
 | --- | --- |
 | `start` | Find the right starting point; initialize `relai/` only when needed. |
 | `discover` | Understand requirements, risks and open questions from code, docs or traces. |
-| `review` | Build or adapt a project-owned app for reading traces, reviewing RELAI decisions and saving source-linked feedback. |
+| `review-app` | Build or adapt a project-owned app for reading traces, reviewing RELAI decisions and saving source-linked feedback. |
 | `eval` | Build and review tests, import a benchmark, or establish a baseline. |
 | `improve` | Investigate failures and compare scoped changes against existing evidence. |
 | `loop` | Continue learning and improving as new traces, answers or tests arrive. |

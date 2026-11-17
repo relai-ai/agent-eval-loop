@@ -1,6 +1,6 @@
 ---
 name: discover
-description: Identify requirements, risks and open questions for an AI agent or LLM application from code, docs or traces; analyze failed runs, maintain its wiki, resolve questions and review risks. Excludes ordinary bugs outside an AI agent. Use review to build a review app.
+description: Identify requirements, risks and open questions for an AI agent or LLM application from code, docs or traces; analyze failed runs, maintain its wiki, resolve questions and review risks. Excludes ordinary bugs outside an AI agent. Use review-app to build a review app.
 ---
 
 # Discover requirements and risks
@@ -14,7 +14,7 @@ agent: its traces are coding sessions, and the team's instructions for coding ag
 requirements.
 
 For a request to build or adapt an interactive trace viewer, use the
-[review skill](../review/SKILL.md). Analysis alone stays here; a review app is not
+[review-app skill](../review-app/SKILL.md). Analysis alone stays here; a review app is not
 a prerequisite. Reuse source-linked human feedback from an existing app as evidence, keeping
 verdicts distinct from recorded behavior.
 

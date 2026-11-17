@@ -44,7 +44,7 @@ Project-owned copies have independent provenance and follow the template's
 | --- | --- | --- |
 | `start` | The request is routed, or needed managed state and a useful board exist | none (orientation) |
 | `discover` | Requirements, ranked falsifiable risks and open questions, every trace-derived claim cited | Risks reviewed, consequential open questions answered or deferred |
-| `review` | A project-owned app for traces and source-linked feedback, and for the decisions other skills ask the user (risks, questions, scenarios, grader checks, candidates) | External data movement, broader hosting or consequential review decisions when not already authorized |
+| `review-app` | A project-owned app for traces and source-linked feedback, and for the decisions other skills ask the user (risks, questions, scenarios, grader checks, candidates) | External data movement, broader hosting or consequential review decisions when not already authorized |
 | `eval` | Harness (first time), then frozen, reviewed tests that can fail and pass fairly; honest runs that show where the agent stands | Scenarios and grader preview |
 | `improve` | Direct fixes with bounded evidence, regression checks, or measured improvement against an agreed objective | Improvement agreement, unless existing instructions cover it |
 | `loop` | discover → eval → improve as new evidence arrives, with agent-chosen experiments per iteration | One agreement covers delegated decisions; measurement changes are controlled |
@@ -63,7 +63,7 @@ shaped these choices:
 | Choice | Evidence |
 | --- | --- |
 | A `loop` skill composes the others under one contract and a locked verification kernel, asking only about ambiguity, conflicts, safety or policy | The value is a system that keeps improving with little human time; repeating covered approvals would interrupt a long run |
-| A standalone `review` skill builds or adapts a project-owned review app, leaving the UI stack and adapters to the coding agent | Trace annotation works independently of discovery or eval setup; related findings, questions and evals can be reviewed beside evidence without automatically changing requirements or scores |
+| A standalone `review-app` skill builds or adapts a project-owned review app, leaving the UI stack and adapters to the coding agent | Trace annotation works independently of discovery or eval setup; related findings, questions and evals can be reviewed beside evidence without automatically changing requirements or scores |
 | Few skills, with specialized work (benchmarks, mocks, shared evaluators) as references inside them | Users could not tell which of many skills to use or in what order |
 | `start` routes from the request and existing infrastructure, with useful next actions | Without prior RELAI knowledge the user would not know the order |
 | Useful knowledge and state in project-owned records, with `relai/` as the default | Users need inspectable context for future development; artifacts are maintained for that value, not as prerequisites to every answer |

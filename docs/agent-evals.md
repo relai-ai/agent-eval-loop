@@ -22,7 +22,7 @@ Durable findings update EvalsWiki when they help future work. The wiki is not a 
 ## Review traces in an app
 
 ```text
-Use RELAI's review skill to build a review app for ./traces
+Use RELAI's review-app skill to build a review app for ./traces
 with hotkeys, filters and feedback on individual steps
 ```
 
