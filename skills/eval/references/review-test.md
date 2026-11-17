@@ -10,12 +10,15 @@ Missing RELAI filenames alone are not a finding; verify the same evidence and gu
 
 Read: `relai/README.md` and `relai/docs/files.md`; the test directory (`task.toml`, `README.md`, scenario and input files,
 everything under `tests/`); any wiki pages it covers; and the request, run log or feedback it was
-built from, if given. Do not read the author's notes or reasoning.
+built from, if given. Factual manifests, source identities, approvals and run records are permitted;
+do not read the author's diagnoses, reasoning or proposed review conclusions. Use existing records
+rather than require another artifact.
 
 Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 
 1. **Measures the stated behavior.** The scenario actually exercises it, and the evaluators reward
-   exactly it, not something adjacent or easier.
+   exactly it, not something adjacent or easier. Valid alternative paths are accepted when they
+   exercise the same challenge; completion without that challenge does not prove the capability.
 2. **No answer in the input.** The agent-facing input holds only the original task and its
    context: no expected answer, diagnosis, root cause, or suggested fix. When used, a simulated user's
    instructions hold the user's goal and knowledge, never the expected agent behavior.
@@ -25,7 +28,8 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    No keyword or regex check stands in for meaning, no judge decides a fact code could check, and
    independent criteria are not merged into one score where one failure could hide another. A
    benchmark scorer that its `README.md` and `decisions.md` record as user-supplied or approved
-   passes this check as long as it is applied exactly.
+   passes this check as long as it is applied exactly. Check the planned repeated execution cost
+   and any reduced judge context against [test-design](test-design.md#execution-cost).
 5. **Can fail, fairly.** An agent without the behavior would score low; a missing required
    deliverable scores the minimum; a structurally broken recording errors instead of scoring
    zero; nothing rewards activity in place of outcome.

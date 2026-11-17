@@ -170,7 +170,7 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 | `python3 relai/bin/check_wiki.py [relai]` | After changing the wiki or a test's `covers`; checks typed pages, a present wiki index and managed attachment JSON syntax, not factual fidelity |
 | `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | During or after a run; concise by default (a run in progress also shows trials finished of the total and not finished), `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`) and descriptive `noise`/`se` |
 | `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run; `--reason` to re-freeze a change, `--begin-repair --reason` to open an agreed repair, `--check` to report |
-| `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer |
+| `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|exclude\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer, `exclude` cases that cannot be scored fairly |
 
 Example scripts (a Harbor agent and launcher, a native runner, an API judge, a trace triager and
 a code-evaluator helper) live in the plugin's `examples/`. None is part of `relai/` until an
@@ -290,23 +290,71 @@ RELAI is something the user steers, not a black box.
   walkthrough without requiring sign-off on an analysis. For review items, explain the judgments
   needed and recommend a manageable first batch; offer a guided chat walkthrough or a suitable
   existing app, with the relevant location and what to do there. File links supplement this
-  invitation rather than assigning an unexplained document-reading task. Check the app's actual
-  capabilities: if review or annotation is missing, offer to extend it, or to build a review app
-  when the workload warrants one, using the `trace-review` skill. Keep chat available and do not
-  make app construction a prerequisite. When approval is needed, ask for the current subset's
-  concrete decision rather than only offering help later.
+  invitation rather than assigning an unexplained document-reading task. When traces need the
+  user's review, such as runs to give feedback on or the source episodes behind findings, check
+  the existing app's actual capabilities and offer a review app (the `trace-review` skill), even
+  for a few traces. When more traces need review than the [review app threshold](#defaults) and
+  no existing app supports that review, build or extend one with the `trace-review` skill without
+  waiting for an answer, then tell the user where it is and what to review there. Keep chat
+  available and do not make the app a prerequisite. When approval is needed, ask for the current
+  subset's concrete decision rather than only offering help later.
 - **Updates.** Lead with the answer or decision, uncertainty and the next useful action; put
   optional future mechanics and supporting detail afterward or in existing files. When another
   action is useful, name it and why; a completed request need not be routed into another stage.
   Update `STATUS.md` when using RELAI-managed state.
+- **Closing summary.** When a skill's work for the request ends, tell the user what you produced
+  and how you produced it. Name each thing you made or changed (for example evals, tasks, graders,
+  run results, wiki pages, a review app or changes to the agent) and where it lives. Describe the
+  process at a high level: the sources you examined, how you checked the work (such as grader
+  previews, pilot runs or independent review) and what the user approved or delegated. Say how
+  thorough it was: what it covered, what it left out or could not check, and how much evidence
+  supports each result, with counts read from records. Explain resource-limited outcomes and
+  useful follow-up under [resources and expectations](#resources-and-expectations).
+  Keep it short enough to read at a glance
+  and link to files for detail.
 - **Counts come from records.** Trial counts, outcomes and spend that you report or put on the
   board are read from the runs' recorded results (`bin/summarize.py` reads them for the supplied
   runners, including runs in progress), never from memory or estimates. Missing cost records are
-  unknown, not zero. Do not report a percentage complete or time remaining.
+  unknown, not zero. Remaining authorized allowance may be reported from recorded limits and
+  usage, with its unit and scope. It is not a completion forecast. Do not report a percentage
+  complete or an unsupported estimate of time to completion.
 - **Cost before spend.** Before any paid run, state trials × attempts and the cost and time per
   trial, measured from a previous trial when one exists, otherwise marked as an estimate. For a
   long run, tell the user how to follow it themselves (`bin/summarize.py` on its run directory or
   the runner's own output), and report when it ends.
+
+### Resources and expectations
+
+Reuse the covering agreement and ask only about missing choices that affect the work. Establish
+what the current allowance should deliver: a verified result, useful exploration followed by a
+checkpoint, or another outcome the user specifies. Separately establish whether the allowance is
+the full allocation or another round may be considered, when that affects planning. An ordinary
+improvement request defaults to pursuing a verified improvement within current authorization.
+Record consequential choices in the existing agreement or decision record; no extra form is needed.
+
+Name the relevant limits and what they cover, such as money, active work time, elapsed time or
+attempts, and whether they are cumulative or additional. Do not require every kind of cap for
+every task. Keep experiment resources separate from the evaluated agent's runtime limits; changing
+the latter can change what is measured and needs the applicable authorization and comparability checks.
+
+Before substantial spending, use comparable records or an authorized pilot to assess feasibility.
+Explain when the allowance is likely to support only a narrower result, with estimates and their
+uncertainty distinguished from recorded usage. Recommend a useful choice, such as narrower scope,
+different measurement effort or a justified extension. Continue covered work while awaiting a
+choice when it does not depend on the answer. Do not repeat budget questions that existing
+instructions settle.
+
+Reassess when observed costs, failures or another proposed revision materially change what can be
+established, including the capacity left for final verification. Raise that tradeoff while the
+user can still redirect the work. All caps remain binding until changed by authorization: a
+possible follow-up does not permit overruns, transfers between pools or resets.
+
+At a limit or stopping point, report which constraint mattered, what was established and what
+remains unsupported. Recommend further resources only for a credible investigation or measurement
+that could change the decision, explaining the expected learning and uncertainty rather than
+promising an improvement. If broken measurement or a missing approach is the bottleneck, explain
+what must change before more repetitions would help. An inconclusive result or no accepted change
+can be the appropriate outcome.
 
 ### Host notes
 
@@ -326,6 +374,7 @@ Starting points, not rules. Change them here or in an agreement, and record why 
 | Judge flagged for low agreement | below 90% over 3 or more judge checks |
 | Judge checks per new or changed judge | 1 or 2 (a high and a low score) |
 | Traces that call for triage instead of reading each in full | about 50 or more |
+| Review app threshold: traces to review above which RELAI builds a review app without asking | 5 |
 | Triage pilot before a full run | 20 traces |
 | Benchmark fidelity pilot | 3 to 5 cases |
 | Benchmark split small enough to run whole | under about 50 cases |

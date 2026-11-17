@@ -10,8 +10,10 @@ Missing RELAI filenames alone are not a finding; verify the same evidence and gu
 Read: `relai/README.md` (its Terms define comparable runs, splits and the agreement); the diff of the change; the baseline and after summaries
 (`summarize.py` output); development target tests and regression checks (their `task.toml`, inputs
 and evaluators); and development trajectories from both runs where the result is unclear.
-Use only permitted aggregate summaries for held-out or final evidence. Do not read the author's
-notes or reasoning.
+Use only permitted aggregate summaries for held-out or final evidence. You may read factual
+agreements, source identities, run manifests and selection history, including factual sections of
+`changes.md`. Do not read the author's diagnoses, reasoning or proposed review conclusions.
+Use existing records; a separate manifest is not required.
 
 If protected contents need inspection, use a separate reviewer authorized to see them. Its report
 to the optimizer gives assessment outcomes, counts and limitations, not protected inputs, rubric
