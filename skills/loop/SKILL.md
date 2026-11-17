@@ -72,7 +72,9 @@ stage decisions it covers. It is not approval to skip an uncovered consequential
 - **Length:** the most iterations to run, or "until there is nothing new"; and any experiment
   limit per iteration.
 - **Budget and evidence:** a ceiling for the loop and any per-iteration limits, covering agent
-  trials, judges and triage. Measurement effort is chosen per decision ([eval: measure](../eval/references/measure.md)).
+  trials, judges and triage. Reuse the [shared resource expectations](../start/template/README.md#resources-and-expectations)
+  for the intended outcome at each checkpoint and whether follow-up may be considered.
+  Measurement effort is chosen per decision ([eval: measure](../eval/references/measure.md)).
 - **When to ask the user** (recommend: only these): user intent is genuinely ambiguous; two
   requirements conflict; a behavior is irreversible or safety-sensitive; a judge and the user's
   past verdicts disagree; a product-policy decision is needed. They are asked as `relai/README.md`

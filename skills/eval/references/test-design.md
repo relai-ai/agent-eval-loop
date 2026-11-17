@@ -17,7 +17,10 @@ How to design each test for the `eval` skill, whose Rules bind; this adds the me
 - When the recording lacks the structure a check reads, let the check raise (an error), never
   score it as zero.
 - Use a simulated user (a model playing the user) when the behavior depends on how a user
-  responds.
+  responds. Check valid alternative paths, including proactive answers, against the user's goal
+  and the intended challenge. Do not require an incidental dialogue sequence when equivalent
+  behavior exercises the same challenge. If the challenge was not exercised, report that limit
+  rather than treating completion alone as evidence of the capability.
 - Run and score tests as [eval: measure](measure.md) describes.
 
 ## Ask the user
@@ -51,6 +54,16 @@ Ask of each criterion: could two correct replies differ in how they satisfy it?
   own.
 - When the outcome lives in exported state rather than the reply (a database row, a mock call),
   check the state with code, not the agent's description of it.
+
+### Execution cost
+
+Consider the expected repeated cost of agent execution and grading before committing to a test
+portfolio. Use representative records or an authorized pilot and the
+[shared resource policy](../../start/template/README.md#resources-and-expectations).
+Reuse deterministic processing and shared evidence extraction where useful. Separate criteria
+need distinguishable scores and feedback, but need not duplicate model work. Use only relevant
+judge context when meaningful pass/fail examples validate that reduction; retain inspectable
+source evidence. Efficiency changes must preserve measurement meaning or follow controlled repair.
 
 ### Choosing what to evaluate from a run and feedback
 

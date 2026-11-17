@@ -220,8 +220,10 @@ avoid duplicated side effects or unnecessary repeated spending.
 ### 35. Match measurement effort to the decision
 
 Choose measurement effort based on consequences and uncertainty within the authorized
-budget. Reserve resources for verification. Report an inconclusive result when the evidence
-cannot support a decision.
+resources. Reserve resources for verification. Establish what the current allowance should
+deliver, explain when limits restrict that outcome, and recommend an extension only when a
+credible next step could help. Report an inconclusive result when the evidence cannot support
+a decision.
 
 ### 36. Report in layers
 

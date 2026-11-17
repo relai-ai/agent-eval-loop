@@ -26,6 +26,8 @@ Goal: a clear, honest picture of how the agent behaves on the selected tests.
   [harbor-notes](harbor-notes.md). Pass only required variables, and judge trials by their result
   files, never by exit status.
 - Use a representative prior trial, or a pilot when needed, to estimate batch duration and cost.
+  Apply the [shared resource policy](../../start/template/README.md#resources-and-expectations)
+  when feasibility, a binding limit or a proposed follow-up affects the decision.
 - Never change the agent or the tests while measuring. If a test looks broken, say so; fixing it
   is Build mode's job and follows the *Frozen tests* rule.
 - Report scored passes and failures, evaluator errors, runtime failures and unscored runs
