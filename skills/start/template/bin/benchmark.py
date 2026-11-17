@@ -10,6 +10,7 @@ Usage:
   python3 relai/bin/benchmark.py batch <id> --n 20        # the next working batch (recorded), one id per line
   python3 relai/bin/benchmark.py record <id> <run dir>... --agent <revision>
   python3 relai/bin/benchmark.py fidelity <id> <run dir>... --reference scores.jsonl
+  python3 relai/bin/benchmark.py exclude <id> --list excluded.txt   # lines "<case id> <reason>"
   python3 relai/bin/benchmark.py coverage <id> [--json]
 
 The coverage record is relai/work/benchmarks/<id>/ledger.json. `init` reads one JSON object per
@@ -23,7 +24,11 @@ that failed before (to fix), about 20% that passed before (to catch regressions)
 never played (category-balanced); when one kind runs out, the others fill in. `record` adds a run's
 scores (Harbor trials, or relai-results.jsonl from a wrapped benchmark) and refuses results from a
 different benchmark commit. `fidelity` checks RELAI's per-case scores against the benchmark's own
-scorer on the same runs. Standard library only; never calls a model or runs the agent.
+scorer on the same runs. `exclude` marks cases that cannot be scored fairly (for example, the
+benchmark's reference solution fails on them) with a reason: they stay in the record with their
+plays but leave batches, role counts, means and final runs for every agent revision. When
+every case maps to final, `init` prints a notice: there is nothing to improve on until a split
+assignment is supplied. Standard library only; never calls a model or runs the agent.
 """
 
 from __future__ import annotations
@@ -149,9 +154,16 @@ def init(args, relai_dir: Path) -> int:
     counts = {r: sum(v["role"] == r for v in cases.values()) for r in ROLES}
     print(f"{args.id}: {len(cases)} cases - " + ", ".join(f"{r} {n}" for r, n in counts.items())
           + f"; held-out sample {len(ledger['held_out_sample'])}")
+    if counts["final"] == len(cases):
+        print("notice: every case is final, so no case can be used for development; agree a split "
+              "assignment and supply it in each case's split field")
     for note in notes:
         print(f"note: {note}")
     return 0
+
+
+def is_excluded(case: dict) -> bool:
+    return bool(case.get("excluded"))
 
 
 def latest(case: dict) -> dict | None:
@@ -161,15 +173,15 @@ def latest(case: dict) -> dict | None:
 def batch(args, relai_dir: Path) -> int:
     ledger = load(relai_dir, args.id)
     cases = ledger["cases"]
-    dev = [c for c, v in cases.items() if v["role"] == "development"]
+    dev = [c for c, v in cases.items() if v["role"] == "development" and not is_excluded(v)]
     unplayed_ids = {c for c in dev if not cases[c]["plays"]}
     if args.case_ids is not None:
         chosen = args.case_ids
         if len(chosen) != len(set(chosen)):
             fail("duplicate case ids")
-        invalid = [cid for cid in chosen if cid not in cases or cases[cid]["role"] != "development"]
+        invalid = [cid for cid in chosen if cid not in dev]
         if invalid:
-            fail("case ids must name development cases: " + ", ".join(invalid))
+            fail("case ids must name development cases that are not excluded: " + ", ".join(invalid))
     else:
         n = args.n
         if n < 1:
@@ -232,7 +244,7 @@ def record(args, relai_dir: Path) -> int:
         print(f"error: results come from benchmark commit(s) {', '.join(wrong)}, not {ledger['commit']}; "
               "a different version is a different benchmark", file=sys.stderr)
         return 2
-    run_name, final_scores, unknown, unscored = Path(args.runs[0]).name, [], [], 0
+    run_name, final_scores, unknown, unscored, excluded = Path(args.runs[0]).name, [], [], 0, 0
     for cid, test in sorted(found.items()):
         case = ledger["cases"].get(cid)
         if case is None:
@@ -244,7 +256,9 @@ def record(args, relai_dir: Path) -> int:
         case["plays"].append({"run": run_name, "agent": args.agent, "score": test["mean"],
                               "attempts": test["attempts"], "scored": test["scored"], "at": now(),
                               "cost_usd": cost / test["attempts"] if cost is not None and test["attempts"] else None})
-        if case["role"] == "final" and test["mean"] is not None:
+        if is_excluded(case):
+            excluded += 1
+        elif case["role"] == "final" and test["mean"] is not None:
             final_scores.append(test["mean"])
     if final_scores:
         ledger["final_runs"].append({"at": now(), "agent": args.agent, "run": run_name, "n": len(final_scores),
@@ -252,11 +266,45 @@ def record(args, relai_dir: Path) -> int:
     save(relai_dir, ledger)
     print(f"recorded {len(found) - len(unknown)} case(s) from {run_name} ({unscored} without a score: "
           "rerun those, they are not failures)")
+    if excluded:
+        print(f"note: {excluded} excluded case(s) recorded but not counted")
     if unknown:
         print(f"warning: {len(unknown)} case(s) not in the record: {', '.join(unknown[:5])}")
     if final_scores:
         print(f"note: final split played ({len(final_scores)} case(s)); this is final run "
               f"#{len(ledger['final_runs'])}. Report it; never choose a change from it.")
+    return 0
+
+
+def exclude(args, relai_dir: Path) -> int:
+    ledger = load(relai_dir, args.id)
+    cases, aliases, chosen = ledger["cases"], case_ids(ledger), {}
+    for n, line in enumerate(Path(args.list).read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        raw, _, reason = line.strip().partition(" ")
+        cid = aliases.get(raw)
+        if cid is None:
+            fail(f"line {n}: unknown case id {raw!r}")
+        if not reason.strip():
+            fail(f"line {n}: give a reason after the case id")
+        if cid in chosen:
+            fail(f"line {n}: case {cid!r} is listed twice")
+        if is_excluded(cases[cid]):
+            fail(f"line {n}: case {cid!r} is already excluded ({cases[cid]['excluded']['reason']})")
+        chosen[cid] = reason.strip()
+    if not chosen:
+        fail("no cases to exclude")
+    at = now()
+    for cid, reason in chosen.items():
+        cases[cid]["excluded"] = {"reason": reason, "at": at}
+    save(relai_dir, ledger)
+    played = sorted(c for c in chosen if cases[c]["plays"])
+    print(f"excluded {len(chosen)} case(s); {sum(is_excluded(v) for v in cases.values())} excluded in total")
+    if played:
+        print(f"note: {len(played)} excluded case(s) were already played ({', '.join(played[:5])}); this changes "
+              "what earlier summaries counted, so record the reason in decisions.md and compare revisions "
+              "only on the remaining cases")
     return 0
 
 
@@ -309,12 +357,13 @@ def coverage(ledger: dict) -> dict:
     out = {"benchmark": ledger["benchmark"], "commit": ledger.get("commit"), "mode": ledger.get("mode"), "roles": {},
            "fidelity": ledger.get("fidelity"), "final_runs": ledger.get("final_runs", [])}
     for role in ROLES:
-        ids = [c for c, v in cases.items() if v["role"] == role]
+        ids = [c for c, v in cases.items() if v["role"] == role and not is_excluded(v)]
         scores = revision_scores([latest(cases[c]) for c in ids])
         out["roles"][role] = {"total": len(ids), "played": sum(1 for c in ids if cases[c]["plays"]),
                               **scores}
-    sample = revision_scores([latest(cases[c]) for c in ledger.get("held_out_sample", []) if c in cases])
-    out["held_out_sample"] = {"n": len(ledger.get("held_out_sample", [])), **sample}
+    sample_ids = [c for c in ledger.get("held_out_sample", []) if c in cases and not is_excluded(cases[c])]
+    out["held_out_sample"] = {"n": len(sample_ids), **revision_scores([latest(cases[c]) for c in sample_ids])}
+    out["excluded"] = sum(is_excluded(v) for v in cases.values())
     costs = [p.get("cost_usd") for v in cases.values() for p in v["plays"] if isinstance(p.get("cost_usd"), (int, float))]
     out["cost_per_case"] = statistics.fmean(costs) if costs else None
     return out
@@ -334,8 +383,9 @@ def coverage_line(cov: dict) -> str:
     final = f"run {len(finals)}× (last {finals[-1]['mean']:.2f}, {finals[-1]['at'][:10]})" if finals else "not run"
     fid = cov["fidelity"]
     fid_text = "fidelity not checked" if not fid else ("fidelity OK" if fid["ok"] else "FIDELITY FAILED")
+    excluded = f"; excluded {cov['excluded']}" if cov.get("excluded") else ""
     return (f"{cov['benchmark']} @ {str(cov['commit'] or '?')[:7]}: development {dev['played']}/{dev['total']} played "
-            f"({assessment(dev)}); held-out sample {held}; final {final}; {fid_text}")
+            f"({assessment(dev)}); held-out sample {held}; final {final}; {fid_text}{excluded}")
 
 
 def main() -> int:
@@ -367,6 +417,9 @@ def main() -> int:
     p.add_argument("id")
     p.add_argument("runs", nargs="+")
     p.add_argument("--reference", required=True, help="JSONL of {case, score} from the benchmark's own scorer")
+    p = sub.add_parser("exclude")
+    p.add_argument("id")
+    p.add_argument("--list", required=True, help='text file with one "<case id> <reason>" per line')
     p = sub.add_parser("coverage")
     p.add_argument("id")
     p.add_argument("--json", action="store_true")
@@ -383,6 +436,8 @@ def main() -> int:
         return record(args, relai_dir)
     if args.command == "fidelity":
         return fidelity(args, relai_dir)
+    if args.command == "exclude":
+        return exclude(args, relai_dir)
     cov = coverage(load(relai_dir, args.id))
     print(json.dumps(cov, indent=1) if args.json else coverage_line(cov))
     return 0

@@ -76,6 +76,12 @@ class SplitTest(unittest.TestCase):
         self.assertEqual(out.returncode, 2)
         self.assertEqual(ledger(self.repo), saved, "existing ledgers must not be silently migrated")
 
+    def test_a_benchmark_with_only_a_test_split_gets_a_notice(self):
+        out = self.init([{"id": f"c{i}", "split": "test"} for i in range(4)])
+        self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
+        self.assertIn("notice: every case is final", out.stdout)
+        self.assertNotIn("every case is final", self.init([{"id": "x", "split": "train"}]).stdout)
+
     def test_unknown_split_needs_a_mapping(self):
         rows = [{"id": "a", "split": "train"}, {"id": "b", "split": "holdout"}]
         out = self.init(rows)
@@ -253,6 +259,79 @@ class SamplingAndRecordTest(unittest.TestCase):
         self.assertEqual(cov["held_out_sample"]["agents"], [None])
         self.assertEqual(cov["held_out_sample"]["warning"], "unknown agent revision")
         self.assertEqual(json.loads(path.read_text()), saved, "coverage must not migrate legacy records")
+
+
+
+class ExcludeTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.repo = Repo()
+        rows = [{"id": f"d{i}", "split": "train"} for i in range(4)]
+        rows += [{"id": f"v{i}", "split": "validation"} for i in range(2)]
+        rows += [{"id": "repo/f#0", "split": "test"}, {"id": "f1", "split": "test"}]
+        out = self.repo.run("benchmark.py", "init", "bx", "--cases", cases_file(self.repo, rows), "--source", "../bench",
+                            "--commit", "abc1234", "--held-out-n", "2")
+        assert out.returncode == 0, out.stdout + out.stderr
+
+    def tearDown(self) -> None:
+        self.repo.close()
+
+    def exclude(self, text: str):
+        path = self.repo.write("excluded.txt", text)
+        return self.repo.run("benchmark.py", "exclude", "bx", "--list", str(path))
+
+    def test_excluded_cases_leave_batches_roles_means_and_final_runs(self):
+        out = self.exclude("d0 reference solution fails\nv0 reference solution fails\nrepo/f#0 image missing\n")
+        self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
+        self.assertIn("excluded 3 case(s)", out.stdout)
+        self.assertNotIn("already played", out.stdout)
+        saved = ledger(self.repo)
+        self.assertEqual(saved["cases"]["repo_f_0"]["excluded"]["reason"], "image missing")
+        self.assertEqual(saved["cases"]["d0"]["role"], "development")
+        self.assertNotIn("d0", self.repo.run("benchmark.py", "batch", "bx", "--n", "10").stdout.split())
+        self.assertNotEqual(self.repo.run("benchmark.py", "batch", "bx", "--case-ids", "d0").returncode, 0)
+        run = wrapped_run(self.repo, "r1", [("d0", "train", "scored", 0.0), ("d1", "train", "scored", 1.0),
+                                            ("v0", "validation", "scored", 0.0), ("v1", "validation", "scored", 1.0),
+                                            ("repo/f#0", "test", "scored", 0.0), ("f1", "test", "scored", 1.0)])
+        recorded = self.repo.run("benchmark.py", "record", "bx", run, "--agent", "main@1")
+        self.assertEqual(recorded.returncode, 0, recorded.stdout + recorded.stderr)
+        self.assertIn("3 excluded case(s) recorded but not counted", recorded.stdout)
+        saved = ledger(self.repo)
+        self.assertEqual(saved["cases"]["d0"]["plays"][-1]["score"], 0.0)
+        self.assertEqual(saved["final_runs"][-1]["n"], 1)
+        self.assertEqual(saved["final_runs"][-1]["mean"], 1.0)
+        cov = json.loads(self.repo.run("benchmark.py", "coverage", "bx", "--json").stdout)
+        self.assertEqual(cov["excluded"], 3)
+        self.assertEqual(cov["roles"]["development"]["total"], 3)
+        self.assertEqual(cov["roles"]["development"]["mean"], 1.0)
+        self.assertEqual(cov["roles"]["held-out"]["mean"], 1.0)
+        self.assertEqual(cov["held_out_sample"]["n"], 1)
+        self.assertIn("; excluded 3", self.repo.run("benchmark.py", "coverage", "bx").stdout)
+
+    def test_excluding_a_played_case_asks_for_a_recorded_reason(self):
+        run = wrapped_run(self.repo, "r1", [("d0", "train", "scored", 0.0)])
+        self.assertEqual(self.repo.run("benchmark.py", "record", "bx", run, "--agent", "main@1").returncode, 0)
+        out = self.exclude("d0 verifier depends on network access\n")
+        self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
+        self.assertIn("already played (d0)", out.stdout)
+        self.assertIn("decisions.md", out.stdout)
+
+    def test_invalid_exclusions_are_atomic(self):
+        path = self.repo.relai / "work/benchmarks/bx/ledger.json"
+        before = path.read_bytes()
+        for text in ("d0 ok\nunknown broken\n", "d0 ok\nd1\n", "d0 ok\nd0 again\n", "\n"):
+            with self.subTest(text=text):
+                self.assertNotEqual(self.exclude(text).returncode, 0)
+                self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(self.exclude("d0 broken\n").returncode, 0)
+        again = self.exclude("d0 broken\n")
+        self.assertNotEqual(again.returncode, 0)
+        self.assertIn("already excluded", again.stdout + again.stderr)
+
+    def test_ledgers_without_exclusions_keep_their_coverage(self):
+        cov = json.loads(self.repo.run("benchmark.py", "coverage", "bx", "--json").stdout)
+        self.assertEqual(cov["excluded"], 0)
+        self.assertEqual(cov["roles"]["development"]["total"], 4)
+        self.assertNotIn("excluded", self.repo.run("benchmark.py", "coverage", "bx").stdout)
 
 
 if __name__ == "__main__":

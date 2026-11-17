@@ -26,9 +26,11 @@ For that interoperability, a native runner writes what a Harbor job writes, as f
 
 A code evaluator may call the benchmark's own grader, but still writes a score and feedback per
 declared evaluator, or an error; a grader that could not run is an error, never a zero. A trial
-whose run failed has `verifier_result` null and an `exception_info`. Never trust the runner's
-exit status; the files decide. A trial rerun after an interruption starts from an empty
-directory.
+whose run failed has `verifier_result` null and an `exception_info`. The example runner's
+`--timeout` stops the whole trial, scoring included; when the agent's own time limit is scored
+(the `eval` skill's benchmark guidance), the per-trial command enforces that limit and still runs
+the scorer, keeping `--timeout` as an outer bound. Never trust the runner's exit status; the files
+decide. A trial rerun after an interruption starts from an empty directory.
 
 Runs from different runners, or native runs with different `runner_id`s, produce comparison notices. Keep
 the `runner_id` for a before/after pair whose commands differ only in paths or the candidate's

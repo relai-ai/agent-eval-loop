@@ -170,7 +170,7 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 | `python3 relai/bin/check_wiki.py [relai]` | After changing the wiki or a test's `covers`; checks typed pages, a present wiki index and managed attachment JSON syntax, not factual fidelity |
 | `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | During or after a run; concise by default (a run in progress also shows trials finished of the total and not finished), `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`) and descriptive `noise`/`se` |
 | `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run; `--reason` to re-freeze a change, `--begin-repair --reason` to open an agreed repair, `--check` to report |
-| `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer |
+| `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|exclude\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer, `exclude` cases that cannot be scored fairly |
 
 Example scripts (a Harbor agent and launcher, a native runner, an API judge, a trace triager and
 a code-evaluator helper) live in the plugin's `examples/`. None is part of `relai/` until an

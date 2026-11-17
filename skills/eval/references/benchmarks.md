@@ -9,17 +9,31 @@ keys by name). The `eval` skill's rules apply to every case a benchmark adds.
 Goal: a benchmark, usually from another repository and often large, scores the agent exactly as
 the benchmark itself would, with its splits respected, and a small budget still covers it over time.
 
+The steps below and `benchmark.py` are the default way to reach this goal. Benchmarks bring
+their own formats, runners and quirks: adapt, extend or replace these defaults to fit them under
+the shared [adaptation policy](../../start/template/README.md#adapting-supplied-implementations).
+What stays fixed is listed under *Rules*: the benchmark's own scorer, its pinned version, the
+agreed split roles and protection of final evidence, and errors kept apart from scores. A change
+to any of those changes what is measured and follows the controlled repair process.
+
 ## Done when
 
-- `relai.toml` has a `[benchmarks.<id>]` entry (`relai/docs/files.md`): source and
-  commit, mode (import or wrap), format or run command, scorer, case id, split and category fields.
+- The benchmark is declared where the project's runs can find it, by default a
+  `[benchmarks.<id>]` entry in `relai.toml` (`relai/docs/files.md`): source and commit, mode
+  (import or wrap), format or run command, scorer, case id, split and category fields.
 - `relai/benchmarks/<id>/README.md` says where the cases come from (repository and commit), how
-  they reach the agent, how they are scored, and how the benchmark's splits map to RELAI's roles.
-- `python3 relai/bin/benchmark.py init <id> ...` wrote the coverage record, and you showed the
-  user the supplied split counts and any proposed held-out sample, its distribution and limits;
-  any derived split was explicitly agreed.
-- **The fidelity check passed** (`benchmark.py fidelity`): on a small pilot (Defaults), RELAI's
-  per-case scores equal the benchmark's own scorer's on the same runs. No score counts before this.
+  they reach the agent, how they are scored, how the benchmark's splits map to RELAI's roles, and
+  which execution settings and scoring conventions apply (*Rules*).
+- Every case has a recorded role and a coverage record exists, by default from
+  `python3 relai/bin/benchmark.py init <id> ...`. You showed the user the split counts and any
+  proposed held-out sample, its distribution and limits; any derived or supplied split assignment
+  was explicitly agreed.
+- When the benchmark ships reference solutions, they were run under the recorded execution
+  settings, and cases whose reference still fails after rerunning infrastructure errors are
+  excluded with a reason (`benchmark.py exclude` by default). You showed the user the excluded
+  counts per split.
+- **Fidelity holds:** on a small pilot (Defaults), RELAI's per-case scores equal the benchmark's
+  own scorer's on the same runs (`benchmark.py fidelity` by default). No score counts before this.
 - For import mode, a fresh test review ([review-test](review-test.md)) approved the template and one
   generated case, and `freeze.py` ran on every generated case before its first real run.
 - `relai/STATUS.md` shows the benchmark's coverage line.
@@ -29,6 +43,13 @@ the benchmark itself would, with its splits respected, and a small budget still 
 - **The benchmark is read-only and pinned.** Never edit the benchmark repository or its cases;
   handle awkward cases in code. Record the commit. A new benchmark version is a new benchmark id
   (for example `<name>-<short commit>`) with its own coverage record, never mixed with the old.
+- **You may adapt how cases run, not what they contain.** Settings that change how cases run,
+  but not what the agent is asked or how it is scored, belong in the runner or adapter: for
+  example no network for the agent, a mirror of an image with the same contents, or resource and
+  idle limits. Record each with its reason in the benchmark's README and check it with the
+  reference solutions when they exist. Say so when comparing with results others report under
+  different settings. Anything that changes instructions, tests, the scorer or repository
+  contents is a new benchmark id.
 - **Its scorer is the truth.** When the benchmark has a scorer, apply exactly that, by running it
   or porting its exact logic; never substitute your own. When cases carry a prose rubric and no
   scorer exists, score it with a judge against that column, and say so in the README.
@@ -47,8 +68,22 @@ the benchmark itself would, with its splits respected, and a small budget still 
   cases remain development; without a validation split, do not carve out a held-out set automatically. Only when
   explicitly agreed, `benchmark.py init --derive-splits` derives them (proportions: Defaults).
   Existing ledgers remain unchanged.
-- **Errors are not scores.** A case that crashed, timed out or broke the benchmark's own
-  environment is a runtime failure or evaluator error, reported apart and rerun, never a zero.
+  A benchmark that ships only a test split maps entirely to final, which leaves nothing to
+  improve on. Agree an assignment with the user (sizes, any stratification, seed), write it into
+  each case's `split` field before `init`, and record the method in the README. A combined
+  `category` (for example `<repository>|<difficulty>`) keeps sampling balanced across both.
+- **Errors are not scores; the agent's own limits are.** A case that crashed, broke the
+  benchmark's environment or hit an infrastructure limit (sandbox start, model provider, verifier
+  time) is a runtime failure or evaluator error, reported apart and rerun, never a zero. When the
+  agent reaches its own time or step limit and the benchmark's scorer grades what it left, score
+  it as that scorer does: rerunning such cases as errors hides a difference between revisions.
+  Record which exceptions count as infrastructure and how limit hits are scored in the README,
+  and report limit hits per agent revision.
+- **Excluded cases leave every comparison.** A case that cannot be scored fairly, such as one
+  whose reference solution fails, is excluded with its reason for every role and agent revision.
+  Never exclude a case because of agent results. A case found broken after it was played goes
+  through the controlled repair process with a line in `decisions.md`, and comparisons then use
+  the remaining cases.
 
 ## A benchmark given as a link
 
@@ -76,9 +111,10 @@ the benchmark itself would, with its splits respected, and a small budget still 
   measured, for the case ids given, and writes `relai-results.jsonl` into the run directory (one
   attempt per line: `benchmark`, `case`, `split`, `attempt`, `status`, `score` normalized to 0-1,
   `error`, `cost_usd`, `trajectory`, `benchmark_commit`; see `summarize.py`). Keep the
-  benchmark's own logs beside it. Map its error states to `runtime failure` or `evaluator error`,
-  never to a score. Run it where the benchmark expects to run (its containers, its environment
-  variables by name), contained as the *Containment* rule in `relai/README.md` requires.
+  benchmark's own logs beside it. Map its infrastructure error states to `runtime failure` or
+  `evaluator error`, never to a score, and the agent's own limit hits as the README records. Run
+  it where the benchmark expects to run (its containers, its environment variables by name),
+  contained as the *Containment* rule in `relai/README.md` requires.
 
 ## Fidelity first
 
