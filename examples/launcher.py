@@ -29,7 +29,8 @@ relay keeps it out if that matters for the agent under test.
 Exit status: 0 every turn recorded; 2 a configuration problem (scenario, simulated-user model or
 key); 3 the adapter failed (exited, sent nothing, or sent something other than {"reply": ...});
 4 the trajectory gained no new user and agent step on some turn; 5 the simulated user's model
-API failed.
+API failed; 6 the trajectory records that the agent's run did not finish normally
+(final_metrics.extra.run_status other than "ok"), so the attempt is invalid rather than scored.
 """
 
 from __future__ import annotations
@@ -58,6 +59,17 @@ def step_counts(path: str):
     except (OSError, ValueError):
         return None
     return (sum(1 for s in steps if s.get("source") == "user"), sum(1 for s in steps if s.get("source") == "agent"))
+
+
+def run_status(path: str):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    metrics = data.get("final_metrics") if isinstance(data, dict) else None
+    extra = metrics.get("extra") if isinstance(metrics, dict) else None
+    return extra.get("run_status") if isinstance(extra, dict) else None
 
 
 def post_json(url: str, headers: dict, body: dict, timeout: int = 300) -> dict:
@@ -181,6 +193,10 @@ def main() -> int:
             history += [{"role": "user", "content": message}, {"role": "assistant", "content": str(reply)}]
     finally:
         shutdown(adapter)
+    status = run_status(args.trajectory)
+    if status not in (None, "ok"):
+        log(f"the agent's run ended with status {status!r}; this attempt is invalid, not a score")
+        return 6
     return 4 if problems else 0
 
 

@@ -50,6 +50,11 @@ measured-improvement agreement, settle before editing:
 For managed measured work, record the agreement in `relai/records/improve/plan.json` (`relai/docs/files.md`),
 or use the covering loop contract. Existing project records may serve the same purpose when they
 preserve the agreement and evidence. Record consequential user choices alongside that agreement.
+State in the agreement what the planned evidence can decide: with one attempt per test, a
+difference smaller than the spread between attempts cannot separate two versions. Compare each
+candidate with `relai/bin/candidate.py compare`; when you keep a change whose target gains are
+within noise or rest on one attempt, say so in the report and in `relai/changes.md`. When a kept
+change fixes a confirmed risk, mark it `resolved` (`relai/docs/files.md`, *Wiki pages*).
 Tell the user when the authorized budget is exhausted, and ask before exceeding it.
 
 In an eval project for coding agents, the thing improved is a team's setup (`relai/setups/<id>/`:

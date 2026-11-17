@@ -868,8 +868,9 @@ class TemplateContentsTest(unittest.TestCase):
     def test_template_ships_only_the_shared_checkers(self):
         from helpers import TEMPLATE
         shipped = sorted(p.name for p in (TEMPLATE / "bin").iterdir() if p.name != "__pycache__")
-        self.assertEqual(shipped, ["_common.py", "benchmark.py", "check_task.py", "check_trajectory.py",
-                                   "check_wiki.py", "freeze.py", "summarize.py"])
+        self.assertEqual(shipped, ["_common.py", "benchmark.py", "candidate.py", "check_task.py",
+                                   "check_trajectory.py", "check_wiki.py", "freeze.py", "preview.py", "status.py",
+                                   "summarize.py"])
 
 
 class SplitTest(unittest.TestCase):

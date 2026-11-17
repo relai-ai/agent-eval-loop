@@ -1,3 +1,4 @@
 .env
 work/
+STATUS.json
 __pycache__/

@@ -8,7 +8,8 @@ description: Build and run agent-neutral coding evals from sessions, PRs or git 
 Read `relai/README.md`, or the bundled [contract](../start/template/README.md) when absent; use the
 [start skill](../start/SKILL.md) to set up `relai/` when it is missing. The methods below are
 starting points: adapt their order, tools and effort to the request. The rules say which guarantees
-bind.
+bind. Progress, terms and review follow the shared contract: `relai/bin/status.py`, the stages in
+`relai/docs/board.md` and the plain names in `relai/README.md`; tasks take the place of risks on the board.
 
 Here the agent under test is the coding agent the team uses, which Harbor installs at the model,
 version and setup the team uses. Often there is one such agent, and the first question is how it

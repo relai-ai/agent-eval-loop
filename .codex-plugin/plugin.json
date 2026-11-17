@@ -12,7 +12,7 @@
   "interface": {
     "displayName": "RELAI",
     "shortDescription": "Eval-driven improvement for AI agents.",
-    "longDescription": "RELAI turns your agent's code and traces into requirements, risks and evaluations, then measures changes against the behavior, cost or latency goal you agree. Seven skills: start, discover, trace-review (a trace review app you own, with saved feedback), eval, improve, loop, and coding-evals (evaluations for the coding agent your team uses, built from its sessions, pull requests and git history). Runs on Harbor or your own runner. Needs Python 3.11+; running evals needs a container engine or your own runner, and model access.",
+    "longDescription": "RELAI turns your agent's code and traces into requirements, risks and evaluations, then measures changes against the behavior, cost or latency goal you agree. Seven skills: start, discover, review (a review app you own for traces and RELAI decisions, with saved feedback), eval, improve, loop, and coding-evals (evaluations for the coding agent your team uses, built from its sessions, pull requests and git history). Runs on Harbor or your own runner. Needs Python 3.11+; running evals needs a container engine or your own runner, and model access.",
     "developerName": "RELAI",
     "category": "Productivity",
     "capabilities": [

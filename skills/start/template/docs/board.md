@@ -1,6 +1,9 @@
 # The board: `STATUS.md`
 
 When using managed state, update `STATUS.md` from recorded evidence for the current request.
+Run `bin/status.py` first: it writes `STATUS.json` (`files.md`) from the records and prints the
+plain-text status that opens every board and checkpoint, so every coding agent shows the same
+thing. Record the active stage with `bin/status.py --stage <skill> <n>` when it changes.
 Link measurements to the revision they describe; exploratory candidate results are not current
 incumbent results. Candidate runs still count toward spend.
 
@@ -17,6 +20,27 @@ sections below only when they have content:
 <count and the top items, or "Nothing">
 ```
 
+## Stages
+
+Number the active skill's stages from this table and mark the decision points (★). Each skill's
+detail (the risk board, the candidate lineage, the task list) is one line in the journey until
+expanded. Where the user has a plan of their own, show both: `Step 5 · eval 6/10`.
+
+| Skill | Stages |
+| --- | --- |
+| `discover` | 1 Scope · 2 Read sources · 3 Investigate · 4 Write wiki · 5 Review risks and questions ★ · 6 Report |
+| `eval` (build) | 1 Scope · 2 Scenarios ★ · 3 Harness (first use) · 4 Build tests · 5 Grader check ★ · 6 Independent review · 7 Freeze · 8 Run · 9 Judge checks and pass mark ★ · 10 Report |
+| `eval` (run) | 1 Select · 2 Cost ★ · 3 Run · 4 Judge · 5 Report |
+| `improve` | 1 Agreement ★ · 2 Diagnose · 3 Build candidate · 4 Measure · 5 Compare · 6 Keep or reject ★ · 7 Independent review · 8 Deliver |
+| `loop` (each iteration) | 1 Gather evidence · 2 Discover · 3 Eval · 4 Improve · 5 Digest ★ |
+| `coding-evals` | 1 Pick tasks · 2 Build · 3 Validate · 4 Independent review · 5 User sign-off ★ · 6 Freeze · 7 Pilot run · 8 Full run · 9 Report |
+| `review` | 1 Build or extend views · 2 The user reviews ★ · 3 Write answers back |
+
+Item states use the same glyphs everywhere, with letters as a fallback: `○` not started or
+suspected, `◐` in progress, `●` confirmed, `✓` done or resolved, `✗` rejected or failed,
+`⚠` needs attention. Items are risks in `discover`, `eval` and `improve`, tasks in `coding-evals`
+and case batches for benchmarks. A change within noise is labelled so, never shown as a gain.
+
 The sections:
 
 - **Current request and progress:** show the relevant capabilities (discovery, harness, tests,
@@ -26,6 +50,12 @@ The sections:
 - **Next action:** continue the user's request or resolve its actual missing prerequisite. A
   question blocks only dependent work. Show broader coverage, hardening or new trace analysis as
   optional opportunities, not mandatory next stages. If the request is complete, say so.
+- **Background work:** delegated reviewers, readers and runs still in progress, and what each is
+  waiting on.
+- **Candidates:** for `improve`, the lineage from the current version: each candidate's parent,
+  verdict with a one-line reason, the ideas it adds or drops, and its scores against the
+  current version. Above about 15 tests, show pass count, mean with spread and moved up, down or
+  held counts, and name regressions.
 - **Waiting on the user:** consequential decisions, feedback and approvals relevant to the
   request, including nonblocking open questions awaiting resolution or explicit deferral, and
   resource limits. Distinguish actual blockers from choices independent work can proceed without.
@@ -61,7 +91,8 @@ The sections:
   time, including candidates and delegated work. Missing resource measurements are unknown, not
   zero. Do not invent or duplicate a budget; show recent entries from `changes.md`. For runs,
   copy trial and judge spend from `bin/summarize.py` where it applies (`../README.md`, *Counts come
-  from records*), and add spend it does not read, such as triage, from its own records.
+  from records*), and add spend it does not read: paid helper calls outside runs from
+  `records/spend.jsonl`, and triage from its own records.
 
 Lengths of history and the agreement threshold are in `../README.md`, Defaults.
 

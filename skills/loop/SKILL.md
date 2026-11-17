@@ -133,8 +133,8 @@ verification, and measurement changes go through the locked kernel.
    generation of the agent.
 8. **Record and report.** Append the iteration to `state.json` (`relai/docs/files.md`), update `relai/STATUS.md`, and
    send the digest: what started the iteration, what was learned, tests added, experiments and
-   candidate outcomes, comparable measurements and their limits, spend so far; then ask the
-   waiting questions.
+   candidate outcomes, comparable measurements and their limits, spend so far (the review app's
+   Board and Candidates views show it when one exists); then ask the waiting questions.
    Use the shared [reviewable handoff](../start/template/README.md#working-with-the-user) for
    decisions or annotations: show their consequences and a useful chat or app review path.
    Revisit relevant deferred questions when new evidence or the current work warrants it;

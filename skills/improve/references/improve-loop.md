@@ -9,7 +9,8 @@ its purpose is to choose useful experiments and reach defensible decisions withi
 ## Protect the incumbent and keep evidence recoverable
 
 Keep an incumbent: the last accepted version, initially the user's code. Explore in isolated
-branches or worktrees under `relai/work/candidates/<name>/`, measuring into their `runs/` folders.
+branches or worktrees under `relai/work/candidates/<name>/` (`relai/bin/candidate.py new <name>`),
+measuring into their `runs/` folders.
 `relai/work/runs/` holds measurements of the user's checkout only. Measure another checkout as
 `relai/README.md`'s host notes describe. Without git, with uncommitted changes the user wants kept,
 or when the user does not want branches created, work in a copy of the project instead and record

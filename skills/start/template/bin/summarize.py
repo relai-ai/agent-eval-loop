@@ -660,8 +660,9 @@ def compare(base: dict, cand: dict) -> dict:
         noise = (math.sqrt(b["stdev"] ** 2 / b["scored"] + c["stdev"] ** 2 / c["scored"])
                  if b["scored"] > 1 and c["scored"] > 1 else None)
         change = observed_change(delta)
+        within = abs(delta) <= noise if delta is not None and noise is not None else None
         rows.append({"test": name, "baseline": b["mean"], "candidate": c["mean"], "delta": delta,
-                     "noise": noise, "observed_change": change,
+                     "noise": noise, "observed_change": change, "within_noise": within,
                      "baseline_scored": b["scored"], "candidate_scored": c["scored"],
                      "attempts": f"{b['scored']}/{c['scored']}",
                      "baseline_solved": solved_pair(b), "candidate_solved": solved_pair(c)})
@@ -746,6 +747,11 @@ def print_comparison(comparison: dict, details: bool) -> None:
     counts = {key: sum(row["observed_change"] == key for row in comparison["rows"])
               for key in ("higher", "lower", "equal", "not-comparable")}
     print("Matched tests: " + ", ".join(f"{key} {value}" for key, value in counts.items()))
+    spread = [r for r in comparison["rows"] if r.get("within_noise") is not None]
+    unknown = sum(r["delta"] is not None and r.get("within_noise") is None for r in comparison["rows"])
+    print(f"Within noise (difference no larger than 1 s.e. of the spread): {sum(r['within_noise'] for r in spread)} "
+          f"of {len(spread)} tests with spread on both sides"
+          + (f"; unknown for {unknown} test(s) with a single scored attempt on a side" if unknown else ""))
     total = comparison["overall"]
     if total:
         print(f"Overall, paired over {total['tests']} tests: the candidate scored higher on {total['higher']} and "

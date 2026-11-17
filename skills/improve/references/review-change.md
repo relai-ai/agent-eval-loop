@@ -13,7 +13,8 @@ and evaluators); and development trajectories from both runs where the result is
 Use only permitted aggregate summaries for held-out or final evidence. Do not read the author's
 notes or reasoning.
 
-If protected contents need inspection, use a separate reviewer authorized to see them. Its report
+If protected contents need inspection, use a separate reviewer authorized to see them
+(`relai/docs/files.md`, *Sealed reviews*). Its report
 to the optimizer gives assessment outcomes, counts and limitations, not protected inputs, rubric
 details, trajectory excerpts or content-specific fixes. Diagnose needed changes using development
 evidence; using protected material for diagnosis changes its assessment role and must be recorded

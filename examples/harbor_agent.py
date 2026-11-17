@@ -84,6 +84,11 @@ class EvalsAgent(BaseAgent):
             if name not in SETTINGS and len(env[name]) >= 8:
                 log = log.replace(env[name], f"[redacted {name}]")
         (self.logs_dir / "launcher.log").write_text(log, encoding="utf-8")
+        try:
+            await environment.download_file(source_path=TRAJECTORY, target_path=self.logs_dir / "trajectory.json")
+        except Exception as exc:
+            with (self.logs_dir / "launcher.log").open("a", encoding="utf-8") as handle:
+                handle.write(f"\ncould not download the trajectory for usage: {type(exc).__name__}: {exc}\n")
         self._record_usage(context)
         if result.return_code != 0:
             raise RuntimeError(f"launcher exited {result.return_code}; last output:\n{log[-4000:]}")

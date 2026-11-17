@@ -1,9 +1,9 @@
 ---
-name: trace-review
-description: Build or adapt a trace review app with persistent source-linked feedback, including review of findings, questions, scenarios or graders when needed. Use for a viewer or annotation UI; use discover for analysis without an app.
+name: review
+description: Build or adapt a project-owned review app for agent traces and RELAI decisions (risks, open questions, feedback, scenarios, grader checks, candidates), with persistent source-linked feedback. Use for a trace viewer, annotation UI or decision review screen; use discover for analysis without an app. Excludes code review of pull requests.
 ---
 
-# Build a trace review app
+# Build a review app
 
 Deliver a working app for inspecting recorded agent behavior and giving feedback against its
 source. This skill works independently: eval setup, Harbor, model access and RELAI-managed
@@ -37,6 +37,25 @@ reviews separately. Prefer existing trace and step IDs; otherwise derive stable 
 source identity and a source locator, not a filtered list position. Record source revision or
 content identity so changed or missing traces cannot silently inherit old feedback. Document
 the mapping and storage format in the generated app's own instructions.
+
+## Views for RELAI records
+
+When the project keeps RELAI records, the app is where the user makes the decisions other skills
+ask for (README, *Review app at decision points*). Build only the views the current decision
+needs and extend the same app later; read everything from records at runtime, never from copies:
+
+- **Board:** `STATUS.json` (`bin/status.py`) with the journey, active stage and what waits on the user.
+- **Risks** (or **Tasks** in a coding-evals project): each item with its state glyph, evidence
+  and probes, from the wiki or task list.
+- **Questions:** open questions and pending feedback items, answered into `feedback.md` and
+  the wiki as the files contract describes.
+- **Runs and Tests:** per-test scores, invalid attempts and judge checks, with links to trajectories.
+- **Candidates:** each attempted change from `changes.md` with its decision card
+  (`bin/candidate.py compare`); above about 15 tests, aggregates first with drill-down per test.
+
+Sealed results (held-out or final scores, hidden audits) appear only in a view the user opens,
+read at runtime from the sealed report (`docs/files.md`, *Sealed reviews*); the coding agent
+never reads that view's content.
 
 ## Review experience
 

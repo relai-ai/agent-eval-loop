@@ -19,6 +19,20 @@ Example tests/check.py, run by tests/test.sh as `cd /tests && python3 check.py`:
                       "Called get_order_details." if ok else "Never called get_order_details; it must look the order up.")
     results.write()
 
+When the trajectory records that the agent's run did not finish normally, call
+results.invalid(reason), write and stop before any check: every expected evaluator gets an error,
+so the attempt is reported as invalid instead of scoring zeros (import sys, and run_status from
+this helper):
+
+    try:
+        status = run_status(load_trajectory())
+    except (OSError, ValueError):
+        status = None
+    if status not in (None, "ok"):
+        results.invalid(f"the agent's run ended with status {status!r}")
+        results.write()
+        sys.exit(0)
+
 A check that raises becomes an error for that evaluator, not a zero: a crash says nothing
 about the agent. Pass the expected evaluator ids to Results so that write() records an explicit
 error for any of them the script never scored, instead of a missing score. Score the agent's real failures as low scores, with feedback that says what
@@ -39,6 +53,13 @@ VERIFIER = Path("/logs/verifier")
 
 def load_trajectory(path: Path = TRAJECTORY) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def run_status(trajectory):
+    """How the agent's run ended, as the adapter recorded it (final_metrics.extra.run_status), or None."""
+    metrics = trajectory.get("final_metrics") if isinstance(trajectory, dict) else None
+    extra = metrics.get("extra") if isinstance(metrics, dict) else None
+    return extra.get("run_status") if isinstance(extra, dict) else None
 
 
 def text(message) -> str:
@@ -90,6 +111,12 @@ class Results:
         self.rewards[evaluator_id] = float(value)
         self.feedback[evaluator_id] = feedback
         self.errors.pop(evaluator_id, None)
+
+    def invalid(self, reason: str) -> None:
+        for evaluator_id in self.expected:
+            self.rewards.pop(evaluator_id, None)
+            self.feedback.pop(evaluator_id, None)
+            self.errors[evaluator_id] = f"invalid attempt: {reason}"
 
     @contextmanager
     def check(self, evaluator_id: str):

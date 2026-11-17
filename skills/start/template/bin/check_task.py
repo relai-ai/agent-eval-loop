@@ -923,11 +923,12 @@ def engine(cli: str, *args: str, timeout: int | None = None) -> subprocess.Compl
     return subprocess.run([cli, *args], capture_output=True, text=True, timeout=timeout)
 
 
-def run_verifier(task: Path, config: dict, report: Report, fixture: Path | None) -> None:
+def verifier_image(task: Path, config: dict, report: Report) -> tuple[str, str] | None:
+    """The container CLI and the verifier image for a task, building the image when the task names none."""
     cli = container_cli()
     if not cli:
         report.error("--verifier needs a running container engine with a docker- or podman-compatible CLI on PATH")
-        return
+        return None
     separate = is_separate(config)
     section = (config.get("verifier", {}) or {}).get("environment", {}) if separate else config.get("environment", {})
     image = (section or {}).get("docker_image")
@@ -935,68 +936,91 @@ def run_verifier(task: Path, config: dict, report: Report, fixture: Path | None)
     if not image:
         if not (context / "Dockerfile").is_file():
             report.note(f"--verifier skipped: no Dockerfile in {context.name}/ to build the verifier from")
-            return
+            return None
         image = "relai-check:" + hashlib.sha256(str(context.resolve()).encode()).hexdigest()[:12]
         built = engine(cli, "build", "-q", "-t", image, str(context))
         if built.returncode:
             report.error(f"verifier image build failed: {built.stderr.strip()[-1500:]}")
-            return
+            return None
+    return cli, image
+
+
+def verify_case(task: Path, config: dict, cli: str, image: str, case: str, report: Report,
+                agent_dir: Path | None = None, trajectory: dict | None = None, keep: Path | None = None):
+    """Run the task's verifier once on agent_dir's files (copied to /logs/agent), with trajectory written over
+    its trajectory.json when given, copying what the verifier wrote to keep when given.
+    Returns (rewards, feedback, errors), or None when the run itself failed."""
+    separate = is_separate(config)
+    stage = relai_root() / "work" / "tmp"
+    stage.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="relai-verifier-", dir=stage) as tmp:
+        logs = Path(tmp) / "logs"
+        (logs / "verifier").mkdir(parents=True)
+        if agent_dir:
+            shutil.copytree(agent_dir, logs / "agent")
+        else:
+            (logs / "agent").mkdir()
+        if trajectory is not None:
+            (logs / "agent" / "trajectory.json").write_text(json.dumps(trajectory))
+        for directory in (logs, logs / "agent", logs / "verifier"):
+            directory.chmod(0o777)
+        mounts = ["-v", f"{logs}:/logs"]
+        if not separate:
+            tests_copy = Path(tmp) / "tests"
+            shutil.copytree(task / "tests", tests_copy)
+            mounts += ["-v", f"{tests_copy}:/tests"]
+        script = ("chmod +x /tests/test.sh 2>/dev/null; "
+                  "if [ -x /tests/test.sh ]; then /tests/test.sh; else sh /tests/test.sh; fi "
+                  "> /logs/verifier/test-stdout.txt 2>&1; echo $? > /logs/verifier/exit-code.txt")
+        try:
+            ran = engine(cli, "run", "--rm", *mounts, "--entrypoint", "sh", image, "-c", script, timeout=900)
+        except subprocess.TimeoutExpired:
+            report.error(f"{case}: verifier did not finish within 15 minutes")
+            return None
+        if ran.returncode:
+            report.error(f"{case}: {cli} run failed: {ran.stderr.strip()[-800:]}")
+            return None
+        if keep:
+            shutil.copytree(logs / "verifier", keep, dirs_exist_ok=True)
+        return read_verifier_outputs(logs / "verifier", case, report)
+
+
+def run_verifier(task: Path, config: dict, report: Report, fixture: Path | None) -> None:
+    found = verifier_image(task, config, report)
+    if not found:
+        return
+    cli, image = found
     evaluators = declared_evaluators(config)
     codes = [ev for ev in evaluators if ev.get("type") == "code"]
     if not codes:
         report.note("no code evaluators; judges are scored after the trial, so --verifier only checks that test.sh runs")
     empty_scores: list[float] = []
     for case in ("normal", "empty-reply"):
-        stage = relai_root() / "work" / "tmp"
-        stage.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="relai-verifier-", dir=stage) as tmp:
-            logs = Path(tmp) / "logs"
-            (logs / "verifier").mkdir(parents=True)
-            if fixture:
-                shutil.copytree(fixture, logs / "agent")
-            else:
-                (logs / "agent").mkdir()
-            (logs / "agent" / "trajectory.json").write_text(json.dumps(synthetic(case == "empty-reply")))
-            for directory in (logs, logs / "agent", logs / "verifier"):
-                directory.chmod(0o777)
-            mounts = ["-v", f"{logs}:/logs"]
-            if not separate:
-                tests_copy = Path(tmp) / "tests"
-                shutil.copytree(task / "tests", tests_copy)
-                mounts += ["-v", f"{tests_copy}:/tests"]
-            script = ("chmod +x /tests/test.sh 2>/dev/null; "
-                      "if [ -x /tests/test.sh ]; then /tests/test.sh; else sh /tests/test.sh; fi "
-                      "> /logs/verifier/test-stdout.txt 2>&1; echo $? > /logs/verifier/exit-code.txt")
-            try:
-                ran = engine(cli, "run", "--rm", *mounts, "--entrypoint", "sh", image, "-c", script, timeout=900)
-            except subprocess.TimeoutExpired:
-                report.error(f"{case}: verifier did not finish within 15 minutes")
+        outputs = verify_case(task, config, cli, image, case, report, fixture, synthetic(case == "empty-reply"))
+        if outputs is None:
+            continue
+        rewards, feedback, errors = outputs
+        for ev in codes:
+            ev_id, low, high = ev.get("id"), ev.get("min_score", 0.0), ev.get("max_score", 1.0)
+            value = rewards.get(ev_id)
+            if ev_id in errors and value is None:
+                hint = "" if fixture else (" If it reads state the harness exports to /logs/agent, pass that state "
+                                           "with --fixture DIR")
+                report.error(f"{case}: evaluator {ev_id} reported an error on a well-formed trajectory: "
+                             f"{str(errors[ev_id])[-600:]}.{hint}")
                 continue
-            if ran.returncode:
-                report.error(f"{case}: {cli} run failed: {ran.stderr.strip()[-800:]}")
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
+                report.error(f"{case}: reward.json has no numeric score for declared evaluator {ev_id}")
                 continue
-            rewards, feedback, errors = read_verifier_outputs(logs / "verifier", case, report)
-            for ev in codes:
-                ev_id, low, high = ev.get("id"), ev.get("min_score", 0.0), ev.get("max_score", 1.0)
-                value = rewards.get(ev_id)
-                if ev_id in errors and value is None:
-                    hint = "" if fixture else (" If it reads state the harness exports to /logs/agent, pass that state "
-                                               "with --fixture DIR")
-                    report.error(f"{case}: evaluator {ev_id} reported an error on a well-formed trajectory: "
-                                 f"{str(errors[ev_id])[-600:]}.{hint}")
-                    continue
-                if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
-                    report.error(f"{case}: reward.json has no numeric score for declared evaluator {ev_id}")
-                    continue
-                if not low <= value <= high:
-                    report.error(f"{case}: evaluator {ev_id} scored {value}, outside [{low}, {high}]")
-                if not str(feedback.get(ev_id, "")).strip():
-                    report.error(f"{case}: feedback.json has no feedback for evaluator {ev_id}")
-                if case == "empty-reply":
-                    empty_scores.append(normalized(value, low, high))
-            for key in rewards:
-                if key not in {ev.get("id") for ev in evaluators}:
-                    report.warn(f"{case}: reward.json key {key!r} is not a declared evaluator")
+            if not low <= value <= high:
+                report.error(f"{case}: evaluator {ev_id} scored {value}, outside [{low}, {high}]")
+            if not str(feedback.get(ev_id, "")).strip():
+                report.error(f"{case}: feedback.json has no feedback for evaluator {ev_id}")
+            if case == "empty-reply":
+                empty_scores.append(normalized(value, low, high))
+        for key in rewards:
+            if key not in {ev.get("id") for ev in evaluators}:
+                report.warn(f"{case}: reward.json key {key!r} is not a declared evaluator")
     has_judges = any(ev.get("type") == "judge" for ev in evaluators)
     prohibition = config.get("metadata", {}).get("relai", {}).get("prohibition", False)
     if codes and not has_judges and empty_scores and min(empty_scores) >= 1.0 and not prohibition:

@@ -100,6 +100,28 @@ invoked) is the choice of whoever builds the tests.
   covered improvement work; otherwise use the current improvement agreement. Do not create
   conflicting duplicate budgets.
 - **Incumbent.** The last accepted version of the agent, initially the user's code.
+- **Sealed evidence.** Held-out and final scores, hidden audits against expert answers, and any
+  other material the coding agent doing the improving must not see. Only a separate reviewer reads
+  it, and that reviewer reports labels, counts and limitations, never the material or hints about
+  it (`docs/files.md`, *Sealed reviews*). Record any leak in the agreement's `disclosures`.
+- **Plain names.** In text the user reads (messages, `STATUS.md`, READMEs, review apps and
+  checker output), use the plain name and explain it once, the first time a step comes up, with
+  why the step exists. Code, configuration keys and file contents keep their technical names, and
+  frozen test files are never rewritten only to rename terms.
+
+  | Say | Technical term | What it means |
+  | --- | --- | --- |
+  | test (task in `coding-evals`) | test, case | One frozen check of one behavior |
+  | attempt | trial | One execution of a test |
+  | run | job | A batch of attempts on a set of tests |
+  | grader: code check or judge | evaluator | What scores an attempt |
+  | grader check | grader preview | Graders shown passing a good answer and failing a bad one before freezing |
+  | judge check | judge-agreement point | The user agrees or disagrees with a judge's score on a real attempt |
+  | current version | incumbent | The last accepted agent |
+  | within noise | spread larger than the difference | The evidence cannot separate two versions |
+  | invalid attempt | runtime failure, errored trial | Neither a pass nor a fail; reported apart |
+  | sealed | held-out, final, protected | Evidence the agent doing the improving never sees |
+  | risk: suspected, selected, confirmed, narrowed, resolved | `proposed`, `admitted`, `confirmed`, `refined`, `resolved` | A risk's lifecycle (`docs/files.md`, *Wiki pages*) |
 
 ## Maintain useful knowledge
 
@@ -135,6 +157,7 @@ generic infrastructure without a concrete need.
 | Path | What it holds | Committed |
 | --- | --- | --- |
 | `STATUS.md` | Progress board and next step (`docs/board.md`) | yes |
+| `STATUS.json` | Status written by `bin/status.py` from the records, with your active stage (`docs/files.md`) | never |
 | `relai.toml` | Target and its configuration, live paths, runner, judge settings | yes |
 | `changes.md` | Every attempted change to the agent: what, why, before/after, kept or not | yes |
 | `feedback.md` | The user's feedback on specific runs and judge scores, and what each answer became | yes |
@@ -149,7 +172,7 @@ generic infrastructure without a concrete need.
 | `evaluators/<id>/` | Criteria shared across tests | yes |
 | `setups/<id>/` | A team's setup for coding agents, laid out as in a repository root (the `coding-evals` skill) | yes |
 | `frozen.json` | Digests of frozen tests (written by `freeze.py`) | yes |
-| `records/` | Decision records teammates need: scenario tables and grader previews (`eval/`), fresh reviews (`reviews/`), the improvement agreement and lessons (`improve/`), the loop contract and iterations (`loop/`) | yes |
+| `records/` | Decision records teammates need: scenario tables and grader previews (`eval/`), fresh reviews (`reviews/`), the improvement agreement and lessons (`improve/`), the loop contract and iterations (`loop/`), and `spend.jsonl` (paid helper calls outside runs) | yes |
 | `.env` | Secret values | never |
 | `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `improve/state.json` (resume checkpoint), `benchmarks/<id>/ledger.json`, scratch | never |
 
@@ -168,7 +191,10 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 | `python3 relai/bin/check_task.py relai/tests/<id> [--cloud] [--verifier [--fixture DIR]]` | After writing or changing a test. `--cloud` additionally checks the bundled hosted-builder recipe; local checks do not require anonymous public images. `--verifier` (Harbor only) runs the verifier in the local container engine on a synthetic normal and empty-reply trajectory; `--fixture DIR` adds files to `/logs/agent` |
 | `python3 relai/bin/check_trajectory.py <trajectory.json> [--turns N]` | On a trajectory from a trial |
 | `python3 relai/bin/check_wiki.py [relai]` | After changing the wiki or a test's `covers`; checks typed pages, a present wiki index and managed attachment JSON syntax, not factual fidelity |
-| `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | During or after a run; concise by default (a run in progress also shows trials finished of the total and not finished), `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`) and descriptive `noise`/`se` |
+| `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | During or after a run; concise by default (a run in progress also shows trials finished of the total and not finished), `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`), descriptive `noise`/`se` and `within_noise` (true, false, or null when a side has one attempt) |
+| `python3 relai/bin/status.py [--stage <skill> <n>] [--json]` | At every checkpoint and before a long step: writes `STATUS.json` and prints the plain-text status from records (`docs/board.md`); `--stage` records the active skill's stage |
+| `python3 relai/bin/preview.py relai/tests/<id> <case dir> [...] [--evaluators ids] [--judge] [--dry-run]` | For the grader check before freezing: scores a test's graders on prepared cases and appends a round, with grader digests, to `records/eval/<date>-grader-preview.md` |
+| `python3 relai/bin/candidate.py new <name> \| compare <name> --baseline <run> --candidate <run>` | In `improve`: `new` creates a worktree under `work/candidates/<name>/`; `compare` prints the decision card against the current version: targets from `records/improve/plan.json`, guardrails, within-noise notices and agent cost |
 | `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run; `--reason` to re-freeze a change, `--begin-repair --reason` to open an agreed repair, `--check` to report |
 | `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer |
 
@@ -252,6 +278,17 @@ RELAI is something the user steers, not a black box.
   questions on subsequent requests; resurface those that affect the work, become actionable or
   challenge an earlier assumption. Respect explicit deferrals rather than repeating an unchanged
   backlog; retain their scope and a useful reason or condition for revisiting them.
+- **Orientation.** At each checkpoint and before a long step, run `bin/status.py` and show its
+  output: the journey, the active skill's numbered stage (`docs/board.md`, *Stages*), what comes
+  next and when the user is needed, plus the user's own plan step when one exists. Progress
+  updates in between name only the current stage.
+- **Review app at decision points.** Decisions that need evidence to judge are reviewed in a
+  project review app, built with the `review` skill at the first such decision and extended at
+  later ones: risk dispositions, open questions, feedback on runs, scenarios, the grader check,
+  judge checks, the pass mark, candidates and loop digests. Preferences (budget, attempts,
+  go or stop) stay in chat. Build it by default and say what it costs in time; when a decision is
+  small enough to settle in chat, say why. In chat, quote answers and judge feedback word for word.
+  When a change reopens an approved item, show only what changed since the approval.
 - **Connected review.** Chat brings decisions to the user's attention; a review app supplies
   evidence and annotation context; the board provides continuity. Use the same underlying items
   and recorded outcomes across these surfaces, with stable references to sources and reviewed
@@ -291,9 +328,9 @@ RELAI is something the user steers, not a black box.
   needed and recommend a manageable first batch; offer a guided chat walkthrough or a suitable
   existing app, with the relevant location and what to do there. File links supplement this
   invitation rather than assigning an unexplained document-reading task. Check the app's actual
-  capabilities: if review or annotation is missing, offer to extend it, or to build a review app
-  when the workload warrants one, using the `trace-review` skill. Keep chat available and do not
-  make app construction a prerequisite. When approval is needed, ask for the current subset's
+  capabilities: if review or annotation is missing, extend it with the `review` skill (see
+  *Review app at decision points*). Keep chat available and do not make app construction a
+  prerequisite for useful work. When approval is needed, ask for the current subset's
   concrete decision rather than only offering help later.
 - **Updates.** Lead with the answer or decision, uncertainty and the next useful action; put
   optional future mechanics and supporting detail afterward or in existing files. When another
@@ -301,10 +338,14 @@ RELAI is something the user steers, not a black box.
   Update `STATUS.md` when using RELAI-managed state.
 - **Counts come from records.** Trial counts, outcomes and spend that you report or put on the
   board are read from the runs' recorded results (`bin/summarize.py` reads them for the supplied
-  runners, including runs in progress), never from memory or estimates. Missing cost records are
-  unknown, not zero. Do not report a percentage complete or time remaining.
+  runners, including runs in progress), never from memory or estimates. Spend from paid helper calls
+  outside runs (grader previews, judge self-tests) is read from `records/spend.jsonl`
+  (`docs/files.md`); run judging stays in the runs, so nothing is counted twice. Missing cost
+  records are unknown, not zero. Do not report a percentage complete or time remaining.
 - **Cost before spend.** Before any paid run, state trials × attempts and the cost and time per
-  trial, measured from a previous trial when one exists, otherwise marked as an estimate. For a
+  trial, measured from a previous trial when one exists, otherwise marked as an estimate. This
+  includes judge, preview and triage calls: `judge.py --dry-run` and `preview.py --dry-run` give
+  the estimate for judges, `triage.py estimate` for triage. For a
   long run, tell the user how to follow it themselves (`bin/summarize.py` on its run directory or
   the runner's own output), and report when it ends.
 
@@ -325,7 +366,7 @@ Starting points, not rules. Change them here or in an agreement, and record why 
 | Questions per sitting | 8 |
 | Judge flagged for low agreement | below 90% over 3 or more judge checks |
 | Judge checks per new or changed judge | 1 or 2 (a high and a low score) |
-| Traces that call for triage instead of reading each in full | about 50 or more |
+| Traces that call for triage instead of reading each in full | about 50 or more, or more than about 1M characters of trace text |
 | Triage pilot before a full run | 20 traces |
 | Benchmark fidelity pilot | 3 to 5 cases |
 | Benchmark split small enough to run whole | under about 50 cases |

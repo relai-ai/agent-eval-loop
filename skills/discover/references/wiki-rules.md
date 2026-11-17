@@ -91,7 +91,8 @@ A risk page carries short labelled lines (the format is in `relai/docs/files.md`
   failure mechanism. Keep a diagnosis conditional when a necessary precondition is unresolved.
 - **Status.** A risk starts `proposed`, becomes `admitted` when judged worth probing, and after a
   probe is `confirmed` (it triggered) or `refined` (narrowed after it did not, or only partly). It
-  ends `rejected` (not worth pursuing) or `retired`. Only `proposed`, `admitted` and `refined`
+  ends `resolved` (`relai/docs/files.md`, *Wiki pages*), `rejected` (not worth pursuing) or
+  `retired`. Only `proposed`, `admitted` and `refined`
   risks are candidates for new hard cases. High-confidence evidence from historical traces can
   support a `proposed` risk; `confirmed` records a triggered probe, not merely confidence that
   the historical failure occurred. Describe that observation and its uncertainty in the evidence.

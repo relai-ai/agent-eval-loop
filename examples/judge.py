@@ -16,7 +16,14 @@ earlier errors are retried. Trials that crashed before verification are skipped.
 Every new attempt is retained in judges/<id>.attempts.jsonl; <id>.json mirrors the latest.
 The first retry also retains a valid legacy result. Count spend from the history when present,
 otherwise from the legacy latest result, never both.
-Optional relai.toml keys: [judge].effort (Anthropic effort, default "medium").
+Optional relai.toml keys: [judge].effort (Anthropic effort, default "medium"); [pricing."<model>"]
+(USD per million tokens, recorded by the coding agent at setup) to compute a call's cost when the
+provider does not report one. Calls made outside a run (--self-test, and bin/preview.py) are
+appended to relai/records/spend.jsonl, including billed calls that end in an error; judging a run
+keeps its cost in judges/<id>.json, where summarize.py counts it.
+
+--dry-run prints each judge's input size and estimated cost without calling a model. A judge
+warns on stderr when it clips an input or receives a very large trajectory.
 
 --self-test runs each judge of a task on a synthetic empty-reply trajectory and fails when a
 judge gives it full marks (a judge that cannot fail is not measuring anything), unless the
@@ -141,6 +148,45 @@ def cost_of(usage: dict | None) -> float | None:
     return float(value) if isinstance(value, (int, float)) and value >= 0 else None
 
 
+def prices(relai_dir: Path, model: str | None) -> dict | None:
+    table = (evals_config(relai_dir).get("pricing") or {}).get(model or "")
+    if not isinstance(table, dict) or not isinstance(table.get("input"), (int, float)):
+        return None
+    prices_only = {k: v for k, v in table.items() if k in ("input", "output", "cache_write", "cache_read")}
+    return table if all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in prices_only.values()) else None
+
+
+def priced_cost(relai_dir: Path, model: str | None, usage: dict | None) -> float | None:
+    """The call's cost from reported token counts and [pricing] in relai.toml, or None."""
+    table, usage = prices(relai_dir, model), usage or {}
+    if table is None:
+        return None
+    fresh = (usage.get("input_tokens") or usage.get("prompt_tokens") or 0)
+    written = usage.get("cache_creation_input_tokens") or 0
+    read = usage.get("cache_read_input_tokens") or 0
+    output = usage.get("output_tokens") or usage.get("completion_tokens") or 0
+    cost = (fresh * table["input"] + written * table.get("cache_write", table["input"])
+            + read * table.get("cache_read", table["input"]) + output * table.get("output", 0.0))
+    return round(cost / 1e6, 6)
+
+
+def record_spend(relai_dir: Path, tool: str, metadata: dict, ref: str) -> None:
+    usage = metadata.get("usage") or {}
+    entry = {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "tool": tool,
+             "model": metadata.get("model"),
+             "input_tokens": usage.get("input_tokens") or usage.get("prompt_tokens"),
+             "output_tokens": usage.get("output_tokens") or usage.get("completion_tokens"),
+             "cache_read_tokens": usage.get("cache_read_input_tokens"),
+             "cost_usd": metadata.get("cost_usd"), "cost_source": metadata.get("cost_source"), "ref": ref}
+    try:
+        ledger = relai_dir / "records" / "spend.jsonl"
+        ledger.parent.mkdir(parents=True, exist_ok=True)
+        with ledger.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry) + "\n")
+    except OSError as exc:
+        print(f"warning: could not append to records/spend.jsonl: {exc}", file=sys.stderr)
+
+
 def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SYSTEM, schema: dict = SCHEMA,
                     name: str = "evaluation", response_metadata: dict | None = None) -> tuple[dict, str, dict]:
     """Return verdict/model/usage; optionally retain billed response metadata before parsing fails."""
@@ -195,6 +241,8 @@ INPUT_LIMIT = 60_000
 def clip(text: str) -> str:
     if len(text) <= INPUT_LIMIT:
         return text
+    print(f"warning: a judge input of {len(text)} characters was clipped to {INPUT_LIMIT}; consider an evidence "
+          "file written by the verifier (relai/docs/files.md, Scores)", file=sys.stderr)
     half = INPUT_LIMIT // 2
     return f"{text[:half]}\n[... {len(text) - INPUT_LIMIT} characters cut ...]\n{text[-half:]}"
 
@@ -210,6 +258,9 @@ def judge_inputs(ev: dict, task: Path, trial_dir: Path | None, trajectory: dict 
                 raise ValueError("no ATIF trajectory for this trial (the agent's runs are not recorded in ATIF), so "
                                  "this judge cannot score it")
             text, label = json.dumps(trajectory, indent=1), "Trajectory"
+            if len(text) > 4 * INPUT_LIMIT:
+                print(f"warning: the trajectory sent to this judge is {len(text)} characters; consider an evidence "
+                      "file written by the verifier (relai/docs/files.md, Scores)", file=sys.stderr)
             parts.append(f"{label}:\n{redact(text, secrets)}")
             continue
         elif name == "instruction":
@@ -230,22 +281,41 @@ def judge_inputs(ev: dict, task: Path, trial_dir: Path | None, trajectory: dict 
     return "\n\n".join(parts)
 
 
-def judge_one(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: dict | None, secrets: dict,
-              trial_dir: Path | None = None, synthetic: bool = False) -> dict:
+def build_prompt(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: dict | None, secrets: dict,
+                 trial_dir: Path | None = None, synthetic: bool = False) -> tuple[str, dict]:
+    """The judge prompt with secret values removed, and the secrets used; raises ValueError or OSError."""
     secrets = {**secrets, **redaction_secrets(config, relai_dir)}
     low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
     rubric = (task / ev["rubric"]).read_text(encoding="utf-8")
-    try:
-        inputs = judge_inputs(ev, task, trial_dir, trajectory, secrets, synthetic)
-    except (OSError, ValueError) as exc:
-        return {"error": redact(str(exc), secrets)}
+    inputs = judge_inputs(ev, task, trial_dir, trajectory, secrets, synthetic)
     prompt = (f"Criterion: {ev.get('criterion', '')}\nScore bounds: {low} (worst) to {high} (best).\n\n"
               f"Rubric:\n{rubric}\n\n{inputs}")
-    prompt = redact(prompt, secrets)
+    return redact(prompt, secrets), secrets
+
+
+def estimate(config: dict, relai_dir: Path, prompt: str) -> dict:
+    tokens = (len(SYSTEM) + len(prompt)) // 4
+    table = prices(relai_dir, config.get("model"))
+    cost = round(tokens * table["input"] / 1e6, 4) if table else None
+    return {"input_chars": len(prompt), "input_tokens_estimate": tokens, "input_cost_usd_estimate": cost}
+
+
+def judge_one(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: dict | None, secrets: dict,
+              trial_dir: Path | None = None, synthetic: bool = False, ledger: bool = False) -> dict:
+    low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
+    try:
+        prompt, secrets = build_prompt(config, relai_dir, task, ev, trajectory, secrets, trial_dir, synthetic)
+    except (OSError, ValueError) as exc:
+        return {"error": redact(str(exc), {**secrets, **redaction_secrets(config, relai_dir)})}
     metadata = {"judge": "api", "judged_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     try:
         verdict, model, usage = call_model_full(config, relai_dir, prompt, response_metadata=metadata)
-        metadata.update(model=model, usage=usage, cost_usd=cost_of(usage))
+        reported = cost_of(usage)
+        computed = None if reported is not None else priced_cost(relai_dir, model, usage)
+        metadata.update(model=model, usage=usage, cost_usd=reported if reported is not None else computed,
+                        cost_source="provider" if reported is not None else "pricing" if computed is not None else None)
+        if ledger:
+            record_spend(relai_dir, "judge", metadata, spend_ref(relai_dir, trial_dir))
         score, feedback = verdict.get("score"), str(verdict.get("feedback", "")).strip()
         if not isinstance(score, (int, float)) or not math.isfinite(score) or not low <= score <= high:
             return {**metadata, "error": redact(f"judge returned score {score!r}, outside [{low}, {high}]", secrets)}
@@ -253,7 +323,21 @@ def judge_one(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: d
             return {**metadata, "error": "judge returned no feedback"}
         return {**metadata, "score": score, "feedback": feedback}
     except Exception as exc:
+        if ledger and "usage" in metadata and "cost_source" not in metadata:
+            computed = metadata.get("cost_usd")
+            if computed is None:
+                computed = priced_cost(relai_dir, metadata.get("model"), metadata.get("usage"))
+            metadata.update(cost_usd=computed, cost_source=None if computed is None else
+                            "provider" if cost_of(metadata.get("usage")) is not None else "pricing")
+            record_spend(relai_dir, "judge", metadata, spend_ref(relai_dir, trial_dir))
         return {**metadata, "error": redact(f"{type(exc).__name__}: {exc}", secrets)}
+
+
+def spend_ref(relai_dir: Path, trial_dir: Path | None) -> str:
+    if trial_dir is None:
+        return "self-test"
+    resolved, root = Path(trial_dir).resolve(), relai_dir.resolve()
+    return resolved.relative_to(root).as_posix() if resolved.is_relative_to(root) else Path(trial_dir).name
 
 
 def write_result(out: Path, result: dict) -> None:
@@ -298,7 +382,7 @@ def self_test(task: Path, config: dict, relai_dir: Path) -> int:
     prohibition = toml.get("metadata", {}).get("relai", {}).get("prohibition", False)
     status = 0
     for ev in judges:
-        result = judge_one(config, relai_dir, task, ev, empty, {}, synthetic=True)
+        result = judge_one(config, relai_dir, task, ev, empty, {}, synthetic=True, ledger=True)
         if "error" in result:
             print(f"FAIL {ev['id']}: {result['error']}")
             status = 1
@@ -315,6 +399,7 @@ def main() -> int:
     parser.add_argument("runs", nargs="*", help="Harbor or native run directories or folders containing them")
     parser.add_argument("--self-test", metavar="TASK_DIR", help="check that a task's judges can fail")
     parser.add_argument("--force", action="store_true", help="re-judge trials that already have results")
+    parser.add_argument("--dry-run", action="store_true", help="print input sizes and estimated cost; call no model")
     parser.add_argument("--relai-dir")
     args = parser.parse_args()
     relai_dir = relai_root(args.relai_dir)
@@ -322,6 +407,8 @@ def main() -> int:
     if config.get("mode") == "subagent":
         print("relai.toml [judge].mode is 'subagent': a fresh subagent writes judges/<id>.json instead of this script")
         return 2
+    if args.self_test and args.dry_run:
+        parser.error("--self-test calls the model; run it without --dry-run")
     if args.self_test:
         return self_test(Path(args.self_test).resolve(), config, relai_dir)
     if not args.runs:
@@ -353,12 +440,26 @@ def main() -> int:
                         continue
                 except (OSError, json.JSONDecodeError):
                     pass
+            if args.dry_run:
+                try:
+                    prompt, _ = build_prompt(config, relai_dir, task, ev, trajectory, secrets, trial_dir)
+                except (OSError, ValueError) as exc:
+                    print(f"{trial_dir.name} {ev['id']}: would error: {redact(str(exc), secrets)}")
+                    continue
+                guess = estimate(config, relai_dir, prompt)
+                cost = guess["input_cost_usd_estimate"]
+                print(f"{trial_dir.name} {ev['id']}: {guess['input_chars']} characters, about "
+                      f"{guess['input_tokens_estimate']} input tokens, "
+                      + (f"about ${cost:.4f} input cost" if cost is not None else "cost unknown (no [pricing] entry)"))
+                continue
             result = judge_one(config, relai_dir, task, ev, trajectory, secrets, trial_dir)
             write_result(out, result)
             written += 1
             errors += "error" in result
             print(f"{trial_dir.name} {ev['id']}: " + (f"error: {result['error']}" if "error" in result
                                                        else f"{result['score']}"))
+    if args.dry_run:
+        return 1 if unresolved else 0
     print(f"judged {written} evaluator result(s), {errors} error(s), {unresolved} trial(s) whose task was not found")
     return 1 if errors or unresolved else 0
 

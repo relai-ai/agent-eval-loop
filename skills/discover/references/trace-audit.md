@@ -10,7 +10,9 @@ across checks rather than treating this list as exhaustive.
 
 Inventory enough of the source set to choose useful coverage: stable trace ids, task types,
 lengths, endings, errors and available recordings. Existing metadata may already provide this.
-For exhaustive work, read every trace in the selected scope untruncated. When that investment
+For exhaustive work, read every trace in the selected scope untruncated. Check what the agent's
+model actually saw: when the framework moves large tool results out of context or summarizes
+the conversation, render those evictions as they happened, beside the full stored output. When that investment
 does not fit the question or budget, use [scalable triage](trace-triage.md) instead.
 
 ## Check claims against available evidence

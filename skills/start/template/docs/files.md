@@ -27,6 +27,12 @@ provider = "anthropic"       # or "openai", "openrouter", "openai-compatible" (m
 model = "claude-opus-5-5"     # required; no default
 effort = "medium"            # optional, Anthropic only
 
+[pricing."claude-model-id"]  # optional, one table per judge model: USD per million tokens
+input = 0.0                  # recorded by the coding agent at setup from the provider's price page
+output = 0.0
+cache_read = 0.0             # optional
+source = "provider pricing page, YYYY-MM-DD"
+
 [triage]                     # optional table; needed only to run bin/triage.py (it never uses [judge])
 provider = "openrouter"      # same keys as [judge]: a cheap model, one call per trace
 model = "anthropic/claude-haiku-5.5"
@@ -212,7 +218,15 @@ they check a real outcome and can fail.
   writes all three.
 - A judge sees what its evaluator's `inputs` lists (default `["trajectory"]`; also
   `"instruction"` and `"verifier/<file>"`, a file the verifier wrote in the trial). A missing
-  input is an error, never a score.
+  input is an error, never a score. When trajectories are large (an agent that reads web pages or
+  documents), have the verifier write an evidence file with the answer and the unique sources the
+  run retrieved, and give the judge `"verifier/evidence.md"` instead of the whole trajectory.
+  `judge.py --dry-run` reports each judge's input size and estimated cost, and a judge warns when
+  it clips an input.
+- An attempt whose agent did not finish normally is an invalid attempt, never a low score. The
+  adapter records how the agent's run ended in the trajectory's `final_metrics.extra.run_status`
+  (`ok`, `error` or `timeout`); a run that is not `ok` makes the Harbor agent raise, so the
+  attempt is reported apart, and the verifier writes `errors.json` instead of scores.
 - Judges write `<trial dir>/judges/<id>.json` after the trial:
   `{"score": n, "feedback": "...", "model": "...", "judge": "api"|"subagent"}` or
   `{"error": "..."}`. The API example retains returned usage, cost and judging time on errors
@@ -270,10 +284,12 @@ only editing hooks read it, to stop asking before each edit of that test.
 
 ## `changes.md`
 
-One `## ` entry per attempted change to the agent, newest last: the date and a one-line title;
+One entry per attempted change to the agent, newest last, headed `## <date> · <name>: <one-line
+title>` (the name is the candidate's branch or worktree name);
 where the change lives (branch, commit or worktree); the diagnosis it acted on; the tests
-targeted and checked; the before and after scores from comparable runs; the verdict (kept,
-rejected, or left for review) with the reason. A rejected change stays recorded so nobody
+targeted and checked; the before and after scores from comparable runs; a line
+`Verdict: <kept | rejected | left for review>` with the reason. `bin/status.py` reads the heading
+and the verdict line. A rejected change stays recorded so nobody
 retries it blindly.
 
 ## `decisions.md` and `UPSTREAM.md`
@@ -352,8 +368,40 @@ Evidence: src/agent/prompts/refunds.md:12; attachments/ingest-2026-11/42.json
 - tests/refund-without-order-id (2026-11-04): triggered
 ```
 
-`Status` is one of `proposed`, `admitted`, `confirmed`, `refined`, `rejected` or `retired`.
+`Status` is one of `proposed`, `admitted`, `confirmed`, `refined`, `resolved`, `rejected` or
+`retired`. `resolved` records that the probes of a confirmed risk pass after a kept, reviewed
+change; its `## Probes` entry names that change and the run that shows it. Other skills link
+here for this rule.
 Ratings are `low`, `medium`, `high` or `critical`. `Threatens` lists requirement ids.
+
+## `records/spend.jsonl`
+
+One JSON line per paid call made outside a run (judge calls from `bin/preview.py` and
+`judge.py --self-test`); judging a run records its cost in the run (`judges/<id>.json`), where
+`summarize.py` counts it, so the two are never added for the same call:
+`{"time", "tool", "model", "input_tokens", "output_tokens", "cache_read_tokens", "cost_usd",
+"cost_source", "ref"}`. `cost_source` is `provider` when the provider reported the cost,
+`pricing` when it was computed from `[pricing]` in `relai.toml`, or null when neither is
+available (unknown, never zero). `ref` names the preview case or self-test, relative to `relai/`.
+
+## `STATUS.json`
+
+Written by `bin/status.py` from the records; never edited by hand and not committed (it holds your active stage). `STATUS.md` and review apps
+read it. Fields: `schema_version`, `generated_at`, `journey` (each skill, its state and glyph),
+`active` (`skill`, `stage`, `of`, `name`, `since`, optional `user_plan_step`; the only value kept
+between runs), `items` (risks with state, plain name and glyph), `frozen_tests`, `candidates`
+(from `changes.md`, with verdict and glyph), `runs` (the latest runs with scored and total
+attempts and agent and judge cost), `waiting_on_user` (`kind`, `count`, `ref`) and `spend`
+(ledger total with the count of calls of unknown cost, and the runs' costs).
+
+## Sealed reviews
+
+A reviewer who reads sealed evidence (held-out or final scores, hidden audits against expert
+answers) writes its full report under `work/` for the user, and returns to the coding agent only:
+for each item a label (for example agree, partial, disagree, not comparable) described in terms of
+the coding agent's own material, and counts. It never quotes, paraphrases or describes the
+direction of the sealed material. A review app shows sealed results only in a view the user opens,
+read at runtime from that report.
 
 ## `records/`
 
@@ -365,7 +413,9 @@ and keep protected assessment contents out. Raw runs, candidates and scratch sta
 
 ## `records/improve/` and `work/improve/`
 
-- `records/improve/plan.json`: the improvement agreement (README, Terms): objective, guardrails and their bounds,
+- `records/improve/plan.json`: the improvement agreement (README, Terms): objective, `targets`
+  (the test ids the change aims to improve; `bin/candidate.py` treats other tests as guardrails),
+  guardrails and their bounds, `disclosures` (any sealed material that reached the coding agent),
   scope, the selection rule when several candidates compete, `budget_usd` and `since` (an ISO
   date; the board counts spend from it). During a loop, use its contract instead of duplicating
   covered agreement or budget fields here.
