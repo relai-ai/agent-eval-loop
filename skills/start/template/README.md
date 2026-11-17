@@ -290,15 +290,26 @@ RELAI is something the user steers, not a black box.
   walkthrough without requiring sign-off on an analysis. For review items, explain the judgments
   needed and recommend a manageable first batch; offer a guided chat walkthrough or a suitable
   existing app, with the relevant location and what to do there. File links supplement this
-  invitation rather than assigning an unexplained document-reading task. Check the app's actual
-  capabilities: if review or annotation is missing, offer to extend it, or to build a review app
-  when the workload warrants one, using the `trace-review` skill. Keep chat available and do not
-  make app construction a prerequisite. When approval is needed, ask for the current subset's
-  concrete decision rather than only offering help later.
+  invitation rather than assigning an unexplained document-reading task. When traces need the
+  user's review, such as runs to give feedback on or the source episodes behind findings, check
+  the existing app's actual capabilities and offer a review app (the `trace-review` skill), even
+  for a few traces. When more traces need review than the [review app threshold](#defaults) and
+  no existing app supports that review, build or extend one with the `trace-review` skill without
+  waiting for an answer, then tell the user where it is and what to review there. Keep chat
+  available and do not make the app a prerequisite. When approval is needed, ask for the current
+  subset's concrete decision rather than only offering help later.
 - **Updates.** Lead with the answer or decision, uncertainty and the next useful action; put
   optional future mechanics and supporting detail afterward or in existing files. When another
   action is useful, name it and why; a completed request need not be routed into another stage.
   Update `STATUS.md` when using RELAI-managed state.
+- **Closing summary.** When a skill's work for the request ends, tell the user what you produced
+  and how you produced it. Name each thing you made or changed (for example evals, tasks, graders,
+  run results, wiki pages, a review app or changes to the agent) and where it lives. Describe the
+  process at a high level: the sources you examined, how you checked the work (such as grader
+  previews, pilot runs or independent review) and what the user approved or delegated. Say how
+  thorough it was: what it covered, what it left out or could not check, and how much evidence
+  supports each result, with counts read from records. Keep it short enough to read at a glance
+  and link to files for detail.
 - **Counts come from records.** Trial counts, outcomes and spend that you report or put on the
   board are read from the runs' recorded results (`bin/summarize.py` reads them for the supplied
   runners, including runs in progress), never from memory or estimates. Missing cost records are
@@ -326,6 +337,7 @@ Starting points, not rules. Change them here or in an agreement, and record why 
 | Judge flagged for low agreement | below 90% over 3 or more judge checks |
 | Judge checks per new or changed judge | 1 or 2 (a high and a low score) |
 | Traces that call for triage instead of reading each in full | about 50 or more |
+| Review app threshold: traces to review above which RELAI builds a review app without asking | 5 |
 | Triage pilot before a full run | 20 traces |
 | Benchmark fidelity pilot | 3 to 5 cases |
 | Benchmark split small enough to run whole | under about 50 cases |
