@@ -3,13 +3,23 @@
 
 Usage:
   python3 relai/bin/status.py [--stage <skill> <n>] [--plan-step TEXT] [--json] [--relai-dir DIR]
+  python3 relai/bin/status.py --grid [RUN_DIR]
+  python3 relai/bin/status.py --receipt [--done TEXT ...] [--next TEXT]
 
 Everything is read from records: wiki pages, frozen.json, changes.md, feedback.md, run folders
 under work/ and records/spend.jsonl. The only value it keeps between runs is the active stage,
 which --stage records (stage numbers and names match docs/board.md, Stages) and --plan-step
 labels with the user's own plan step. It writes only STATUS.json, which is per person and not
 committed. Missing costs are reported as unknown, never zero, and partly reported costs say how
-many attempts reported one. Exit status: 0 written, 2 a usage error.
+many attempts reported one.
+
+--grid prints one cell per attempt of a run (default: the latest), for check-ins during and after
+it: ✓ at or above the pass mark, ✗ below it (the score itself when no pass mark is set), ⚠ an
+invalid attempt or evaluator error, · judges pending; attempts not finished are counted below.
+--receipt prints the block that ends each skill's work: the active skill and stage, what was done
+(--done, the coding agent's own lines, one per item), risks, frozen tests, spend from records,
+files changed under relai/ (from git) and the exact next request (--next).
+Exit status: 0 written, 2 a usage error.
 """
 
 from __future__ import annotations
@@ -17,12 +27,13 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import frozen_state, relai_root
+from _common import evals_config, frozen_state, pass_mark, relai_root
 
 SCHEMA_VERSION = 1
 JOURNEY = ("start", "discover", "eval", "improve", "loop")
@@ -176,6 +187,90 @@ def money(value) -> str:
     return "unknown" if value is None else f"${value:.2f}"
 
 
+def risk_line(items: list[dict]) -> str:
+    counts: dict[tuple[str, str], int] = {}
+    for item in items:
+        counts[(item["glyph"], item["plain"])] = counts.get((item["glyph"], item["plain"]), 0) + 1
+    return " · ".join(f"{g} {n} {p}" for (g, p), n in counts.items())
+
+
+def cell(trial: dict, mark) -> str:
+    if trial["status"] == "scored" and trial["score"] is not None:
+        return f"{trial['score']:.1f}" if mark is None else "✓" if trial["score"] >= mark else "✗"
+    return {"judges pending": "·", "task not found": "?"}.get(trial["status"], "⚠")
+
+
+def grid(relai: Path, run: Path | None) -> str:
+    runs = [run] if run else run_dirs(relai)[-1:]
+    if not runs:
+        return "No runs under work/ yet."
+    import summarize
+    summary = summarize.summarize(runs, relai)
+    try:
+        mark = pass_mark(evals_config(relai))
+    except (ValueError, OSError):
+        mark = None
+    tests = summary.get("tests", {})
+    width = max((len(name) for name in tests), default=0)
+    lines = [f"{name:<{width}}  " + " ".join(cell(t, mark) for t in sorted(test["trials"], key=lambda t: t["trial"]))
+             for name, test in sorted(tests.items())]
+    unfinished = sum(job.get("n_unfinished_trials") or 0 for job in summary.get("jobs", []))
+    info = run_summary(runs[0], relai) if runs[0].is_relative_to(relai) else {}
+    foot = f"{summary.get('trials', 0)} attempts recorded" + (f" · {unfinished} not finished" if unfinished else "")
+    if info.get("agent_cost_usd") is not None:
+        foot += f" · agent {money(info['agent_cost_usd'])} so far"
+    legend = ("✓ at or above the pass mark · ✗ below" if mark is not None else "scores (no pass mark set)")
+    return "\n".join(lines + [foot, legend + " · ⚠ invalid or evaluator error · · judges pending"])
+
+
+def changed_files(relai: Path) -> list[str]:
+    try:
+        out = subprocess.run(["git", "-C", str(relai.parent), "status", "--porcelain", "--untracked-files=all", "--", str(relai)],
+                             capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if out.returncode:
+        return []
+    found: list[str] = []
+    for line in out.stdout.splitlines():
+        path = Path(line[3:].strip().strip('"').split(" -> ")[-1])
+        parts = path.parts[1:] if path.parts[:1] == (relai.name,) else path.parts
+        if not parts or parts[0] in ("work", "STATUS.json"):
+            continue
+        name = parts[0] if len(parts) == 1 else "/".join(parts[:2 if parts[0] == "records" else 1]) + "/"
+        if name not in found:
+            found.append(name)
+    return found
+
+
+def receipt(status: dict, relai: Path, done: list[str], next_step: str | None) -> str:
+    rule = "─ " * 20
+    active = status.get("active")
+    head = "RELAI"
+    if active:
+        head += f" {active['skill']} · " + ("done" if active["stage"] == active["of"] else
+                                            f"stage {active['stage']}/{active['of']} {active['name']}")
+    lines = [rule, f" {head}"] + [f" {item}" for item in done]
+    if status["items"]:
+        lines.append(f" risks  {risk_line(status['items'])}")
+    if status["frozen_tests"]:
+        lines.append(f" tests  {len(status['frozen_tests'])} frozen")
+    spend = []
+    for run in status["runs"][-1:]:
+        if "error" not in run:
+            spend.append(f"latest run agent {money(run['agent_cost_usd'])} · judges {money(run['judge_cost_usd'])}")
+    if status["spend"]["ledger"]["entries"]:
+        spend.append(f"helpers outside runs {money(status['spend']['ledger']['cost_usd'])}")
+    if spend:
+        lines.append(" spend  " + " · ".join(spend))
+    files = changed_files(relai)
+    if files:
+        lines.append(" files  " + ", ".join(files[:6]) + (f" and {len(files) - 6} more" if len(files) > 6 else ""))
+    if next_step:
+        lines.append(f' next   "{next_step}"')
+    return "\n".join(lines + [rule])
+
+
 def render(status: dict) -> str:
     active = status.get("active")
     head = "RELAI"
@@ -185,10 +280,7 @@ def render(status: dict) -> str:
             head += f" · {active['user_plan_step']}"
     lines = [head, " › ".join(f"{j['skill']} {j['glyph']}" for j in status["journey"])]
     if status["items"]:
-        counts: dict[tuple[str, str], int] = {}
-        for item in status["items"]:
-            counts[(item["glyph"], item["plain"])] = counts.get((item["glyph"], item["plain"]), 0) + 1
-        lines.append("Risks:  " + " · ".join(f"{g} {n} {p}" for (g, p), n in counts.items()))
+        lines.append("Risks:  " + risk_line(status["items"]))
     if status["frozen_tests"]:
         lines.append(f"Tests:  {len(status['frozen_tests'])} frozen")
     if status["candidates"]:
@@ -216,8 +308,14 @@ def main() -> int:
     parser.add_argument("--stage", nargs=2, metavar=("SKILL", "N"), help="record the active skill and stage number")
     parser.add_argument("--plan-step", help="the user's own plan step for the active work, such as 'Step 5'")
     parser.add_argument("--json", action="store_true", help="print STATUS.json instead of the text status")
+    parser.add_argument("--grid", nargs="?", const="", metavar="RUN_DIR", help="print one cell per attempt of a run")
+    parser.add_argument("--receipt", action="store_true", help="print the block that ends a skill's work")
+    parser.add_argument("--done", action="append", default=[], help="with --receipt: one line of what was done")
+    parser.add_argument("--next", dest="next_step", help="with --receipt: the exact next request")
     parser.add_argument("--relai-dir")
     args = parser.parse_args()
+    if sum([args.json, args.grid is not None, args.receipt]) > 1:
+        parser.error("use one of --json, --grid and --receipt")
     relai = relai_root(args.relai_dir)
     if not relai.is_dir():
         print(f"error: {relai} does not exist; set up relai/ with the start skill or pass --relai-dir",
@@ -238,7 +336,16 @@ def main() -> int:
         previous = {}
     status = build(relai, previous if isinstance(previous, dict) else {}, stage, args.plan_step)
     path.write_text(json.dumps(status, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps(status, indent=2, ensure_ascii=False) if args.json else render(status))
+    if args.grid is not None:
+        run = Path(args.grid).resolve() if args.grid else None
+        if run is not None and not run.is_dir():
+            print(f"error: {run} is not a run directory", file=sys.stderr)
+            return 2
+        print(grid(relai, run))
+    elif args.receipt:
+        print(receipt(status, relai, args.done, args.next_step))
+    else:
+        print(json.dumps(status, indent=2, ensure_ascii=False) if args.json else render(status))
     return 0
 
 

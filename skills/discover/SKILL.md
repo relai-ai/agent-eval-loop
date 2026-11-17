@@ -119,4 +119,7 @@ user" in `relai/README.md` says when the agreement leaves a consequential choice
   stopping under [trace investigation](references/trace-investigation.md), without extending the
   allowance on your own.
 - **Say what it found.** Lead the report with what the user did not know: "your 20 runs had 1
-  failure; the traces show 7 risks, 2 confirmed".
+  failure; the traces show 7 risks, 2 confirmed". While investigating, show each risk you confirm
+  or narrow in one line as you find it (glyph, plain state, the risk, how often it appears, its
+  strongest source, such as `● confirmed  refunds without an order id · 7 of 40 traces · trace 0412
+  step 6`), so the user can redirect early; the report still holds the full inventory.

@@ -52,6 +52,43 @@ class StatusTest(unittest.TestCase):
         self.assertEqual(missing.returncode, 2)
         self.assertNotIn("Traceback", missing.stderr)
 
+    def test_grid_shows_each_attempt_against_the_pass_mark(self):
+        task = self.repo.task()
+        toml = self.repo.relai / "relai.toml"
+        toml.write_text((toml.read_text() if toml.exists() else "") + "\n[scoring]\npass_mark = 0.9\n")
+        job = harbor_job(self.repo.relai / "work/runs", "r1", 4)
+        judged = {"explains": {"score": 1.0, "feedback": "f"}}
+        harbor_trial(job, "t0", task, {"looks-up-order": 1.0}, feedback={"looks-up-order": "f"}, judges=judged)
+        harbor_trial(job, "t1", task, {"looks-up-order": 0.0}, feedback={"looks-up-order": "f"}, judges=judged)
+        harbor_trial(job, "t2", task, {"looks-up-order": 1.0}, feedback={"looks-up-order": "f"})
+        harbor_trial(job, "t3", task, None, exception="AgentTimeoutError",
+                     usage={"n_input_tokens": 0, "n_output_tokens": 0})
+        result = self.repo.run("status.py", "--grid")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("tests/orders  ✓ ✗ · ⚠", result.stdout)
+        self.assertIn("4 attempts recorded", result.stdout)
+        self.assertEqual(self.repo.run("status.py", "--grid", "--receipt").returncode, 2)
+
+    def test_receipt_reads_records_and_changed_files(self):
+        git = ["git", "-C", str(self.repo.root)]
+        subprocess.run([*git, "init", "-q"], check=True)
+        subprocess.run([*git, "add", "-A"], check=True)
+        subprocess.run([*git, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "i"], check=True)
+        self.repo.write("relai/wiki/risks/a.md", "# Risk A\nStatus: confirmed\n")
+        self.repo.write("relai/records/eval/2026-11-16-scenarios.md", "x\n")
+        self.assertEqual(self.repo.run("status.py", "--stage", "eval", "10").returncode, 0)
+        result = self.repo.run("status.py", "--receipt", "--done", "3 tests built and frozen",
+                               "--next", "Use RELAI's improve skill to fix tests/orders")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("RELAI eval · done", result.stdout)
+        self.assertIn(" 3 tests built and frozen", result.stdout)
+        self.assertIn("risks  ● 1 confirmed", result.stdout)
+        self.assertIn("files  ", result.stdout)
+        self.assertIn("records/eval/", result.stdout)
+        self.assertIn("wiki/", result.stdout)
+        self.assertNotIn("STATUS.json", result.stdout)
+        self.assertIn('next   "Use RELAI\'s improve skill to fix tests/orders"', result.stdout)
+
     def test_stage_names_match_the_board_and_the_coding_evals_skill(self):
         sys.path.insert(0, str(TEMPLATE / "bin"))
         import status

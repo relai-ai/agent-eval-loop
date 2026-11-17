@@ -192,7 +192,7 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 | `python3 relai/bin/check_trajectory.py <trajectory.json> [--turns N]` | On a trajectory from a trial |
 | `python3 relai/bin/check_wiki.py [relai]` | After changing the wiki or a test's `covers`; checks typed pages, a present wiki index and managed attachment JSON syntax, not factual fidelity |
 | `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | During or after a run; concise by default (a run in progress also shows trials finished of the total and not finished), `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`), descriptive `noise`/`se` and `within_noise` (true, false, or null when a side has one attempt) |
-| `python3 relai/bin/status.py [--stage <skill> <n>] [--json]` | At every checkpoint and before a long step: writes `STATUS.json` and prints the plain-text status from records (`docs/board.md`); `--stage` records the active skill's stage |
+| `python3 relai/bin/status.py [--stage <skill> <n>] [--json \| --grid [run] \| --receipt]` | At every checkpoint and before a long step: writes `STATUS.json` and prints the plain-text status from records (`docs/board.md`); `--stage` records the active skill's stage; `--grid` prints one cell per attempt for run check-ins; `--receipt` (with `--done` and `--next`) prints the block that ends each skill's work |
 | `python3 relai/bin/preview.py relai/tests/<id> <case dir> [...] [--evaluators ids] [--judge] [--dry-run]` | For the grader check before freezing: scores a test's graders on prepared cases and appends a round, with grader digests, to `records/eval/<date>-grader-preview.md` |
 | `python3 relai/bin/candidate.py new <name> \| compare <name> --baseline <run> --candidate <run>` | In `improve`: `new` creates a worktree under `work/candidates/<name>/`; `compare` prints the decision card against the current version: targets from `records/improve/plan.json`, guardrails, within-noise notices and agent cost |
 | `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run; `--reason` to re-freeze a change, `--begin-repair --reason` to open an agreed repair, `--check` to report |
@@ -335,7 +335,9 @@ RELAI is something the user steers, not a black box.
 - **Updates.** Lead with the answer or decision, uncertainty and the next useful action; put
   optional future mechanics and supporting detail afterward or in existing files. When another
   action is useful, name it and why; a completed request need not be routed into another stage.
-  Update `STATUS.md` when using RELAI-managed state.
+  Update `STATUS.md` when using RELAI-managed state. End each skill's work with
+  `bin/status.py --receipt --done "<item>" ... --next "<request>"` and show its block as printed:
+  every skill ends the same way, with the numbers read from records.
 - **Counts come from records.** Trial counts, outcomes and spend that you report or put on the
   board are read from the runs' recorded results (`bin/summarize.py` reads them for the supplied
   runners, including runs in progress), never from memory or estimates. Spend from paid helper calls
@@ -347,7 +349,7 @@ RELAI is something the user steers, not a black box.
   includes judge, preview and triage calls: `judge.py --dry-run` and `preview.py --dry-run` give
   the estimate for judges, `triage.py estimate` for triage. For a
   long run, tell the user how to follow it themselves (`bin/summarize.py` on its run directory or
-  the runner's own output), and report when it ends.
+  the runner's own output), show `bin/status.py --grid` at each check-in, and report when it ends.
 
 ### Host notes
 
