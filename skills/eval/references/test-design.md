@@ -109,15 +109,18 @@ evaluator, not as constants in its code. Another test of the same shape can then
 For scenario approval, write each proposed test's full design to the scenarios file: its source (a risk, a
 requirement, the user's feedback on a run, a triage gap with how many real runs it stands for, a
 compound of named signals or tests, or a harder rung of an existing test); the risks and
-requirements it covers; the scenario, naming the real data it uses; the trigger that makes it
-hard; what passing and failing look like; its opposite-direction partner, if any; its split; and
-what would make the probe invalid. Also state:
+requirements it covers; the scenario, naming the real data it uses; relevant operating conditions
+and intended difficulty; what passing and failing look like; its opposite-direction partner, if
+any; its split; and what would make the probe invalid. Link to the agreed purpose, selection and
+outcome priorities in the existing records, explaining how this case contributes. Also state:
 
-- **The mechanism:** why the source failed, and concrete evidence that this scenario can trigger
-  that cause (a size, a count, a timing or a state). When it cannot, say what the test covers
-  instead.
-- **The shortcut:** the cheapest strategy that skips the trigger, and why it fails the test. The
-  grader preview later scores it ([eval](../SKILL.md), *Preview the graders before freezing*).
+- **The mechanism:** for a failure or difficult probe, why the source failed or the risk is
+  plausible, and evidence that this scenario can trigger it. For ordinary coverage, state the
+  behavior exercised without inventing a failure mechanism. Narrow unsupported coverage claims.
+- **The shortcut:** a strategy that skips required behavior or a claimed risk trigger, and why
+  the affected evaluator fails it. The grader preview scores it ([eval](../SKILL.md), *Preview
+  the graders before freezing*). A cheap correct solution is valid; do not add artificial
+  difficulty simply to make it fail.
 
 When the request calls for coverage of a defined set of behaviors or findings, account for each
 within the agreed scope with a scenario that exercises it and an observable passing/failing

@@ -15,16 +15,23 @@ starting data; `relai/decisions.md`. Do not read the author's notes or reasoning
 
 Check each proposed test, with a verdict (pass, fail, unsure) and quoted evidence:
 
-1. **The trigger is unavoidable.** Name the cheapest strategy that reaches a passing outcome
-   without engaging what makes the test hard, for example acting on the only or first match,
-   reading the answer off the starting data, or ignoring the instruction that matters. If that
-   strategy would pass, the scenario leaks its answer. The proposal's own shortcut entry
+First assess the suite against the shared [purpose guidance](../../start/template/README.md#establish-the-purpose):
+the user-confirmed intended use, selection/difficulty and relevant outcome priorities, with
+assumptions distinguished. A setup choice alone is insufficient. Flag unresolved consequential
+preferences as **User decides**; do not settle them through reviewer delegation. Check that
+sources, coverage, measures and planned reporting support the intended claim.
+
+1. **Required behavior is unavoidable.** Look for a strategy that passes while omitting required
+   behavior or the mechanism the test claims to probe. A cheap correct solution is valid for
+   ordinary coverage. For risk or difficult probes, try acting on the first match, reading a
+   leaked answer or ignoring the relevant instruction. The proposal's own shortcut entry
    ([test-design](test-design.md), *Proposing a test*) is a starting point, not the limit of
    your search.
-2. **It can reach the source's mechanism.** The proposal names why the source failed (the
+2. **It can reach the source's mechanism.** For a failure or difficult probe, the proposal names why the source failed (the
    mechanism, not only the visible symptom) and gives concrete evidence that the scenario can
    trigger it: a size, a count, a timing or a state. When it cannot, the proposal narrows what
-   the test claims to cover.
+   the test claims to cover. Ordinary coverage needs a relevant behavior, not an invented failure
+   mechanism or added difficulty.
 3. **One defensible expected outcome.** A careful person reading the input and data would reach
    the outcome the evaluators reward. For a simulated or scripted user, every answer the user
    gives decides each case the scoring depends on, with nothing a reasonable agent could read

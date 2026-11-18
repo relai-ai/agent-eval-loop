@@ -252,9 +252,44 @@ or printing the value.
 - **Native:** the integration declares and checks its own runtime and containment (Fixed rules, *Containment*).
 - **When Harbor or a container engine is missing:** tell the user what is missing and the
   alternatives: start or install a supported engine, a native runner with authorized containment
-  (`docs/native.md`), or a hosted runner (`docs/harbor.md`). Agent-neutral tasks need
-  Harbor-compatible execution, locally or hosted; tasks with their own services also need an
-  environment that runs Harbor's multi-container tasks (`docker` or another with Compose support).
+  (`docs/native.md`), or a hosted runner (`docs/harbor.md`). For the supplied Harbor service-task
+  layout, choose an environment supporting Harbor's multi-container tasks (`docker` or another
+  with Compose support). Native integrations demonstrate equivalent guarantees through their
+  own infrastructure.
+
+## Establish the purpose
+
+Before consequential case selection, measurement design or optimization, establish what the user
+wants the work to support. The evaluated agent's purpose and the user's purpose for this request
+are separate. Resolve choices that would change the work before relying on them:
+
+- **Intended use:** the decision or learning sought, such as finding weaknesses, estimating
+  everyday reliability, catching regressions, selecting a product or improving a workflow.
+  Naming agents, choosing the same model, or matching setups settles comparison conditions;
+  those choices alone do not establish the intended use.
+- **Selection:** the relevant task distribution, representative coverage, known failures,
+  realistic difficult probes or an agreed mixture. Explain how sources and difficulty serve
+  the intended use. Do not present a failure-selected suite as typical performance or promise
+  that a difficult task will fail before measuring it.
+- **Outcomes and priorities:** task success (state whether solved rate, all-check pass rate or
+  another criterion), specific behavior, safety, cost, latency or another relevant measure.
+  Establish which drive the decision, which are guardrails, and which are informational. A
+  budget for conducting evaluation does not establish a preference for cheaper agent operation.
+  Do not invent weights or resolve an uncovered tradeoff for the user.
+
+Inspect the request, evidence and existing agreements first. Ask only about consequential gaps,
+with a recommendation and its effect on the approach; use the interaction guidance below. Record
+inferred choices as assumptions rather than user-confirmed decisions. A clear deterministic fix
+needs no unrelated questionnaire. Exploration can leave later choices explicitly open while
+settling what the exploration should learn; pause only dependent work.
+
+Carry the answers into sources, scenarios, instrumentation, sampling, acceptance and reporting.
+For relevant cost or latency comparisons, define the boundary before dependent measurements:
+agent work versus setup/judging overhead, per attempt versus per solved task, and the response
+or completion time that matters. Use available recorded metrics, disclose gaps and limit claims
+when the requested measure is unavailable. Reuse existing decision records and agreements; no
+additional form is required. Scenario approval or reviewer delegation does not settle an
+uncovered user preference.
 
 ## Working with the user
 

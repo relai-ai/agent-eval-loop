@@ -37,7 +37,9 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    repository at run time.
 5. **Objective improvement.** Read the factual objective, guardrails and selection rule from
    `records/improve/plan.json` (or the loop contract or equivalent project agreement), without the author's diagnostic notes. Verify
-   improvement against that objective and the exercised mechanism. Preserved behavioral performance
+   that the objective, relevant case distribution and measure boundaries serve the user's
+   intended outcome under the shared [purpose guidance](../../start/template/README.md#establish-the-purpose).
+   Verify improvement against that objective and the exercised mechanism. Preserved behavioral performance
    with lower cost or latency is valid. For multiple candidates, selection followed the recorded
    rule, ties were reported as ties, and best-of-k assessment reuse was authorized and disclosed.
    Bundles have justified scope and do not claim individual effects without evidence.

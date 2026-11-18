@@ -130,7 +130,8 @@ precedence.
   them is disclosed, and final assessment stays separate.
 - **The grader preview** shows the user each test's scoring on synthetic and recorded
   trajectories before freezing, without running the agent, including a shortcut: the cheapest
-  strategy that skips what makes the test hard, which must fail.
+  strategy that skips required behavior or a claimed risk trigger, which must fail the affected
+  check. Representative cases may be easy; cheap correct solutions remain valid.
 
 ## Known limits
 
@@ -143,6 +144,5 @@ precedence.
   `tests/`.
 - Each coding task carries its own copy of the verifier library inside its frozen digest, so
   upgrading the library is a measurement change for every task that takes it.
-- Fresh-session hypothetical navigation and UX pilots have been run; real agent improvement and teammate UX remain unvalidated.
 - Recovery has documented responsibilities but no automatic reconciliation; priority suggestions
   and observed deltas are not confidence gates.

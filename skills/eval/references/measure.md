@@ -17,6 +17,11 @@ Goal: a clear, honest picture of how the agent behaves on the selected tests.
 
 ## Rules
 
+- Before dependent selection or instrumentation, reuse or establish the intended decision,
+  case distribution and relevant outcome priorities under the shared
+  [purpose guidance](../../start/template/README.md#establish-the-purpose). Capture the metrics
+  that decision needs, with explicit boundaries and missing-data limits; reporting available
+  scores alone does not establish that the intended question was answered.
 - Pick the smallest selection that answers the question, and enough attempts per test to tell a
   real difference from noise when the result will be compared with another run. Never select the
   smoke test. Choose repetitions or adaptive effort for the uncertainty that matters. Reuse/cache

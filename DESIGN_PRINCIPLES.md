@@ -8,8 +8,10 @@ room to evolve the implementation.
 
 ### 1. Start from the user’s actual question
 
-Choose the smallest workflow that answers the question or achieves the requested outcome.
-Match the work to the need.
+Establish the user's intended outcome or decision and the priorities that materially affect it.
+Technical setup choices do not by themselves establish that purpose. Connect the selected scope,
+methods, evidence and success criteria to the intended outcome, and choose the smallest workflow
+that serves it.
 
 ### 2. Build systems when the task warrants them
 

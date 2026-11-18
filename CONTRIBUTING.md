@@ -96,6 +96,8 @@ Match verification to what changed:
 - **Skill guidance:** describe the scenario and expected agent behavior. For consequential
   changes, exercise a representative task and retain redacted evidence, including undesirable
   outcomes and untested paths. A text consistency test alone does not establish agent behavior.
+  The [purpose-alignment cases](tests/behavior/purpose-alignment.md) provide manual acceptance
+  scenarios; static walkthroughs and fresh-session executions must be reported separately.
 - **Copied contracts or verifier code:** explain the effect on existing project copies and
   frozen tasks. Updating the plugin does not automatically update those copies. Changes to
   measurement meaning require a documented repair and a comparable baseline.

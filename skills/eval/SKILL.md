@@ -25,6 +25,10 @@ Useful discoveries can update existing records without reproducing a wiki or boa
 
 ## Choose the work
 
+Apply the shared [purpose guidance](../start/template/README.md#establish-the-purpose) before
+selecting scenarios or designing measurements, for both agent-specific and agent-neutral work.
+Comparison setup alone does not establish the user's intended decision or outcome priorities.
+
 Apply the methods relevant to the requested outcome, including analysis and scenario design.
 Build and Run describe implementation and execution work; their setup, approvals and completion
 criteria apply when that work is requested. Designing or recommending tests does not itself
@@ -79,8 +83,9 @@ filenames are not required.
 - Keep tests focused; a combined scenario must exercise each behavior with distinguishable
   passing/failing criteria. Extend an existing test rather than near-duplicating it; a frozen test
   changes only under the *Frozen tests* rule.
-- Hard but realistic: real data instances and the ambiguity and competing cues that make the
-  behavior hard. When using a simulated user, its instructions hold only that user's goal and knowledge.
+- Match realism and difficulty to the agreed purpose. Representative cases can be easy;
+  difficult probes preserve realistic ambiguity, competing cues and the claimed mechanism.
+  When using a simulated user, its instructions hold only that user's goal and knowledge.
   Never put the answer, a diagnosis or a hint in the agent's input.
 - Exact criteria are code, meaning is a judge, each criterion its own evaluator; expected values
   live in `tests/params.json`, not in evaluator code ([test-design](references/test-design.md)).
@@ -115,14 +120,11 @@ start, ask together only what is still open:
   run or benchmark: run the `discover` skill first (recommend this, more strongly when traces of
   real runs exist), build from risks read in the code now ([test-design](references/test-design.md),
   *Hard cases*), or test one behavior the user names.
-- **What the results will decide**, when not evident: catching regressions before merge, gating
-  a release, comparing models or prompts, or seeing where the agent stands. It sets the split
-  recommendation, attempts and spend.
-- **Selection preferences**, when they change the suite: representative coverage, regressions,
-  difficult capability probes or workflow readiness; relevant domains, realism, interaction,
-  allowed sources and budget. Recommend a mix for the decision: known failures and ordinary
-  cases for regressions, representative tasks plus difficult cases for comparisons, or realistic
-  hardening for capability limits. Failure-selected suites do not estimate normal success rates.
+- **Purpose and preferences** still open under the shared [purpose guidance](../start/template/README.md#establish-the-purpose):
+  what the work should help decide or learn, relevant case selection and difficulty, and outcome
+  priorities such as success, cost or latency. Recommend an approach and explain its consequences.
+  Same-model versus as-deployed options answer comparison setup, not these questions. Resolve
+  consequential gaps before presenting the scenario selection as agreed.
 - For agent-neutral work, unresolved participants and interaction/evidence boundaries
   ([agent-neutral](references/agent-neutral.md), *Establish the boundary before scenarios*).
   Explain conflicts, affected tasks or claims, and recommended options before asking. Adapt
@@ -167,14 +169,13 @@ the first few, or change the list.
 ## Preview the graders before freezing
 
 Freezing stops anyone tuning a test to the agent's results, so preview without running the agent:
-score each test's evaluators on synthetic evidence (trajectories, artifacts, state or journals) (a passing one, a failing one that commits
-the risk's observable failure, an empty reply, and a **shortcut**) and on any real recorded traces
-that fit the scenario. The shortcut is the cheapest strategy that skips what makes the test hard,
-as the scenario proposal names it: acting on the first or only match, reading the answer off the
-starting data, or ignoring the instruction that matters. It must fail the primary check or an
-evaluator named for the risk; if it passes, the test leaks its answer, so fix the scenario before
-freezing. For a behavior with an opposite-direction partner, also score the over-cautious
-strategy (always asks, never acts, refuses) on the test where acting is right. Write every test's full table (evaluator × case → score and the first line of
+score each test's evaluators on synthetic evidence (trajectories, artifacts, state or journals):
+a passing case, a failure of the required behavior, an empty reply, and a **shortcut**, plus real
+recorded traces that fit. The shortcut skips required behavior or a claimed risk trigger, as the
+proposal names it: acting on the first match, reading a leaked answer, or ignoring an instruction.
+It must fail the primary or affected risk check; otherwise repair the unsupported coverage claim
+or scenario before freezing. A cheap correct solution remains valid. For a behavior with an
+opposite-direction partner, also score the over-cautious strategy (always asks, never acts, refuses) on the test where acting is right. Write every test's full table (evaluator × case → score and the first line of
 feedback) to `relai/records/eval/<date>-grader-preview.md`. Size chat previews by the shared
 [decision-effort rule](../start/template/README.md#working-with-the-user), reviewing manageable
 subsets when needed while keeping the complete artifact and pending decisions visible. For the

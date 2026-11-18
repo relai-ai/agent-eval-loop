@@ -19,6 +19,10 @@ RELAI helps teams understand and improve agent behavior. Choose the smallest use
 
 ## Route before setting up
 
+Use the shared [purpose guidance](template/README.md#establish-the-purpose) when the intended
+outcome or priorities would change routing or scope. Reuse clear intent; leave workflow-specific
+clarifications to the selected skill rather than front-loading a questionnaire.
+
 Inspect the request and existing project tests, runners and results. A deterministic fix or a
 regression check using project tests goes directly to `improve`; that handoff completes this skill
 without requiring evaluation setup or a board. Maintain durable knowledge when useful as the

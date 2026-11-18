@@ -65,11 +65,16 @@ Show what you found as a short list (the agent and its setup, which repositories
 the drafted standards), then ask only what remains open, following
 "Working with the user" in `relai/README.md`:
 
-1. **Source repositories** tasks may come from, and the **kinds of work** that matter, when the
+1. **Purpose and preferences** still open under the shared
+   [purpose guidance](../../start/template/README.md#establish-the-purpose): the intended use,
+   representative coverage versus difficult probes or another selection, and which outcomes
+   matter. This affects tasks and grading, so resolve it before dependent selection; do not defer
+   it with model/sign-in choices to the run plan.
+2. **Source repositories** tasks may come from, and the **kinds of work** that matter, when the
    request does not say.
-2. **Where the eval project lives**, with the pros, cons and your recommendation (*The
+3. **Where the eval project lives**, with the pros, cons and your recommendation (*The
    repository*), unless already settled.
-3. **Where task code may live** (`task_code`), only when it could leave the eval project's
+4. **Where task code may live** (`task_code`), only when it could leave the eval project's
    repository: `"private"`, kept there (default), or `"shareable"`. Never assume shareable.
 
 When some fix can be found online (a public source, a published release), state the network default with the findings: tasks whose fix can be
@@ -87,7 +92,8 @@ paid run is next. Skip what is already answered:
    Compare only when the user names a change (a model, a version, an instruction-file edit, a
    skill or hook) or another agent; after a baseline, you may mention once that these are
    possible. When the user compares agents, list each the same way, and whether to compare them
-   bare or each with a matched setup ([comparing](comparing.md), *Comparing agents*).
+   under controlled or as-deployed conditions as agreed ([comparing](comparing.md), *Comparing agents*).
+   This chooses the compared configuration, not the purpose or outcome priorities.
 2. **Each agent's model, version and sign-in** (*Find out first*), attempts per task, and
    `[judge].mode` (API or subagent judges).
 3. **The pilot**: one trial per version run ([comparing](comparing.md), *Before any paid run*),

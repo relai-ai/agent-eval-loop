@@ -10,6 +10,11 @@ account of why no change was kept.
 
 ## Choose the verification path first
 
+Apply the shared [purpose guidance](../start/template/README.md#establish-the-purpose) to the
+requested outcome before choosing verification or optimization. For measured work, connect the
+objective and guardrails to the relevant case distribution and outcome priorities. A clear
+deterministic fix needs no unrelated evaluation questionnaire.
+
 - **Direct deterministic fix:** repository tests can reproduce and verify a code defect or missing
   deterministic capability. Use relevant project checks and existing agent evals when needed. No
   harness, frozen suite or optimization loop is required for this path. Review the diff
@@ -32,7 +37,8 @@ merely to complete the flow. Across all paths, maintain useful knowledge under t
 ## Establish the improvement agreement
 
 Reuse existing instructions or a loop contract that cover the agreement (`relai/README.md`,
-Terms). Ask only for missing consequential choices, conflicts, or work outside it. For a new
+Terms). Apply the shared purpose guidance; ask only for missing consequential choices,
+conflicts, or work outside it. For a new
 measured-improvement agreement, settle before editing:
 
 - **Objective and guardrails:** behavioral success, lower cost, or lower latency; the targeted

@@ -14,6 +14,12 @@ own conclusions from the requirements and artifacts.
 
 Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 
+First check the task's contribution to the agreed purpose, case distribution/difficulty and
+outcome priorities under the shared [purpose guidance](../../start/template/README.md#establish-the-purpose).
+Repositories, agents and model/setup choices alone do not establish these. Ordinary coding
+coverage can be easy; difficult probes need realistic grounds. Flag consequential unresolved
+preferences for the user, and verify that the planned measures support the intended decision.
+
 1. **Faithful request.** With `request = "verbatim"`, `instruction.md` is the developer's request
    as given (redacted), with no file name, diagnosis, approach or test name they did not give. With
    `request = "symptom"`, it states only the symptom a developer would report, agrees with the

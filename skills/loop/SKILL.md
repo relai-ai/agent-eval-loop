@@ -55,6 +55,10 @@ remain inspectable and recoverable; do not create duplicate state merely to matc
 
 ## Establish the loop agreement
 
+Use the shared [purpose guidance](../start/template/README.md#establish-the-purpose) to connect
+the requested outcome, evidence selection and outcome priorities before dependent iterations.
+Carry covered choices forward; do not reopen them each iteration.
+
 Reuse an existing contract covering these choices. Ask only for missing consequential choices
 or changed boundaries; establish a new contract before starting when none exists. The contract is
 the improvement agreement (`relai/README.md`, Terms) and supplies the authorization for the

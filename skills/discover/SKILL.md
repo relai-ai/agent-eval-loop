@@ -5,6 +5,10 @@ description: Identify requirements, risks and open questions for an AI agent or 
 
 # Discover requirements and risks
 
+Use the shared [purpose guidance](../start/template/README.md#establish-the-purpose) when the
+intended learning, decision or coverage priorities would change the evidence selected. Resolve
+consequential gaps before deep mining; reuse existing intent and allow explicit exploration.
+
 Inspect existing knowledge and trace tooling first. Use the project's shared terms and interaction
 guidance, or the bundled [terms](../start/template/README.md#terms) and
 [user guidance](../start/template/README.md#working-with-the-user) when absent. Read only the

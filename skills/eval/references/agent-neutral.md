@@ -16,8 +16,10 @@ execution and evidence guarantees rather than requiring unused Harbor structure.
 
 ## Establish the boundary before scenarios
 
-Read the request, project evidence and existing decisions first. Settle uncovered choices at
-`eval`'s opening checkpoint, recommending an approach and explaining what each choice changes:
+Apply the shared [purpose guidance](../../start/template/README.md#establish-the-purpose) first:
+agent/model/setup choices do not establish the intended use, case selection or outcome priorities.
+Read the request, project evidence and existing decisions. Settle uncovered choices at `eval`'s
+opening checkpoint, recommending an approach and explaining what each choice changes:
 
 - **Participants and purpose.** Which agents, versions and setups, or which compatibility
   requirements for future agents? Is the decision about controlled agent differences or products
