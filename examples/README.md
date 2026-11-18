@@ -14,6 +14,5 @@ the relevant guarantee and verify it with focused checks. Each example is standa
 | `triage.py` | `relai/bin/`, with `judge.py` | Cheap-model triage of a large trace set (see [trace triage](../skills/discover/references/trace-triage.md)) |
 | `evaluate.py` | a task's `tests/` | Helper that writes the verifier's reward, feedback and error files |
 | `mcp_service.py` | a sidecar folder in an agent-neutral task's `environment/` | Serves a task's mock tools over MCP from `tools.json`, handlers and starting state; journals every call for the verifier |
-| `ask_user.py`, with `launcher.py` for a simulated user | a sidecar folder, as its `handlers.py` or merged into one | An `ask_user` tool answered by scripted replies (no model) or a simulated user, so agents that take one request can still ask questions |
 
 `judge.py`, `native_runner.py` and `triage.py` import `_common.py`, so they run from `relai/bin/`.

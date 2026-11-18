@@ -28,7 +28,7 @@ starting state.
 - **Healthy:** Harbor's oracle agent (`solution/solve.sh`, which calls the same MCP tools an agent
   would) scored every code check at full marks, Harbor's nop agent failed the primary check, and
   a different correct solution also passes. These runs call no model, unless the reference
-  solution asks a simulated user, whose model then answers.
+  solution asks a simulated user.
 - A fresh review ([review-test](review-test.md)) approved each test, and `freeze.py` ran before
   its first real trial.
 - When the user asked to run agents: a pilot of one trial per agent showed that each agent
@@ -56,14 +56,13 @@ starting state.
   the trajectory only for how the agent worked, and is "not recorded" for an agent Harbor records
   without one.
 - **The user's request is `instruction.md`.** When the behavior depends on how the user answers,
-  add an `ask_user` tool (the plugin's `examples/ask_user.py`). Use scripted replies when the
-  scenario fixes the user's decision: no model is called, so the oracle run stays free and the
-  verdict does not depend on a user model. Write each reply so it settles every case the scoring
-  depends on. Use a simulated user when the answer must respond to what the agent asks; its
+  add an `ask_user` tool to the service whose tools it guards, so one journal orders every call.
+  Its handler returns scripted replies kept in the service's state when the scenario fixes the
+  user's decision (no model call, so the oracle run stays free), written so each reply settles
+  every case the scoring depends on. When the answer must respond to the question, the handler
+  can call a simulated user (the plugin's `examples/launcher.py`, `simulated_user_turn`); its
   instructions hold only the user's goal and knowledge, and its model key goes in the service's
-  environment, never in the agent's. When the scoring depends on what the agent did before or
-  after asking, serve `ask_user` from the same service as the tools it guards, so one journal
-  orders every call.
+  environment, never in the agent's.
 - **Real requests and failures first.** Build scenarios from public issue reports about the
   agents being compared (a reply to the wrong person, deleted data, a double booking, a request
   half done), real requests from datasets whose license allows it, and sessions users donated.
@@ -82,12 +81,10 @@ starting state.
   agent's own release and how it authenticates. Check that each one lists MCP server support
   among Harbor's agent capabilities for the release in `[harbor].version`; an agent without it
   needs a custom Harbor agent that registers the task's servers.
-- **Say what the comparison is.** Running every agent on one model compares the harnesses;
-  running each on its default model compares the products. Ask which the user wants, and report
-  it with the results.
-- **Setups.** For an assistant, the setup is its instruction, persona and memory files, its
-  skills and its built-in integrations. Compare agents bare or each with a matched setup, as
-  `relai/README.md` (*Comparing agents*) describes.
+- **Setups and what is compared.** For an assistant, the setup is its instruction, persona and
+  memory files, its skills and its built-in integrations. Follow *Comparing agents* in
+  `relai/README.md` for bare or matched setups and for saying whether the runs compare agents on
+  one model or each on its default model; ask the user which.
 - **Features only some agents have** (memory across sessions, scheduled jobs, messaging
   channels) are outside agent-neutral tests. Test them in a separate set run only on the agents
   that have them, and report that set apart.
@@ -103,16 +100,7 @@ the baseline agent's run as `--baseline`.
   journal that the agent called the task's tools. An agent that never connects scores zero on
   every check, which measures the integration rather than the agent: report it as an
   integration failure and fix it before counting results. Then follow *Cost before spend* in
-  `relai/README.md`. When an agent is new to the project, you can check its install while
-  building, with no model call, as the [Harbor notes](harbor-notes.md) describe (*Installing
-  without running*).
+  `relai/README.md`.
 - **Report per agent:** the solved rate (the primary check at full marks), the mean over checks
   recorded for every agent compared, recording coverage, cost and time per trial, and the tasks
   that separate agents. Follow *Comparing agents* in `relai/README.md`.
-
-## Improving one agent
-
-Improve one agent at a time with the `improve` skill: its scope is that agent's setup files, or
-its code when this repository develops it. The other agents' scores are context for the report,
-never targets. Measure each candidate on the same frozen tests, and decide on held-out tests
-when there are enough comparable tests to hold some out.

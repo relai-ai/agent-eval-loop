@@ -324,10 +324,7 @@ appends one JSON line per call to
 serves its journal to the verifier, which copies it to `/logs/verifier/mock-journal.jsonl`):
 `{"target", "operation", "input", "outcome", "response"}`, where `outcome` is `matched`,
 `unmatched` or `error`. A call that changes the mock's state also records the change as
-`state_change`. No journal means no calls. A mock may add `seq` (its handling order) and
-`received_at` and `responded_at` (Unix seconds), as the plugin's `examples/mcp_service.py` does,
-so a check can tell whether one call was sent before the agent saw another's result. A check
-never reads them as anything the agent saw.
+`state_change`. No journal means no calls.
 
 ## `frozen.json`
 

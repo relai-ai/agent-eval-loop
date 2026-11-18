@@ -85,12 +85,8 @@ longer being tested.
 
 ### In an agent-neutral test
 
-The mock runs as an MCP server in a sidecar container that the task declares, and every agent
-under test reaches it the same way ([agent-neutral](agent-neutral.md)). The plugin's
-`examples/mcp_service.py` serves a tool set from `tools.json`, handlers and starting state, and
-journals every call; the verifier reads the journal and state over the sidecar's network with a
-token that only `tests/` and the sidecar hold. The agent's image copies nothing from the
-sidecar's folder, which `check_task.py` checks.
+The mock runs as an MCP server in a sidecar container, as [agent-neutral](agent-neutral.md)
+describes.
 
 ### Read a near miss as evidence
 

@@ -48,12 +48,6 @@ and update this file.
 - **An installed agent's release is a kwarg.** Pass `--ak version=<release>`; without it Harbor
   installs whatever is newest, so runs on different days compare different agents.
   `[agent].user` runs the agent as that user instead of the image's default (often root).
-- **Installing without running.** Observed in 0.26.0: `harbor run --install-only` builds the
-  task environment, installs the agent and stops before the agent runs, so no model is called.
-  The trial's `result.json` records an install failure as its exception, and on success
-  `agent_info` shows the version Harbor detected. A successful install does not show that a
-  later step works: an agent's configuration or MCP registration runs only when the agent
-  starts, so the paid pilot still checks those.
 - **The verifier runs as `[verifier].user`, or the image's default user when unset.** It does not
   fall back to root: with a non-root agent (`[agent].user`, or a final `USER` in the Dockerfile),
   a verifier that must stop processes or write `/logs/verifier` needs `[verifier] user = "root"`,

@@ -27,11 +27,7 @@ they refuse every request.
 
 Each journal line follows relai/docs/files.md (Mocks): target, operation, input, outcome
 (matched, unmatched or error), response, and state_change (the top-level state keys the call
-changed). It also records seq (this service's handling order, from 1), received_at (when the
-request arrived, before it waited for another call to finish) and responded_at, both as Unix
-seconds. A call whose received_at precedes the previous call's responded_at was sent before the
-agent saw that call's result, such as two tool calls in one batch. These fields are evidence for
-the verifier only; no tool ever returns them to the agent. A call to a tool that has no handler is answered with an error and journaled as
+changed). A call to a tool that has no handler is answered with an error and journaled as
 unmatched; nothing falls through to a real service. Standard library only.
 """
 
@@ -45,7 +41,6 @@ import json
 import os
 import sys
 import threading
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -72,25 +67,18 @@ class Service:
         self.handlers = module
         self.journal: list[dict] = []
         self.lock = threading.Lock()
-        self.seq = 0
 
     def tool_names(self) -> set[str]:
         return {t["name"] for t in self.tools}
 
-    def record(self, entry: dict, received_at: float) -> None:
-        self.seq += 1
-        entry.update(seq=self.seq, received_at=received_at, responded_at=round(time.time(), 6))
-        self.journal.append(entry)
-
-    def call(self, tool: str, arguments: dict, received_at: float | None = None) -> dict:
-        received_at = round(time.time(), 6) if received_at is None else received_at
+    def call(self, tool: str, arguments: dict) -> dict:
         entry = {"target": self.name, "operation": tool, "input": arguments}
         handler = getattr(self.handlers, tool, None) if tool in self.tool_names() else None
         with self.lock:
             if not callable(handler):
                 text = f"unknown tool {tool!r}"
                 entry.update(outcome="unmatched", response=text)
-                self.record(entry, received_at)
+                self.journal.append(entry)
                 return {"content": [{"type": "text", "text": text}], "isError": True}
             before = copy.deepcopy(self.state)
             try:
@@ -108,10 +96,10 @@ class Service:
             changed = sorted(k for k in set(before) | set(self.state) if before.get(k) != self.state.get(k))
             if changed:
                 entry["state_change"] = changed
-            self.record(entry, received_at)
+            self.journal.append(entry)
             return result
 
-    def rpc(self, message: dict, received_at: float | None = None) -> dict | None:
+    def rpc(self, message: dict) -> dict | None:
         method, ident, params = message.get("method"), message.get("id"), message.get("params") or {}
         if ident is None:
             return None
@@ -127,7 +115,7 @@ class Service:
             arguments = params.get("arguments") or {}
             if not isinstance(params.get("name"), str) or not isinstance(arguments, dict):
                 return {"jsonrpc": "2.0", "id": ident, "error": {"code": -32602, "message": "tools/call needs a name and object arguments"}}
-            result = self.call(params["name"], arguments, received_at)
+            result = self.call(params["name"], arguments)
         else:
             return {"jsonrpc": "2.0", "id": ident, "error": {"code": -32601, "message": f"method {method!r} not found"}}
         return {"jsonrpc": "2.0", "id": ident, "result": result}
@@ -170,7 +158,6 @@ def make_handler(service: Service, token: str):
             self.send(405)
 
         def do_POST(self) -> None:
-            received_at = round(time.time(), 6)
             if self.path != "/mcp":
                 self.send(404)
                 return
@@ -185,7 +172,7 @@ def make_handler(service: Service, token: str):
                 body = {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "send one JSON-RPC object"}}
                 self.send(400, json.dumps(body).encode())
                 return
-            reply = service.rpc(message, received_at)
+            reply = service.rpc(message)
             if reply is None:
                 self.send(202)
             else:

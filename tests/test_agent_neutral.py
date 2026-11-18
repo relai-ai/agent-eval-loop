@@ -1,5 +1,5 @@
-"""Tests for agent-neutral tasks with their own services: the example MCP service, the ask_user
-handlers, a minimal task built from them and check_task.py's service checks.
+"""Tests for agent-neutral tasks with their own services: the example MCP service, a minimal task
+built from it and check_task.py's service checks.
 Run: python3 -m unittest discover -s tests"""
 
 from __future__ import annotations
@@ -298,10 +298,6 @@ class MCPServiceTest(TaskFixture):
         self.assertEqual([e["outcome"] for e in entries], ["matched", "matched", "unmatched"])
         self.assertEqual(entries[0]["state_change"], ["notes"])
         self.assertNotIn("state_change", entries[1])
-        self.assertEqual([e["seq"] for e in entries], [1, 2, 3])
-        for entry in entries:
-            self.assertLessEqual(entry["received_at"], entry["responded_at"])
-        self.assertNotIn("seq", result["content"][0]["text"])
         status, body = self.service.get("/relai/state")
         self.assertEqual(json.loads(body)["notes"][-1]["text"], "Buy milk")
 
@@ -332,54 +328,6 @@ class NoTokenTest(TaskFixture):
         finally:
             server.shutdown()
             server.server_close()
-
-
-class AskUserTest(unittest.TestCase):
-    def setUp(self) -> None:
-        sys.path.insert(0, str(EXAMPLES))
-        self.module = load(EXAMPLES / "ask_user.py", "example_ask_user")
-        self.module.ToolError = type("ToolError", (Exception,), {})
-
-    def tearDown(self) -> None:
-        sys.path.remove(str(EXAMPLES))
-
-    def test_the_simulated_user_answers_with_the_request_as_its_first_message(self):
-        state = {"request": "Save my note.", "user": {"instructions": "You are a user.", "model": "anthropic:m"}}
-        seen = {}
-
-        def fake(spec, history, key):
-            seen["history"] = [dict(m) for m in history]
-            seen["key"] = key
-            return "The note says hello.", False
-
-        with patch.object(self.module, "simulated_user_turn", fake), patch.dict("os.environ", {"RELAI_USER_SIM_KEY": "k"}):
-            answer = self.module.ask_user(state, {"question": "What should it say?"})
-        self.assertEqual(answer, "The note says hello.")
-        self.assertEqual(seen["history"], [{"role": "user", "content": "Save my note."},
-                                           {"role": "assistant", "content": "What should it say?"}])
-        self.assertEqual(state["history"][-1], {"role": "user", "content": "The note says hello."})
-
-    def test_questions_stop_at_the_limit_and_a_missing_key_is_an_error(self):
-        state = {"request": "r", "user": {}, "max_questions": 1,
-                 "history": [{"role": "user", "content": "r"}, {"role": "assistant", "content": "q"}]}
-        self.assertEqual(self.module.ask_user(state, {"question": "again?"}), self.module.NOTHING_TO_ADD)
-        with patch.dict("os.environ", {"RELAI_USER_SIM_KEY": ""}), self.assertRaises(RuntimeError):
-            self.module.ask_user({"request": "r", "user": {}}, {"question": "q"})
-        with self.assertRaises(self.module.ToolError):
-            self.module.ask_user({}, {"question": " "})
-
-    def test_scripted_replies_answer_in_order_without_a_model(self):
-        state = {"request": "Tidy my notes.", "replies": ["Delete the old ones.", "That's all."]}
-
-        def no_model(spec, history, key):
-            raise AssertionError("a scripted user must not call the model")
-
-        with patch.object(self.module, "simulated_user_turn", no_model), patch.dict("os.environ", {"RELAI_USER_SIM_KEY": ""}):
-            answers = [self.module.ask_user(state, {"question": q}) for q in ("Proposal?", "More?", "Anything else?")]
-        self.assertEqual(answers, ["Delete the old ones.", "That's all.", "That's all."])
-        self.assertEqual(state["history"][:3], [{"role": "user", "content": "Tidy my notes."},
-                                                {"role": "assistant", "content": "Proposal?"},
-                                                {"role": "user", "content": "Delete the old ones."}])
 
 
 class TaskVerdictTest(TaskFixture):
