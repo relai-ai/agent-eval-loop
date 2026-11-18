@@ -14,9 +14,10 @@ exception and recorded token counts that are all zero is a runtime failure even 
 scored it: the agent never reached its model, so the score is the untouched workspace's.
 
 An agent-neutral task ([metadata.relai].agent_neutral = true) needs no trajectory to be scored: its
-checks read the workspace (a coding task) or the services' journals and state (a task with its own
-services). Without a trajectory, the evaluators that need one (code evaluators with
+checks read the workspace (a coding task) or declared service evidence, replies and artifacts
+(a task with services). Without a trajectory, the evaluators that need one (code evaluators with
 trajectory = true, judges whose inputs include "trajectory") are "not recorded" and left out of the pass rule.
+If the primary evaluator is not recorded, the attempt is unscored; other scores remain visible.
 
 A benchmark run through its own runner (wrapped) leaves relai-results.jsonl in its run directory,
 one attempt per line: {"benchmark", "case", "split", "attempt", "status" (scored | runtime failure
@@ -276,7 +277,13 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
         if ev.get("type") == "judge":
             path = trial_dir / "judges" / f"{ev_id}.json"
             data = read_json_dict(path) if path.is_file() else None
-            if data is None:
+            missing_inputs = [name for name in (ev.get("inputs") or ["trajectory"])
+                              if isinstance(name, str) and (
+                                  (name.startswith("verifier/") and not (trial_dir / name).is_file())
+                                  or (name == "instruction" and not (task_path / "instruction.md").is_file()))]
+            if neutral and missing_inputs:
+                outcome.update(state="error", message=f"missing judge inputs: {', '.join(missing_inputs)}")
+            elif data is None:
                 outcome["state"] = "pending"
             elif "error" in data:
                 outcome.update(state="error", message=str(data["error"]))
@@ -308,6 +315,8 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
         status = "evaluator error"
     elif "pending" in states:
         status = "judges pending"
+    elif neutral and base["primary"] and outcomes.get(base["primary"], {}).get("state") != "scored":
+        status = "unscored"
     else:
         status = "scored"
     score = None

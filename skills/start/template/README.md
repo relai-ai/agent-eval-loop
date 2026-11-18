@@ -17,7 +17,9 @@ Evidence, authorization, budget and measurement guarantees remain binding. Direc
 project-native regression checks need no evaluation setup. Maintain useful
 knowledge as described below. The layout below is the
 default for RELAI-managed work: reuse existing project records when they preserve the needed
-evidence, and use checker-specific formats only when using those checkers. File formats and
+evidence, and use checker-specific formats only when using those checkers. Assess whether supplied
+implementations fit; adapt or replace them within scope while demonstrating the affected guarantees.
+A limitation of a supplied checker is not a universal requirement. File formats and
 runner details are in `docs/`, read when the work touches them:
 
 | File | Read it when |
@@ -41,9 +43,10 @@ invoked) is the choice of whoever builds the tests.
    each declared evaluator yields a score within its bounds plus feedback, or an explicit error.
    Project-native records may preserve this evidence in their own format. ATIF and the bundled
    trial layout are required when using integrations or checkers that consume them (`docs/native.md`). An
-   agent-neutral task is scored from the workspace (a coding task) or from its services' journals
-   and state (a task with its own services) when a run has no trajectory (Harbor's oracle, or an
-   agent it records without one); its evaluators that need one are "not recorded".
+   agent-neutral task can be scored from workspace, service state, journals or declared output
+   artifacts when a run has no trajectory. Evaluators that need a missing trajectory are "not
+   recorded"; missing primary evidence leaves task success unmeasured. Record the evidence needed
+   for the intended claims and disclose recording limits.
 3. **Containment.** Trials are contained. Containers are the default. Host execution needs explicit authorization
    (an existing agreement may cover it) and reviewed sandboxing or simulated tool boundaries that
    prevent access to hidden tests, graders, credentials, other trials and unrelated user files,
@@ -104,29 +107,37 @@ invoked) is the choice of whoever builds the tests.
 
 ## Comparing agents
 
-Only when the user wants to compare different agents on agent-neutral tasks (coding tasks, or
-tasks with their own services). The tasks need no change; what differs between agents is what
-they read, what is recorded and what they cost.
+Use this guidance when comparing agents on coding tasks or tasks with services. Establish the
+participants (or compatibility requirements), task inputs, interaction lifecycle, outputs,
+permissions and observable evidence before designing affected tasks. Resolve consequential
+conflicts with options and a recommendation; continue work that does not depend on the answer.
 
-- **What each agent reads.** Agents read different instruction, persona, memory and skill files,
-  and which ones depends on the agent and its version. Compare either every agent bare, or each
-  with its **matched setup**: the same guidance written into each agent's own files. Never one
-  agent's setup against another bare. Confirm from a trial that each agent loaded the files meant
-  for it.
-- **Same conditions.** The same frozen tasks, attempts, network setting and web-tool setting for
-  every agent, with `[agent].timeout_sec` covering the slowest compared agent's normal runs; a
-  timed-out run is graded and counts as that agent's result, so report timeouts per agent.
-- **A fair basis.** The headline is the primary check's solved rate, which every agent and the
-  oracle are scored on. Beside it, compare only the checks recorded for every agent compared, and
-  show each agent's recording coverage: a judge that reads the run record is "not recorded" for an
-  agent Harbor records without one, so the pass rule over all checks covers different checks per
-  agent.
-- **Cost in one unit.** Report tokens and time per trial and per solved task; dollars only when
-  every compared agent pays per token.
-- **Paired against a baseline.** Pick one agent as the baseline and compare each other agent with
-  it task by task (`bin/summarize.py --baseline`); report the agents side by side from those runs.
-- **Say what is compared.** The same model on every agent compares the agents' harnesses; each
-  agent on its own default model compares the products. Report which one the runs measure.
+- **What is compared.** The same model helps compare harnesses; default models and native setups
+  compare products. For controlled comparisons, recommend every agent bare or with **matched
+  setups** (equivalent guidance in each agent's own files). As-deployed comparisons can include
+  different setups intentionally. Confirm intended guidance loads and disclose differences.
+- **Relevant conditions.** Hold frozen tasks, grading and relevant conditions stable except for
+  the intended differences. Match effective permissions, service access and resource budgets,
+  rather than assuming identical configuration values are equivalent. Recommend equal attempts
+  and adequate timeouts for controlled comparisons; justify intentional differences and report
+  timeouts. An agent reaching its agreed limit is a result, not automatically an infrastructure
+  failure.
+- **Capabilities and coverage.** Recommend shared-capability tasks for controlled comparisons.
+  Agree how unsupported capabilities affect product comparisons: failures of a required capability
+  or excluded tasks reported as gaps. Show eligible, attempted and scored counts per subset;
+  exclude nothing silently. The bundled summarizer reports observed attempts, so document any
+  eligibility decisions alongside it.
+- **A fair basis.** Report the primary evaluator's solved rate (full marks) with scored/attempted
+  counts. Coding tasks require a workspace code primary; service tasks may use a validated judge
+  when success is semantic. Missing primary evidence cannot establish success. Compare common
+  recorded checks and show coverage, with other checks and capability subsets reported apart.
+  An aggregate over different recorded checks does not establish a fair ranking.
+- **Cost in stated units.** Report available tokens, time and cost with recording coverage.
+  Compare dollars only on a justified common accounting basis; subscription charges cannot be
+  inferred from token pricing. Report per-trial and per-solved-task measures where meaningful.
+- **Paired evidence.** Compare task by task against a baseline (`bin/summarize.py --baseline`)
+  when useful. Report unmatched cases, selection effects and uncertainty. A larger solved rate
+  on a small or difficulty-selected suite does not establish general superiority.
 
 ## Maintain useful knowledge
 

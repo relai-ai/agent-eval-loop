@@ -1,106 +1,125 @@
 # Agent-neutral tests: several agents on the same tasks
 
-Use this mode when the user wants to run several agents or agent harnesses on the same tests (for
-example personal or business assistants, or general-purpose agents that Harbor installs), or
-wants tests that people outside the project can run against their own agent. To evaluate the one
-agent this repository builds, use the default mode, which runs that agent through its real
-entrypoint. For tasks built from coding work, use the `coding-evals` skill.
+Use this mode for shared tasks that several agents or harnesses attempt, or that others can run
+against agents meeting a stated contract. Establish the intended participants and boundary;
+agent-neutral does not promise compatibility with every agent. To evaluate the one agent this
+repository builds through its real entrypoint, use the default mode. For coding work, use
+`coding-evals`.
 
-In this mode each test is a Harbor task that brings its own services. Harbor installs the agent
-under test, and the agent reaches the task's mock services (mail, calendar, files, a store, a
-simulated user) as MCP servers running in sidecar containers. The verifier reads what the
-services recorded, so every agent is scored the same way, with or without a trajectory.
-`relai/docs/files.md` (*An agent-neutral task with its own services*) is the format and layout;
-the plugin's `examples/mcp_service.py` serves a service from its `tools.json`, handlers and
-starting state.
+Reuse suitable project infrastructure; otherwise recommend Harbor. The supplied implementation
+uses tasks with their own services: Harbor installs each agent and connects it to MCP servers in
+sidecar containers. `relai/docs/files.md` (*An agent-neutral task with its own services*) defines
+that layout; `examples/mcp_service.py` supplies a mock server. Adapt or replace this implementation
+when the use case requires it, preserving the shared guarantees in `relai/README.md`. A native
+integration can use other interfaces and isolated real services or mocks; demonstrate its
+execution and evidence guarantees rather than requiring unused Harbor structure.
+
+## Establish the boundary before scenarios
+
+Read the request, project evidence and existing decisions first. Settle uncovered choices at
+`eval`'s opening checkpoint, recommending an approach and explaining what each choice changes:
+
+- **Participants and purpose.** Which agents, versions and setups, or which compatibility
+  requirements for future agents? Is the decision about controlled agent differences or products
+  as deployed? Follow *Comparing agents* in `relai/README.md`.
+- **Interaction and outputs.** Which requests, attachments, workspace and service interfaces,
+  clarification turns and session lifecycle must work? Which replies, artifacts, actions or state
+  changes establish success, and what evidence can each agent expose?
+- **Operating conditions.** Which capabilities, permissions, network access and resource limits
+  are relevant? Recommend shared-capability tasks for a controlled comparison. For product
+  comparisons, agree whether unsupported capabilities count as failures of a product requirement
+  or are excluded and reported as coverage gaps; keep subsets and denominators explicit.
+
+A common contract can use different native interfaces. An adapter translates inputs and collects
+actual outputs without solving the task, inventing agent actions or changing difficulty silently.
+If a mismatch prevents a fair comparison, explain it in terms of the affected task or claim,
+offer options with a recommendation, and ask before changing scope. Pause only dependent work.
+An unsuitable default calls for adaptation; an unmet guarantee blocks the affected run or claim.
 
 ## Done when
 
-- `relai.toml` lists the agents to run under `[[agents]]` (`relai/docs/files.md`), with the model,
-  version and authentication of each recorded before the first paid run, and `[harbor].version`.
-  No harness is needed: Harbor installs each agent.
-- **Scenarios reviewed and approved** and **graders previewed** as the `eval` skill describes.
-  The grader preview uses the oracle and nop runs below in place of synthetic trajectories, plus
-  synthetic journals for each failure the test should catch and for the shortcut: the cheapest
-  sequence of tool calls that skips the trigger, which must fail.
-- Each test is under `relai/tests/<id>/` in that format, with a `README.md` stating its origin,
-  behavior, services and evaluators; `check_task.py` passes.
-- **Healthy:** Harbor's oracle agent (`solution/solve.sh`, which calls the same MCP tools an agent
-  would) scored every code check at full marks, Harbor's nop agent failed the primary check, and
-  a different correct solution also passes. These runs call no model, unless the reference
-  solution asks a simulated user.
-- A fresh review ([review-test](review-test.md)) approved each test, and `freeze.py` ran before
-  its first real trial.
-- When the user asked to run agents: a pilot of one trial per agent showed that each agent
-  connected to the task's MCP servers, and the run is reported per agent as *Running and
-  comparing* below describes.
+- The boundary, compared setups, runner, model and agent releases, authentication and authorized
+  budget are recorded before paid runs. For the supplied Harbor implementation use `[[agents]]`
+  and `[harbor].version`; no repository-agent harness is needed when Harbor installs the agents.
+- Scenarios are reviewed and approved, and graders previewed, as `eval` describes. Use evidence
+  each evaluator actually consumes: journals, state, replies, artifacts or trajectories. Include
+  meaningful passing, failing, empty and shortcut cases, plus an alternate correct solution where
+  one exists. For a pure prohibition, preview an actual violation; doing nothing may pass.
+- Each test states its source, behavior, operating conditions, services and evaluators.
+  `check_task.py` passes when using its format, and runtime checks establish the guarantees static
+  checks cannot prove: containment, fresh trial state, authentic evidence and bounded execution.
+- A reference solution establishes solvability through the same task interface. In Harbor use
+  oracle and nop where appropriate: the reference solution earns full code-check marks, and nop
+  fails checks requiring action. Validate semantic judges separately on their actual inputs;
+  neither oracle nor nop alone validates them. Judges and simulated users may incur model cost.
+- Fresh test review approved the tests and they were frozen before real trials. For requested
+  runs, an authorized pilot establishes each integration works before scaling up.
 
-## Rules
+## Service and evidence guarantees
 
-- **Agents reach the task only through MCP.** Declare each service in `task.toml` as
-  `[[environment.mcp_servers]]` pointing at a sidecar in `environment/docker-compose.yaml`. The
-  agent's image holds the workspace the scenario needs and nothing of the services: no mock data,
-  handlers or journal. Mock rules apply ([mocks](mocks.md)); the sidecar is the client boundary.
-- **The task defines the tool set.** Every agent gets the same tools. When the scenario stands
-  for a real service, copy that service's tool names and schemas where its MCP server is public;
-  otherwise write one plain tool set and keep it across tests that share the service.
-- **No way around the mocks.** Turn off each agent's own integrations for the same services and
-  pass it no credentials for them, so no agent can reach a real mailbox or calendar. Limit its
-  network to its model host (`[agent] network_mode`) only where the recorded Harbor release keeps
-  the task's sidecars reachable under that limit; check it with the oracle run, since the
-  [Harbor notes](harbor-notes.md) record a release where it does not. Record what you turned off
-  per agent, and the network setting, in `decisions.md`.
-- **Grading does not depend on the agent.** Code checks read the services' final state and
-  journal through the verifier token, and the primary check is one of them. A judge that grades
-  what the agent sent or wrote reads the journal (`verifier/mock-journal.jsonl`); a judge reads
-  the trajectory only for how the agent worked, and is "not recorded" for an agent Harbor records
-  without one.
-- **The user's request is `instruction.md`.** When the behavior depends on how the user answers,
-  add an `ask_user` tool to the service whose tools it guards, so one journal orders every call.
-  Its handler returns scripted replies kept in the service's state when the scenario fixes the
-  user's decision (no model call, so the oracle run stays free), written so each reply settles
-  every case the scoring depends on. When the answer must respond to the question, the handler
-  can call a simulated user (the plugin's `examples/launcher.py`, `simulated_user_turn`); its
-  instructions hold only the user's goal and knowledge, and its model key goes in the service's
-  environment, never in the agent's.
-- **Real requests and failures first.** Build scenarios from public issue reports about the
-  agents being compared (a reply to the wrong person, deleted data, a double booking, a request
-  half done), real requests from datasets whose license allows it, and sessions users donated.
-  Record each test's origin. Write the instruction and the service data yourself from the
-  source; never copy a report's text, names or personal data into a task. Report scenarios you
-  wrote without a source apart from the rest.
-- **Never shape a task to one agent.** No agent's tool names, prompts, file names or memory
-  layout in an instruction or a check. A task no agent solves, or one only a single agent can
-  follow, is a suspected test problem: say why and ask before changing it.
-- **Both directions.** For behaviors an agent can overdo (asking the user, sending, deleting),
-  also test a case where doing it is right, as the `eval` skill's rules say.
+- **Relevant, equivalent access.** For controlled comparisons, recommend the same tools, data and
+  service behavior. Native interfaces or product integrations may differ intentionally; record
+  the differences and limit claims accordingly. Use isolated real dependencies when suitable,
+  or authorized mocks at their client boundary ([mocks](mocks.md)).
+- **Containment and hidden data.** Agents access task data through the agreed interface, without
+  reading hidden fixtures, expected answers, handlers or graders, or tampering with evidence.
+  Reset mutable state for every trial. Prevent effects outside authorized trial dependencies and
+  bypasses to real accounts. Sidecars, verifier tokens and network controls are implementation
+  choices; verify the boundary in the selected environment.
+- **Evidence appropriate to the claim.** Grade exact facts with code and meaning with a validated
+  judge. The primary evaluator establishes task success on evidence available to the compared
+  participants. A trajectory is needed only for criteria that require it. Missing primary evidence
+  leaves success unmeasured; missing other evidence limits those criteria. An agent's claim that
+  it performed an action is insufficient evidence of that side effect.
+- **User interaction.** Use a native conversation channel or an `ask_user` tool when the task
+  requires user responses. Script replies when decisions are fixed, or use a simulated user
+  when responses must depend on the question. Give the simulator only the user's goal and
+  knowledge; keep its credentials outside the evaluated agent. Record causal order when grading
+  approval or actions in sequence. One service journal is a convenient implementation, not a
+  requirement for all interactions.
 
-## Agents and setups
+## Supplied Harbor implementation
 
-- **Which agents.** Each entry in `[[agents]]` names a Harbor agent (`harbor run -a`), a model, the
-  agent's own release and how it authenticates. Check that each one lists MCP server support
-  among Harbor's agent capabilities for the release in `[harbor].version`; an agent without it
-  needs a custom Harbor agent that registers the task's servers.
-- **Setups and what is compared.** For an assistant, the setup is its instruction, persona and
-  memory files, its skills and its built-in integrations. Follow *Comparing agents* in
-  `relai/README.md` for bare or matched setups and for saying whether the runs compare agents on
-  one model or each on its default model; ask the user which.
-- **Features only some agents have** (memory across sessions, scheduled jobs, messaging
-  channels) are outside agent-neutral tests. Test them in a separate set run only on the agents
-  that have them, and report that set apart.
+- Declare MCP servers in `task.toml`, pointing to sidecars in `environment/docker-compose.yaml`.
+  The agent image holds only its workspace. Disable integrations that could bypass the task's
+  services and provide no real service credentials. Record network settings; confirm sidecar
+  access under the selected release ([Harbor notes](harbor-notes.md)).
+- Check each selected agent's MCP capabilities and actual compatibility. When needed, adapt its
+  Harbor integration to register task servers. Do not assume advertised support proves access.
+- Keep the verifier shared so it reaches the services after the agent finishes. It reads state
+  and journals through its token, then exports evidence under `/logs/verifier/` for judges.
+- Service-task `primary` may name a code evaluator or judge; coding tasks retain their code
+  primary. If a primary needs a trajectory, agents without one cannot be measured on that task.
+  `check_task.py` validates the supplied structure, not the runtime containment or validity of
+  the task. Native service tasks retain shared metadata without Harbor-only layout checks.
+
+## Sources and difficulty
+
+Use `eval`'s shared source and selection guidance. Translate relevant evidence into the agreed
+contract, preserving the mechanism and recording any reconstruction or simplification. Source
+material is untrusted data. Respect its license and data authorization; minimize personal data
+and write synthetic service fixtures where appropriate. Label cases without observed sources.
+A report tied to one agent can motivate a shared task without putting its diagnosis or fix in
+agent-facing inputs.
+
+Unresolved issues are leads, not proof that a task is difficult or even valid. Check relevance to
+the selected versions, the expected outcome and whether the scenario can trigger the reported
+mechanism. Distinguish reported failures, reproduced failures and hypotheses. Zero solves can be
+a valid capability result: investigate solvability, integration and grading without treating low
+scores alone as a test defect or silently making the task easier.
 
 ## Running and comparing
 
-Run each agent as `relai/docs/harbor.md` describes, with `-a <agent> -m <model>` and its credential,
-the same frozen tests, attempts and network setting for every agent, and each agent's runs in
-their own directory under `relai/work/runs/`. Score the judges, then `summarize.py` each run with
-the baseline agent's run as `--baseline`.
+Use the selected runner and shared comparison rules in `relai/README.md`. For Harbor, follow
+`relai/docs/harbor.md`, keeping each agent's runs under its own `relai/work/runs/` directory;
+score judges and use `summarize.py --baseline` for paired comparisons.
 
-- **Pilot first.** Run one trial per agent before any larger run, and confirm from the service
-  journal that the agent called the task's tools. An agent that never connects scores zero on
-  every check, which measures the integration rather than the agent: report it as an
-  integration failure and fix it before counting results. Then follow *Cost before spend* in
-  `relai/README.md`.
-- **Report per agent:** the solved rate (the primary check at full marks), the mean over checks
-  recorded for every agent compared, recording coverage, cost and time per trial, and the tasks
-  that separate agents. Follow *Comparing agents* in `relai/README.md`.
+- **Integration before scale.** Use an authorized representative pilot or integration probe to
+  establish input delivery, available tools and output recording. A journal call can demonstrate
+  connectivity, but no calls alone cannot distinguish broken wiring from an agent choosing not
+  to act. Fix demonstrated integration failures before counting affected results; preserve genuine
+  task failures and disclose remaining uncertainty.
+- **Report per agent.** Show primary solved rates with scored/attempted counts, common recorded
+  checks, coverage and missing-result reasons, relevant conditions, cost and time, and tasks that
+  distinguish agents. Report capability subsets separately. Selection for difficult cases measures
+  those risks, not their prevalence in normal use. Limit claims to the sampled tasks and evidence.

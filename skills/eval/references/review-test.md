@@ -29,8 +29,10 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    independent criteria are not merged into one score where one failure could hide another. A
    benchmark scorer that its `README.md` and `decisions.md` record as user-supplied or approved
    passes this check as long as it is applied exactly.
-5. **Can fail, fairly.** An agent without the behavior would score low; a missing required
-   deliverable scores the minimum; a structurally broken recording errors instead of scoring
+5. **Can fail, fairly.** The task fits the agreed participants and interaction/evidence boundary;
+   intentional differences are disclosed, and the chosen integration demonstrates containment
+   and authentic evidence. Implementation defaults are not universal requirements. An agent
+   without the behavior would score low; a missing required deliverable scores the minimum; a structurally broken recording errors instead of scoring
    zero; nothing rewards activity in place of outcome.
 6. **Useful feedback.** Every score below full marks says what was missing and what full marks need.
 7. **Faithful to its source.** A test from a run keeps the original input; one from a requirement

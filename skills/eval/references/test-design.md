@@ -4,8 +4,10 @@ How to design each test for the `eval` skill, whose Rules bind; this adds the me
 
 ## Rules
 
-- Reuse `relai/harness/`. A test adds its scenario, inputs and evaluators; it does not redefine
-  how the agent runs. If the harness cannot support the test, fix the harness under [harness](harness.md) and rerun the smoke test (`relai/harness/smoke/`). Never write agent tests there.
+- Reuse the selected integration (`relai/harness/` when used). A test adds its scenario, inputs
+  and evaluators; shared execution behavior stays in the integration. If it cannot support the
+  test, repair it under [harness](harness.md) and rerun its smoke test (`relai/harness/smoke/`
+  when used). Never use the smoke test as an agent-quality eval.
 - Use a behavior-class scenario for a general expectation and an exact instance when the request,
   trace or value itself is the point.
 - From a failed run plus feedback: keep the original input faithful and put the lesson in the
@@ -16,8 +18,8 @@ How to design each test for the `eval` skill, whose Rules bind; this adds the me
   reply may pass it; show it can fail on a synthetic violating example instead.
 - When the recording lacks the structure a check reads, let the check raise (an error), never
   score it as zero.
-- Use a simulated user (a model playing the user) when the behavior depends on how a user
-  responds.
+- When behavior depends on a user's response, use an interaction channel matching real use.
+  Script fixed decisions; use a simulated user when replies must respond to the question.
 - Run and score tests as [eval: measure](measure.md) describes.
 
 ## Ask the user

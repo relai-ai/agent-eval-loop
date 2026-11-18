@@ -14,7 +14,7 @@
   <a href="#installation"><img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757?style=flat-square&labelColor=1b2430&logo=claude&logoColor=white"></a>
   <a href="#installation"><img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-5b7fff?style=flat-square&labelColor=1b2430"></a>
   <a href="#installation"><img alt="Agent Skills compatible" src="https://img.shields.io/badge/Agent%20Skills-compatible-2e9d6e?style=flat-square&labelColor=1b2430"></a>
-  <a href="https://github.com/harbor-framework/harbor"><img alt="Evals are Harbor tasks" src="https://img.shields.io/badge/evals-Harbor%20tasks-d98a1f?style=flat-square&labelColor=1b2430"></a>
+  <a href="https://github.com/harbor-framework/harbor"><img alt="Evals use Harbor or native runners" src="https://img.shields.io/badge/evals-Harbor%20or%20native-d98a1f?style=flat-square&labelColor=1b2430"></a>
   <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-de5d4f?style=flat-square&labelColor=1b2430"></a>
   <a href="https://github.com/relai-ai/agent-eval-loop/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/community-discussions-8b6fd6?style=flat-square&labelColor=1b2430&logo=github&logoColor=white"></a>
 </p>
@@ -192,14 +192,13 @@ Before an eval scores your agent, RELAI checks that it tests the right thing and
 You approve the plan and grading, or delegate that to an independent reviewer.
 
 1. **It comes from something real:** a trace, your feedback, a risk, a requirement, a bug fix
-   or a public bug report.
+   or a public bug report. Synthetic cases fill gaps and are labeled.
 2. **Its plan is reviewed before it is built.** For agents you build, a reviewer that did not
    write the eval checks that the answer can't be read off the input, and that the eval can
    trigger the failure it targets.
 3. **Its grading is tested before any agent runs.** In the eval's real environment, a reference
-   solution must pass, another correct solution must pass too, and doing nothing must fail.
-   You also see scores of sample runs that are wrong, empty or lazy (skipping the hard part);
-   each must fail.
+   solution and another correct solution pass where applicable. Failing examples must fail;
+   doing nothing may pass a prohibition. You preview wrong, empty and shortcut cases too.
 4. **A fresh reviewer checks the finished eval** for fairness and useful feedback.
 5. **It is locked before use.** RELAI fingerprints its files so later edits show; a first paid
    run confirms everything works.

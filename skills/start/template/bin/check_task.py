@@ -167,7 +167,7 @@ def check_static(task: Path, relai_dir: Path, report: Report, native: bool = Fal
     check_evaluators(task, config, report)
     neutral = is_agent_neutral(config)
     if neutral and isinstance((config.get("metadata", {}).get("relai", {}) or {}).get("services"), dict):
-        check_services(task, config, relai_dir, report)
+        check_services(task, config, relai_dir, report, native=native)
     elif neutral:
         check_coding(task, config, relai_dir, report)
 
@@ -282,16 +282,21 @@ def reaches_into(ignored: str, tracked: str) -> bool:
 
 
 def check_neutral_basics(task: Path, config: dict, relai_dir: Path, report: Report, table: str, meta: dict,
-                         reads: str, shared_reason: str) -> None:
-    """What every agent-neutral task needs: a primary code check every agent and the oracle are scored on,
-    a shared verifier, an agent timeout, a reference solution and a base image without the harness."""
+                         reads: str, shared_reason: str, *, native: bool = False,
+                         code_primary: bool = True) -> None:
+    """Check primary metadata, then the supplied Harbor task's execution structure when used."""
     evaluators = declared_evaluators(config)
     primary = next((ev for ev in evaluators if ev.get("id") == meta.get("primary")), None)
     if primary is None:
-        report.error(f"[metadata.relai.{table}].primary must name the code evaluator that says the task was solved")
-    elif primary.get("type") != "code" or primary.get("trajectory"):
+        kind = "code evaluator" if code_primary else "declared evaluator"
+        report.error(f"[metadata.relai.{table}].primary must name the {kind} that says the task was solved")
+    elif code_primary and (primary.get("type") != "code" or primary.get("trajectory")):
         report.error(f"primary evaluator {primary.get('id')!r} must be a code evaluator that {reads}, "
                      "not the trajectory, so every agent and the oracle are scored on it")
+    if native:
+        report.note("native service task: validate containment, service access, trial reset, execution limits and "
+                    "passing/failing grading through the integration; static checks do not certify these guarantees")
+        return
     if is_separate(config):
         report.error("an agent-neutral task's verifier shares the agent's container (leave environment_mode unset): "
                      f"{shared_reason}")
@@ -348,14 +353,19 @@ def compose_services(text: str) -> dict[str, str | None]:
     return services
 
 
-def check_services(task: Path, config: dict, relai_dir: Path, report: Report) -> None:
-    """An agent-neutral task with its own services: every agent reaches the same mock services through MCP,
-    and only the verifier reads what the services recorded."""
+def check_services(task: Path, config: dict, relai_dir: Path, report: Report, native: bool = False) -> None:
+    """Check service-task metadata and the supplied Harbor MCP/sidecar layout when used."""
     meta = config.get("metadata", {}).get("relai", {}) or {}
     services = meta.get("services") if isinstance(meta.get("services"), dict) else {}
     check_neutral_basics(task, config, relai_dir, report, "services", services,
                          "reads the services' journals or final state",
-                         "its checks read the services' journals and state after the agent is done")
+                         "its checks read the services' journals and state after the agent is done",
+                         native=native, code_primary=False)
+    if not services.get("origin"):
+        report.note("[metadata.relai.services].origin should name where the scenario came from (an issue URL, a "
+                    "dataset row, a session); the reviewer checks the instruction against it")
+    if native:
+        return
     servers = (config.get("environment") or {}).get("mcp_servers") or []
     if not servers:
         report.error("declare each mock service as [[environment.mcp_servers]], so every agent Harbor installs "
@@ -392,9 +402,6 @@ def check_services(task: Path, config: dict, relai_dir: Path, report: Report) ->
                     if first == folder:
                         report.error(f"environment/Dockerfile copies {source}, the build context of service {svc!r}: "
                                      "the agent could read the mock data and journals")
-    if not services.get("origin"):
-        report.note("[metadata.relai.services].origin should name where the scenario came from (an issue URL, a "
-                    "dataset row, a session); the reviewer checks the instruction against it")
 
 
 def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> None:
@@ -1203,7 +1210,8 @@ def main() -> int:
             report.error("--verifier is Harbor-only; demonstrate native grading on synthetic passing, failing and empty-reply trials")
         elif args.verifier and config and is_agent_neutral(config):
             report.note("--verifier does not apply to an agent-neutral task: run Harbor's oracle and nop agents on it "
-                        "(no model cost)")
+                        "where appropriate, then preview every evaluator on meaningful passing/failing evidence; "
+                        "judges and simulated users may call models")
         elif args.verifier and config and not report.errors:
             run_verifier(task, config, report, fixture)
         elif args.verifier and report.errors:

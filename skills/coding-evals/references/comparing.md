@@ -42,7 +42,7 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   under `restore` ([checks](checks.md)).
 - **By kind of work**: suggest routing only when a difference holds on several tasks of that kind.
 - **Tasks that separate versions** are the most informative; review the ones nobody solves for
-  fairness.
+  solvability, integration and fairness without treating zero solves alone as a defect.
 - **Failure patterns**: which checks failed together. Read a few trajectories from each large
   group and quote where the agent went wrong. Record a pattern the trajectories support as a risk
   under the [discover skill](../../discover/SKILL.md)'s rules, citing the runs.

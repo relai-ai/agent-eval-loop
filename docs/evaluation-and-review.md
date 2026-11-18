@@ -53,11 +53,12 @@ review, follows the agreement above.
   scenario can trigger the source's failure, that one outcome is clearly right, and that the
   failure leaves evidence a check can read. RELAI fixes what keeps the scenario's intent and
   brings the rest to you with a recommended answer.
-- **Validation without a model.** These run in the eval's real environment, with no model call.
-  A reference solution scores full marks on every code check (Harbor's oracle run), doing
-  nothing fails the main check (Harbor's nop run), a different correct solution also passes where
-  one exists, and each judge is shown able to fail. A failing control points to a broken
-  environment or grader, so RELAI fixes it before anything is frozen.
+- **Passing and failing controls.** Validate graders in the selected environment. A reference
+  solution scores full marks on code checks (Harbor's oracle when used); doing nothing fails
+  checks requiring action (Harbor's nop), but may pass a prohibition. Use an actual violation for
+  that check, and another correct solution where one exists. Preview judges on their declared
+  evidence too. Scripted controls need no model; judges and simulated users may call one.
+  Investigate unexpected control results before freezing.
 - **Grader preview.** You see each check's scores on passing, failing and empty runs, on recorded
   traces that fit, and on the shortcut, which must fail. A shortcut that passes means the eval
   leaks its answer, and RELAI fixes the scenario before freezing.

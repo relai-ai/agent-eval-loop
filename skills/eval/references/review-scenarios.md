@@ -29,12 +29,15 @@ Check each proposed test, with a verdict (pass, fail, unsure) and quoted evidenc
    the outcome the evaluators reward. For a simulated or scripted user, every answer the user
    gives decides each case the scoring depends on, with nothing a reasonable agent could read
    either way.
-4. **Gradable from the recording.** The failure the test targets leaves evidence that code or a
+4. **Within the agreed boundary.** The inputs, interaction, services, outputs and permissions
+   fit the intended participants or stated compatibility requirements. Any intentional interface
+   or capability differences have an agreed interpretation. Flag conflicts before dependent work.
+5. **Gradable from the recording.** The failure the test targets leaves evidence that code or a
    judge can read: exported state, a mock journal or the trajectory, with the order of events
    when the behavior is about order.
-5. **Both directions.** For a behavior an improvement could overcorrect, a partner case where
+6. **Both directions.** For a behavior an improvement could overcorrect, a partner case where
    doing it is right exists or is proposed.
-6. **Faithful to its source.** The scenario keeps what made the source case hard and takes no
+7. **Faithful to its source.** The scenario keeps what made the source case hard and takes no
    detail the source does not contain without saying where it came from.
 
 Report each verdict, then findings, each marked with who must act:

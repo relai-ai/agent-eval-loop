@@ -24,6 +24,12 @@ For that interoperability, a native runner writes what a Harbor job writes, as f
   `verifier/errors.json` as in `files.md` Scores (paths relative to the trial directory instead
   of `/logs`), `judges/` after judging, and the run's own logs.
 
+Agent-neutral service tasks can use their integration's service interfaces and isolated real
+dependencies or mocks. Keep shared metadata when using the bundled checkers (`files.md`); validate
+runtime containment, reset, execution limits and evidence through the integration. Trajectories
+are required only by criteria that consume them. Export genuine replies or other evidence as
+declared artifacts for artifact-based judges; missing primary evidence cannot establish success.
+
 A code evaluator may call the benchmark's own grader, but still writes a score and feedback per
 declared evaluator, or an error; a grader that could not run is an error, never a zero. A trial
 whose run failed has `verifier_result` null and an `exception_info`. The example runner's

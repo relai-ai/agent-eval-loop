@@ -1,6 +1,6 @@
 ---
 name: eval
-description: Build and run evaluations for an AI agent or LLM application, including harnesses, failure-based tests, benchmarks and shared evaluators. Also build agent-neutral tests that bring their own mock services, so several agents or harnesses (for example personal or business assistants) run on the same tasks and are compared. Analyze evaluation coverage or design scenarios without requiring implementation or execution. Repair broken tests or mock unreachable dependencies. Use improve for changing the agent or comparing changes; use coding-evals for agent-neutral coding tasks, including agents developed here.
+description: Build and run evaluations for an AI agent or LLM application, including harnesses, failure-based tests, benchmarks and shared evaluators. Also build agent-neutral tests for an agreed set of agents or compatibility requirements, adapting service interfaces and runners to the use case. Analyze evaluation coverage or design scenarios without requiring implementation or execution. Repair broken tests or mock unreachable dependencies. Use improve for changing the agent or comparing changes; use coding-evals for agent-neutral coding tasks, including agents developed here.
 ---
 
 # Build and run evals
@@ -35,11 +35,11 @@ authorize building or running them.
 - **Run** - run selected frozen tests, score them and report where the agent stands
   ([measure](references/measure.md); its *Done when* applies). On a benchmark, follow
   [benchmarks](references/benchmarks.md). To compare runs before and after a change, use the `improve` skill.
-- **Agent-neutral** - when the user wants several agents or harnesses run on the same tests, or
-  tests others can run on their own agent: tests that bring their own mock services as MCP
-  servers, which any agent Harbor installs can reach ([agent-neutral](references/agent-neutral.md);
-  its *Done when* replaces the harness requirement below). Ask which mode fits when the request
-  could mean either.
+- **Agent-neutral** - shared tasks for selected agents or stated compatibility requirements.
+  Establish the interaction and evidence boundary before scenarios; adapt suitable existing
+  infrastructure, or recommend Harbor with task services over MCP
+  ([agent-neutral](references/agent-neutral.md); its *Done when* replaces the harness requirement
+  below). Ask which mode fits when the request could mean either.
 
 ## Done when (build)
 
@@ -51,8 +51,8 @@ examples, a recoverable reviewed test version before real trials, and traceable 
 filenames are not required.
 
 - **Harness ready** (first time only, [harness](references/harness.md); not needed when the only tests are
-  a wrapped benchmark, whose own runner runs the agent, or agent-neutral tests, where Harbor
-  installs each agent).
+  a wrapped benchmark, whose own runner runs the agent, or agent-neutral tests whose selected
+  integration already meets the execution guarantees).
 - **Scenarios reviewed and approved:** a fresh scenario review
   ([review-scenarios](references/review-scenarios.md)) checked the proposals before anything was
   built, and you resolved its findings as *Approve the scenarios* below describes. Then the user,
@@ -92,20 +92,22 @@ filenames are not required.
   count alone: many unique, issue-specific tests are not a useful random split.
 - A failure caused by the trial itself (a refused action, a broken harness, a killed container)
   is inconclusive, not evidence about the agent; fix the probe.
-- **Where tests come from.** Choose sources relevant to the request: runs the user's feedback judged wrong
-  (replay the run, [test-design](references/test-design.md)); open risks; coverage gaps and co-occurring
-  weak signals from a triage (`relai/work/discover/<ingest-id>/lanes.json`); requirements no test
-  covers; harder or combined versions of passing tests ([hardening](references/hardening.md), always as
-  new tests); and, for agent-neutral tests, public reports of real failures and real requests
-  ([agent-neutral](references/agent-neutral.md), *Real requests and failures first*).
+- **Where tests come from.** Choose sources for the user's decision: traces and feedback,
+  incidents, requirements and domain knowledge, open risks, coverage gaps and co-occurring weak
+  signals, public issues and discussions, licensed requests or benchmarks, and harder or combined
+  passing tests ([hardening](references/hardening.md), always as new tests). Prefer relevant
+  observed evidence; fill gaps with labeled synthetic scenarios. Record provenance, authorization
+  and uncertainty. An unresolved report is a lead, not proof of a current failure or difficulty.
+  Preserve the source's mechanism when reconstructing a case ([test-design](references/test-design.md)).
 - Specialized cases: a benchmark ([benchmarks](references/benchmarks.md)), a criterion shared across tests or
   an evaluator to repair ([shared-evaluators](references/shared-evaluators.md)), a dependency trials cannot reach or
   must not call ([mocks](references/mocks.md)).
 
 ## Ask the user
 
-The user is asked at up to three points in a build: once at the start, at scenario approval and
-at the grader preview (or once for both, when the user chose one sitting below). Skip any
+Use the start, scenario approval and grader preview as the usual build checkpoints (or combine
+approvals when the user chose one sitting below). Ask consequential blockers when they arise;
+continue independent work. Skip any
 question that the request, `relai/decisions.md`, the wiki or an agreement already answers. At the
 start, ask together only what is still open:
 
@@ -116,6 +118,15 @@ start, ask together only what is still open:
 - **What the results will decide**, when not evident: catching regressions before merge, gating
   a release, comparing models or prompts, or seeing where the agent stands. It sets the split
   recommendation, attempts and spend.
+- **Selection preferences**, when they change the suite: representative coverage, regressions,
+  difficult capability probes or workflow readiness; relevant domains, realism, interaction,
+  allowed sources and budget. Recommend a mix for the decision: known failures and ordinary
+  cases for regressions, representative tasks plus difficult cases for comparisons, or realistic
+  hardening for capability limits. Failure-selected suites do not estimate normal success rates.
+- For agent-neutral work, unresolved participants and interaction/evidence boundaries
+  ([agent-neutral](references/agent-neutral.md), *Establish the boundary before scenarios*).
+  Explain conflicts, affected tasks or claims, and recommended options before asking. Adapt
+  unsuitable defaults within scope; pause only work depending on an unresolved guarantee.
 - On first use, the harness questions still open ([harness](references/harness.md), *Ask the user*).
 - **How involved to be**, when nothing says
   ([delegated approvals](../start/template/README.md#working-with-the-user)): approve the
@@ -156,7 +167,7 @@ the first few, or change the list.
 ## Preview the graders before freezing
 
 Freezing stops anyone tuning a test to the agent's results, so preview without running the agent:
-score each test's evaluators on synthetic trajectories (a passing one, a failing one that commits
+score each test's evaluators on synthetic evidence (trajectories, artifacts, state or journals) (a passing one, a failing one that commits
 the risk's observable failure, an empty reply, and a **shortcut**) and on any real recorded traces
 that fit the scenario. The shortcut is the cheapest strategy that skips what makes the test hard,
 as the scenario proposal names it: acting on the first or only match, reading the answer off the

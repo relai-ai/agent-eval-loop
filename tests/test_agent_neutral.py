@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path
 from unittest.mock import patch
 
-from helpers import EXAMPLES, Repo
+from helpers import EXAMPLES, Repo, harbor_job, harbor_trial
 
 TOKEN = "test-token"
 
@@ -393,18 +393,160 @@ class CheckServicesTest(unittest.TestCase):
         self.edit("environment/Dockerfile", "COPY notes/state.json /app/\n", "COPY . /app/\n")
         self.assertIn("copies the whole context", self.check())
 
-    def test_stdio_servers_warn_and_a_separate_verifier_or_missing_primary_is_an_error(self):
+    def test_stdio_servers_warn_and_a_separate_verifier_is_an_error(self):
         self.edit("task.toml", 'transport = "streamable-http"\nurl = "http://notes:8000/mcp"',
                   'transport = "stdio"\ncommand = "python3"')
         self.assertIn("runs over stdio inside the agent's container", self.check())
         self.edit("task.toml", "[verifier]\n", '[verifier]\nenvironment_mode = "separate"\n')
         self.assertIn("shares the agent's container", self.check())
+
+    def test_a_judge_primary_is_valid_but_an_unknown_primary_is_an_error(self):
         self.edit("task.toml", 'primary = "saved-the-note"', 'primary = "reports-the-note"')
-        self.assertIn("must be a code evaluator that reads the services' journals", self.check())
+        self.assertIn("PASS: task tests/save-a-note", self.check())
+        self.edit("task.toml", 'primary = "reports-the-note"', 'primary = "missing"')
+        self.assertIn("primary must name the declared evaluator", self.check())
 
     def test_a_neutral_task_without_either_table_is_an_error(self):
         self.edit("task.toml", "[metadata.relai.services]", "[metadata.relai.other]")
         self.assertIn("no [metadata.relai.services] table", self.check())
+
+
+NATIVE_TASK_TOML = '''\
+[metadata.relai]
+id = "service-result"
+behavior = "Produces a useful explanation from the service data."
+agent_neutral = true
+
+[metadata.relai.services]
+source = "written"
+origin = "a synthetic service contract fixture"
+primary = "useful-explanation"
+
+[[metadata.relai.evaluators]]
+id = "useful-explanation"
+type = "judge"
+method = "semantic"
+criterion = "The explanation answers the request using the service data."
+rubric = "tests/judges/explanation.md"
+inputs = ["verifier/reply.txt"]
+min_score = 0.0
+max_score = 1.0
+
+[[metadata.relai.evaluators]]
+id = "service-state"
+type = "code"
+method = "exact"
+criterion = "The expected state is preserved."
+min_score = 0.0
+max_score = 1.0
+'''
+
+
+class NativeServiceTaskTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.project = Repo()
+        self.project.write("relai/relai.toml", '[runner]\nkind = "native"\nisolation = "container"\n')
+        self.task = self.project.write("relai/tests/service-result/task.toml", NATIVE_TASK_TOML).parent
+        self.project.write("relai/tests/service-result/instruction.md", "Explain the service result.")
+        self.project.write("relai/tests/service-result/tests/judges/explanation.md",
+                           "Full marks for a useful explanation supported by the service result.")
+
+    def tearDown(self) -> None:
+        self.project.close()
+
+    def check(self):
+        return self.project.run("check_task.py", str(self.task))
+
+    def test_native_service_metadata_needs_no_harbor_structure(self):
+        out = self.check()
+        self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
+        self.assertIn("static checks do not certify", out.stdout)
+        self.assertFalse((self.task / "environment").exists())
+        self.assertFalse((self.task / "solution").exists())
+
+    def test_native_validation_retains_primary_and_secret_checks(self):
+        path = self.task / "task.toml"
+        path.write_text(NATIVE_TASK_TOML.replace('primary = "useful-explanation"', 'primary = "missing"'))
+        out = self.check()
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("primary must name the declared evaluator", out.stdout)
+        path.write_text(NATIVE_TASK_TOML)
+        (self.task / ".env").write_text("SYNTHETIC_TOKEN=fixture-only\n")
+        out = self.check()
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("secret values never go in a task", out.stdout)
+
+    def test_native_judge_primary_requires_a_valid_rubric(self):
+        (self.task / "tests" / "judges" / "explanation.md").unlink()
+        out = self.check()
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("rubric", out.stdout)
+
+    def trial(self, job, name, judgment=None, with_trajectory=False):
+        trial = harbor_trial(job, name, self.task, {"service-state": 1.0},
+                             feedback={"service-state": "state preserved"},
+                             judges={"useful-explanation": judgment} if judgment is not None else None,
+                             with_trajectory=with_trajectory)
+        result_path = trial / "result.json"
+        result = json.loads(result_path.read_text())
+        result.update(runner="native", runner_id="fixture-service", runner_command="fixture")
+        result_path.write_text(json.dumps(result))
+        (trial / "verifier" / "reply.txt").write_text("An explanation from the service result.")
+        return trial
+
+    def summary(self, job):
+        output = self.project.root / "summary.json"
+        out = self.project.run("summarize.py", str(job), "--json", str(output))
+        self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
+        return json.loads(output.read_text())["run"]
+
+    def test_judge_primary_scores_and_keeps_pending_and_errors_out_of_solved_denominator(self):
+        job = harbor_job(self.project.root / "runs", "job", 4)
+        self.trial(job, "pass", {"score": 1.0, "feedback": "supported and useful"})
+        self.trial(job, "fail", {"score": 0.0, "feedback": "does not answer the request"})
+        self.trial(job, "pending")
+        self.trial(job, "error", {"error": "judge unavailable"})
+        run = self.summary(job)
+        test = run["tests"]["tests/service-result"]
+        self.assertEqual(test["solved"]["solved"], 1)
+        self.assertEqual(test["solved"]["scored"], 2)
+        self.assertEqual(test["solved"]["attempts"], 4)
+        self.assertEqual(test["solved"]["rate"], 0.5)
+        self.assertEqual(test["status_counts"]["judges pending"], 1)
+        self.assertEqual(test["status_counts"]["evaluator error"], 1)
+        self.assertEqual(run["solved"]["attempts"], 2)
+
+    def test_a_primary_needing_a_missing_trajectory_cannot_establish_success(self):
+        path = self.task / "task.toml"
+        path.write_text(NATIVE_TASK_TOML.replace('inputs = ["verifier/reply.txt"]', 'inputs = ["trajectory"]'))
+        self.assertEqual(self.check().returncode, 0)
+        job = harbor_job(self.project.root / "runs", "job", 2)
+        self.trial(job, "absent", {"score": 1.0, "feedback": "stale judgment"})
+        self.trial(job, "present", {"score": 1.0, "feedback": "supported"}, with_trajectory=True)
+        test = self.summary(job)["tests"]["tests/service-result"]
+        self.assertEqual(test["status_counts"]["unscored"], 1)
+        self.assertEqual(test["solved"]["solved"], 1)
+        self.assertEqual(test["solved"]["scored"], 1)
+        absent = next(t for t in test["trials"] if t["trial"] == "absent")
+        self.assertEqual(absent["evaluators"]["useful-explanation"]["state"], "not recorded")
+        self.assertIsNone(absent["score"])
+
+    def test_a_missing_primary_input_invalidates_a_stale_judgment(self):
+        for index, name in enumerate(("verifier/reply.txt", "instruction")):
+            with self.subTest(input=name):
+                (self.task / "task.toml").write_text(
+                    NATIVE_TASK_TOML.replace('inputs = ["verifier/reply.txt"]', f'inputs = ["{name}"]'))
+                job = harbor_job(self.project.root / "runs", f"job-{index}", 1)
+                trial = self.trial(job, "missing", {"score": 1.0, "feedback": "stale judgment"})
+                path = self.task / "instruction.md" if name == "instruction" else trial / name
+                path.unlink()
+                test = self.summary(job)["tests"]["tests/service-result"]
+                self.assertEqual(test["solved"]["scored"], 0)
+                self.assertIsNone(test["solved"]["rate"])
+                self.assertEqual(test["status_counts"]["evaluator error"], 1)
+                outcome = test["trials"][0]["evaluators"]["useful-explanation"]
+                self.assertEqual(outcome["state"], "error")
+                self.assertIn(name, outcome["message"])
 
 
 if __name__ == "__main__":

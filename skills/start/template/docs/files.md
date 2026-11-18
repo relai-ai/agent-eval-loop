@@ -84,9 +84,9 @@ id = "team"
 path = "setups/team"         # relative to relai/
 agent = "<agent id>"         # optional: the agent whose files it is written in; matched setups share the same guidance
 
-[[agents]]                   # optional: agents run on agent-neutral tasks with their own services (the eval skill)
+[[agents]]                   # optional: agents run on shared service tasks (the eval skill); this example uses Harbor
 id = "<label>"
-agent = "<Harbor agent name>"  # passed to `harbor run -a`; it must support task MCP servers
+agent = "<Harbor agent name>"  # Harbor example: passed to `harbor run -a`; check task MCP compatibility
 model = "<provider/model>"     # passed as -m
 version = "<agent release>"    # passed as --ak version=...; recorded before the first paid run
 auth = "api-key"               # or "subscription"
@@ -204,9 +204,25 @@ Missing params or hidden files are errors: the task itself is broken.
 
 ### An agent-neutral task with its own services
 
-A task any agent Harbor installs can run (the `eval` skill's agent-neutral mode): the agent reaches
-the task's mock services as MCP servers in sidecar containers, and the verifier reads what the
-services recorded. Beside the shared table it declares:
+A shared service task for the agreed participants or compatibility requirements (`eval`'s
+agent-neutral mode). Reuse or adapt suitable infrastructure. The supplied Harbor implementation
+uses MCP sidecars and service journals/state. Its format below adds to the shared metadata;
+Harbor-specific fields and layout apply only when using this implementation.
+
+A native service task keeps `agent_neutral = true`, `[metadata.relai.services]` and evaluator
+definitions when using the checkers. Its integration can use other service interfaces, authorized
+isolated real services or mocks, and its own execution limits and reference-solution mechanism.
+It needs no Harbor tables, MCP configuration, Compose file, Dockerfile, shared verifier placement
+or `solution/solve.sh`. Record the actual integration and demonstrate containment, fresh trial
+state, service access, bounded execution, and grading on passing/failing evidence. Static checks
+cannot certify these runtime guarantees. Project-native formats may instead meet the shared
+contract through their own checks (`native.md`).
+
+`services.primary` names a declared evaluator: code for exact facts, or a validated judge for
+semantic success. All participants need its declared evidence for a solved-rate comparison;
+missing primary evidence leaves success unmeasured. Coding tasks retain their code primary.
+
+For the supplied Harbor layout:
 
 ```toml
 [agent]
@@ -223,7 +239,7 @@ agent_neutral = true
 [metadata.relai.services]
 source = "issue"                     # issue, request, session or written
 origin = "owner/repo#1234"           # where the scenario came from
-primary = "<code-evaluator-id>"      # the code evaluator that says the task was solved; reads the services
+primary = "<evaluator-id>"           # code or judge evaluator that establishes task success
 category = "<area>"
 
 [[metadata.relai.evaluators]]
@@ -294,11 +310,13 @@ available results using current task definitions and reports that limitation thr
 
 **The pass rule.** An attempt (one trial) is scored when it has a trajectory (an agent-neutral
 task's attempt needs none), the runner did not
-end it before grading completed, and every evaluator the test declares has a score within its
-bounds. The attempt's score is the mean, over those evaluators, of
+end it before grading completed, and every recorded evaluator has a score within its bounds.
+For agent-neutral tasks, evaluators needing an absent trajectory are "not recorded" and excluded
+from the mean; an absent primary result leaves the attempt unscored even if other checks scored.
+Errors and pending judges remain explicit. The attempt's score is the mean, over those evaluators, of
 `(score - min_score) / (max_score - min_score)`. A test passes when the mean of its scored
 attempts' scores is at or above `pass_mark`. A test with no scored attempt has not passed: report
-it apart, as a runtime failure, evaluator error or pending judge. `summarize.py` computes exactly
+it apart, as unscored, a runtime failure, evaluator error or pending judge. `summarize.py` computes exactly
 this as each test's `mean`.
 
 **Subagent judges.** With `[judge] mode = "subagent"`, judges are fresh subagents that have not
@@ -306,7 +324,7 @@ seen the run being judged or the conversation around it; one subagent may judge 
 Give each the rubric file, the criterion, the score bounds, the paths of the inputs its evaluator
 lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.json`, plus the rules the example judge gives its model:
 
-- Judge only what the trajectory shows; do not assume actions that were not recorded.
+- Judge only what the declared inputs show; do not assume actions that were not recorded.
 - Score the whole relevant turn: all agent steps after a user step and before the next one.
 - Accept any wording that satisfies the rubric; do not reward or punish style it does not mention.
 - If the rubric grades a deliverable the user asked for and the agent did not produce it, give the
@@ -318,7 +336,7 @@ lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.j
 
 Each mock is listed in `harness/mocks/MOCKS.md` with the dependency it replaces, its real hosts
 or functions, why, and the applicable authorization (an approval or covering agreement); in an
-agent-neutral task with its own services, the task's README lists its sidecars instead. A mock
+agent-neutral task with its own services, the task's README lists its service boundaries instead. A mock
 appends one JSON line per call to
 `/logs/agent/mock-journal.jsonl` (or `agent/mock-journal.jsonl` in a native trial; a sidecar
 serves its journal to the verifier, which copies it to `/logs/verifier/mock-journal.jsonl`):

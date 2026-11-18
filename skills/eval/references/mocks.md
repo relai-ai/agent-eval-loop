@@ -1,6 +1,6 @@
 # Mock a dependency
 
-Without a harness, build it first ([harness](harness.md)).
+Use the selected runner's integration, building a harness when needed ([harness](harness.md)).
 
 Goal: the agent runs for real with only the dependency's client boundary replaced, and evaluators
 can see what the agent tried to do.
@@ -78,15 +78,17 @@ longer being tested.
 - Keep mutable data in an explicit state object, never in module globals, so it starts fresh in
   each trial and its changes can be journaled.
 - Use a seeded clock, random source and id sequence instead of the wall clock, `random` or `uuid`.
-- Beyond its journal, mock code writes no files, makes no outbound network calls and starts no
-  subprocesses of its own. A mock served at a base URL or as an MCP server listens only inside
-  the trial.
+- Keep mock behavior self-contained and reproducible. Additional files, outbound calls or
+  subprocesses need a task-relevant reason and must preserve containment, authorization and
+  evidence. A simulated-user provider is one such dependency; account for its data and cost.
+  A mock served at a base URL or as an MCP server listens only inside the trial.
 - Never import the agent's own project: a mock simulates the dependency, not the agent.
 
 ### In an agent-neutral test
 
-The mock runs as an MCP server in a sidecar container, as [agent-neutral](agent-neutral.md)
-describes.
+Use the agreed interaction boundary and selected runner, as [agent-neutral](agent-neutral.md)
+describes. MCP in a sidecar is the supplied Harbor implementation; other isolated service
+interfaces can satisfy the same guarantees.
 
 ### Read a near miss as evidence
 
