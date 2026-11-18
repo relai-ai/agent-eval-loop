@@ -213,9 +213,9 @@ services recorded. Beside the shared table it declares:
 timeout_sec = 900                    # required: Harbor has no default
 
 [[environment.mcp_servers]]          # one per service; Harbor registers them with each agent that supports it
-name = "office"
+name = "<service>"
 transport = "streamable-http"
-url = "http://office:8000/mcp"       # a sidecar service in environment/docker-compose.yaml
+url = "http://<service>:8000/mcp"    # a sidecar service in environment/docker-compose.yaml
 
 [metadata.relai]
 agent_neutral = true
@@ -223,11 +223,11 @@ agent_neutral = true
 [metadata.relai.services]
 source = "issue"                     # issue, request, session or written
 origin = "owner/repo#1234"           # where the scenario came from
-primary = "moved-the-meeting"        # the code evaluator that says the task was solved; reads the services
-category = "calendar"
+primary = "<code-evaluator-id>"      # the code evaluator that says the task was solved; reads the services
+category = "<area>"
 
 [[metadata.relai.evaluators]]
-id = "confirms-new-time"
+id = "<judge-evaluator-id>"
 type = "judge"
 inputs = ["verifier/mock-journal.jsonl"]   # what the agent sent, from the service journal
 # ...
@@ -253,8 +253,7 @@ relai/tests/<id>/
 The verifier shares the agent's environment (leave `environment_mode` unset) so it can reach the
 sidecars. It reads each service's `/relai/journal` and `/relai/state` with the token, which
 arrives only with `tests/`, and copies the journal to `/logs/verifier/mock-journal.jsonl` for
-judges. The plugin's `examples/mcp_service.py` serves these endpoints, and
-`examples/agent-neutral-task/` holds a complete task. `check_task.py` checks that every MCP
+judges. The plugin's `examples/mcp_service.py` serves these endpoints. `check_task.py` checks that every MCP
 server points at a sidecar and that the agent's image copies nothing from one.
 
 ## The smoke test: `harness/smoke/`

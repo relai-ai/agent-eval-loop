@@ -10,9 +10,9 @@ In this mode each test is a Harbor task that brings its own services. Harbor ins
 under test, and the agent reaches the task's mock services (mail, calendar, files, a store, a
 simulated user) as MCP servers running in sidecar containers. The verifier reads what the
 services recorded, so every agent is scored the same way, with or without a trajectory.
-`relai/docs/files.md` (*An agent-neutral task with its own services*) is the format; the plugin's
-`examples/agent-neutral-task/move-one-on-one/` is a complete task that passes `check_task.py` and
-Harbor's oracle and nop runs.
+`relai/docs/files.md` (*An agent-neutral task with its own services*) is the format and layout;
+the plugin's `examples/mcp_service.py` serves a service from its `tools.json`, handlers and
+starting state.
 
 ## Done when
 

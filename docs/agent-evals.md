@@ -53,8 +53,7 @@ in sidecar containers. Harbor installs each agent under test and connects it to 
 every agent gets the same tools and data. The checks read what the services recorded, so every
 agent is scored the same way, whether or not it leaves a trajectory. RELAI validates each test
 without a model: a scripted reference solution must pass and doing nothing must fail. See
-[agent-neutral tests](../skills/eval/references/agent-neutral.md) and the complete example in
-[examples/agent-neutral-task](../examples/agent-neutral-task/move-one-on-one/README.md).
+[agent-neutral tests](../skills/eval/references/agent-neutral.md).
 
 ## Use a project-native runner
 
