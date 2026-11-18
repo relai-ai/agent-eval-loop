@@ -13,8 +13,9 @@ merged, and Harbor's own exit status is not trusted (it exits 0 when trials fail
 exception and recorded token counts that are all zero is a runtime failure even when the verifier
 scored it: the agent never reached its model, so the score is the untouched workspace's.
 
-An agent-neutral coding task ([metadata.relai].agent_neutral = true) needs no trajectory to be scored: its
-checks read the workspace. Without a trajectory, the evaluators that need one (code evaluators with
+An agent-neutral task ([metadata.relai].agent_neutral = true) needs no trajectory to be scored: its
+checks read the workspace (a coding task) or the services' journals and state (a task with its own
+services). Without a trajectory, the evaluators that need one (code evaluators with
 trajectory = true, judges whose inputs include "trajectory") are "not recorded" and left out of the pass rule.
 
 A benchmark run through its own runner (wrapped) leaves relai-results.jsonl in its run directory,
@@ -34,8 +35,8 @@ is set (SCORED otherwise, NOT SCORED with no scored attempt), then named warning
 attempts were not scored. Output describes observations, not acceptance or confidence. --details prints full tables;
 --json always writes the complete evidence. observed_change is higher, lower, equal or
 not-comparable; numeric noise/se fields are reference estimates only.
-For an agent-neutral coding task, each test also reports its solved rate: attempts whose main
-check ([metadata.relai.coding].primary, usually the hidden tests) scored full marks, apart from the mean over every recorded
+For an agent-neutral task, each test also reports its solved rate: attempts whose main
+check ([metadata.relai.coding].primary, usually the hidden tests, or [metadata.relai.services].primary) scored full marks, apart from the mean over every recorded
 check. From Harbor's trial timings it reports time per phase (environment setup, which includes any
 image build, agent setup, the agent's work and the verifier), and the agent's cost per solved task.
 Safe on a run still in progress: a job whose trials are not all finished gets a line with trials
@@ -242,8 +243,8 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
         toml = None
     relai_meta = (toml or {}).get("metadata", {}).get("relai", {}) or {}
     neutral = bool(relai_meta.get("agent_neutral"))
-    coding = relai_meta.get("coding") if isinstance(relai_meta.get("coding"), dict) else {}
-    base["primary"] = coding.get("primary") if isinstance(coding.get("primary"), str) else None
+    kind = next((relai_meta[k] for k in ("coding", "services") if isinstance(relai_meta.get(k), dict)), {})
+    base["primary"] = kind.get("primary") if isinstance(kind.get("primary"), str) else None
     if recorded_evaluators(result.get("evaluator_definitions")):
         evaluators = result["evaluator_definitions"]
         base["evaluator_source"] = "recorded"
@@ -549,15 +550,15 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
     solved = summary.get("solved")
     if solved:
         line = (f"Solved (main check at full marks): {solved['solved']} of {solved['attempts']} attempts on "
-                f"{solved['tests']} coding test(s); mean of per-test solved rates {solved['mean_rate']:.2f}. "
+                f"{solved['tests']} agent-neutral test(s); mean of per-test solved rates {solved['mean_rate']:.2f}. "
                 "The per-test mean below averages every recorded check, so it can be lower on tests every attempt solved.")
         print(line)
         if solved["cost_per_solved_task"] is not None:
             print(f"Agent cost per solved task: ${solved['cost_per_solved_task']:.4f} (the cost of all "
-                  f"{solved['coding_attempts']} attempts on coding tests over the {solved['solved']} that solved their task)")
+                  f"{solved['coding_attempts']} attempts on agent-neutral tests over the {solved['solved']} that solved their task)")
         else:
             print(f"Agent cost per solved task: not computed (cost reported for {solved['cost_reported']} of "
-                  f"{solved['coding_attempts']} attempts on coding tests, or none solved)")
+                  f"{solved['coding_attempts']} attempts on agent-neutral tests, or none solved)")
     timing = summary.get("timing") or {}
     shown = [(label, timing.get(phase) or {}) for phase, label in TIMING_LABELS]
     if any(t.get("n") for _, t in shown):
@@ -738,7 +739,7 @@ def print_comparison(comparison: dict, details: bool) -> None:
             return pair["solved"] / pair["scored"]
         more = sum(rate(r["candidate_solved"]) > rate(r["baseline_solved"]) for r in paired)
         fewer = sum(rate(r["candidate_solved"]) < rate(r["baseline_solved"]) for r in paired)
-        print(f"Solved (main check at full marks), paired over {len(paired)} coding test(s): baseline "
+        print(f"Solved (main check at full marks), paired over {len(paired)} agent-neutral test(s): baseline "
               f"{sum(r['baseline_solved']['solved'] for r in paired)} of {sum(r['baseline_solved']['scored'] for r in paired)} "
               f"attempts, candidate {sum(r['candidate_solved']['solved'] for r in paired)} of "
               f"{sum(r['candidate_solved']['scored'] for r in paired)}; the candidate solved more often on {more} "

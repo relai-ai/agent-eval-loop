@@ -827,7 +827,7 @@ class SummarizeWithoutTrajectoryTest(unittest.TestCase):
             self.assertIn("agent 5m00s (6m00s)", out.stdout)
             self.assertIn("Agent cost per solved task: $0.0100", out.stdout)
             out = project.run("summarize.py", str(job), "--baseline", str(job))
-            self.assertIn("paired over 1 coding test(s): baseline 2 of 2 attempts, candidate 2 of 2", out.stdout)
+            self.assertIn("paired over 1 agent-neutral test(s): baseline 2 of 2 attempts, candidate 2 of 2", out.stdout)
             plain = project.task("plain")
             harbor_trial(job, "d", plain, {"looks-up-order": 1.0}, feedback={"looks-up-order": "ok"},
                          judges={"explains": {"score": 1.0, "feedback": "ok"}}, usage={"cost_usd": 5.0})
@@ -841,7 +841,7 @@ class SummarizeWithoutTrajectoryTest(unittest.TestCase):
             self.assertIsNone(run["tests"]["tests/plain"]["solved"])
             self.assertEqual(run["solved"]["tests"], 1)
             self.assertIsNone(run["solved"]["cost_per_solved_task"])
-            self.assertIn("not computed (cost reported for 4 of 5 attempts on coding tests", out.stdout)
+            self.assertIn("not computed (cost reported for 4 of 5 attempts on agent-neutral tests", out.stdout)
         finally:
             project.close()
 

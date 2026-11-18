@@ -1,6 +1,6 @@
 ---
 name: eval
-description: Build and run evaluations for an AI agent or LLM application, including harnesses, failure-based tests, benchmarks and shared evaluators. Also analyze evaluation coverage or design scenarios without requiring implementation or execution. Repair broken tests or mock unreachable dependencies. Use improve for changing the agent or comparing changes; use coding-evals for agent-neutral coding tasks, including agents developed here.
+description: Build and run evaluations for an AI agent or LLM application, including harnesses, failure-based tests, benchmarks and shared evaluators. Also build agent-neutral tests that bring their own mock services, so several agents or harnesses (personal or business assistants such as OpenClaw, Hermes Agent, Claude Code or Codex) run on the same tasks and are compared. Analyze evaluation coverage or design scenarios without requiring implementation or execution. Repair broken tests or mock unreachable dependencies. Use improve for changing the agent or comparing changes; use coding-evals for agent-neutral coding tasks, including agents developed here.
 ---
 
 # Build and run evals
@@ -35,6 +35,11 @@ authorize building or running them.
 - **Run** - run selected frozen tests, score them and report where the agent stands
   ([measure](references/measure.md); its *Done when* applies). On a benchmark, follow
   [benchmarks](references/benchmarks.md). To compare runs before and after a change, use the `improve` skill.
+- **Agent-neutral** - when the user wants several agents or harnesses run on the same tests, or
+  tests others can run on their own agent: tests that bring their own mock services as MCP
+  servers, which any agent Harbor installs can reach ([agent-neutral](references/agent-neutral.md);
+  its *Done when* replaces the harness requirement below). Ask which mode fits when the request
+  could mean either.
 
 ## Done when (build)
 
@@ -46,10 +51,13 @@ examples, a recoverable reviewed test version before real trials, and traceable 
 filenames are not required.
 
 - **Harness ready** (first time only, [harness](references/harness.md); not needed when the only tests are
-  a wrapped benchmark, whose own runner runs the agent).
-- **Scenarios approved:** the user, or an independent reviewer when the approval is delegated
-  (by an agreement or a recorded choice in `decisions.md`),
-  approved the scenario table below.
+  a wrapped benchmark, whose own runner runs the agent, or agent-neutral tests, where Harbor
+  installs each agent).
+- **Scenarios reviewed and approved:** a fresh scenario review
+  ([review-scenarios](references/review-scenarios.md)) checked the proposals before anything was
+  built, and you resolved its findings as *Approve the scenarios* below describes. Then the user,
+  or an independent reviewer when the approval is delegated (by an agreement or a recorded choice
+  in `decisions.md`), approved the scenario table below.
 - Each test is a task under `relai/tests/<id>/` (or a benchmark row) meeting
   `relai/docs/files.md`, with a `README.md` stating behavior, scenario, risk probed and each
   evaluator; `check_task.py` passes, plus `--verifier` for Harbor or synthetic
@@ -87,8 +95,9 @@ filenames are not required.
 - **Where tests come from.** Choose sources relevant to the request: runs the user's feedback judged wrong
   (replay the run, [test-design](references/test-design.md)); open risks; coverage gaps and co-occurring
   weak signals from a triage (`relai/work/discover/<ingest-id>/lanes.json`); requirements no test
-  covers; and harder or combined versions of passing tests ([hardening](references/hardening.md), always as
-  new tests).
+  covers; harder or combined versions of passing tests ([hardening](references/hardening.md), always as
+  new tests); and, for agent-neutral tests, public reports of real failures and real requests
+  ([agent-neutral](references/agent-neutral.md), *Real requests and failures first*).
 - Specialized cases: a benchmark ([benchmarks](references/benchmarks.md)), a criterion shared across tests or
   an evaluator to repair ([shared-evaluators](references/shared-evaluators.md)), a dependency trials cannot reach or
   must not call ([mocks](references/mocks.md)).
@@ -128,7 +137,16 @@ as an instruction, not a question. Reuse existing setup and continue work that d
 
 Unless the approval is delegated or the user chose one sitting, wait for a yes before building. Write each proposed
 test's full design to `relai/records/eval/<date>-scenarios.md` ([test-design](references/test-design.md),
-*Proposing a test*). In chat, show one compact table, in the order you recommend building: the
+*Proposing a test*, including each test's mechanism and shortcut).
+
+Before the user sees the table, have a fresh reviewer check the scenarios file against
+[review-scenarios](references/review-scenarios.md). Apply its *author fixes* findings to the
+scenarios file. Carry its *user decides* findings into the approval question, each with the
+reviewer's recommended default. When the scenario approval is delegated, this review is the
+independent approval. In a one-sitting build, run it before building all the same: it needs only
+the scenarios file and the sources.
+
+In chat, show one compact table, in the order you recommend building: the
 behavior, its source, the scenario in one line naming the real data and the trigger that makes
 it hard, what failing looks like, and its opposite-direction partner, if any. Below it, give the
 cost and time of one trial per test plus judging, in total; a yes approves that as this build's
@@ -139,8 +157,13 @@ the first few, or change the list.
 
 Freezing stops anyone tuning a test to the agent's results, so preview without running the agent:
 score each test's evaluators on synthetic trajectories (a passing one, a failing one that commits
-the risk's observable failure, an empty reply) and on any real recorded traces that fit the
-scenario. Write every test's full table (evaluator × case → score and the first line of
+the risk's observable failure, an empty reply, and a **shortcut**) and on any real recorded traces
+that fit the scenario. The shortcut is the cheapest strategy that skips what makes the test hard,
+as the scenario proposal names it: acting on the first or only match, reading the answer off the
+starting data, or ignoring the instruction that matters. It must fail the primary check or an
+evaluator named for the risk; if it passes, the test leaks its answer, so fix the scenario before
+freezing. For a behavior with an opposite-direction partner, also score the over-cautious
+strategy (always asks, never acts, refuses) on the test where acting is right. Write every test's full table (evaluator × case → score and the first line of
 feedback) to `relai/records/eval/<date>-grader-preview.md`. Size chat previews by the shared
 [decision-effort rule](../start/template/README.md#working-with-the-user), reviewing manageable
 subsets when needed while keeping the complete artifact and pending decisions visible. For the

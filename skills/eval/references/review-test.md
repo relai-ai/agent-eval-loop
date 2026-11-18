@@ -20,7 +20,10 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    context: no expected answer, diagnosis, root cause, or suggested fix. When used, a simulated user's
    instructions hold the user's goal and knowledge, never the expected agent behavior.
 3. **Not made easy.** Ambiguity, competing cues and constraints that make the behavior hard are
-   kept; the input was not simplified so the right answer is obvious.
+   kept; the input was not simplified so the right answer is obvious. Try at least one cheap
+   strategy that skips the trigger beyond the shortcut the preview already scores (acting on
+   the first or only match, reading the answer off the starting data or the environment,
+   ignoring the instruction that matters). Any that passes is blocking.
 4. **Right method.** Exact criteria use code; anything with many valid phrasings uses a judge.
    No keyword or regex check stands in for meaning, no judge decides a fact code could check, and
    independent criteria are not merged into one score where one failure could hide another. A
@@ -38,8 +41,8 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    refusing, asking, searching, calling a tool), a test exists, or is proposed, where doing it is
    the right answer, so an agent that never does it cannot pass every test.
 10. **Previewed.** The grader preview (`relai/records/eval/<date>-grader-preview.md`: scores on
-    synthetic pass and fail trajectories, and on real recorded traces where any exist) covers
-    every evaluator and matches the evaluators to be frozen. The user approved it, or the
+    synthetic pass and fail trajectories, a shortcut that fails, and real recorded traces where
+    any exist) covers every evaluator and matches the evaluators to be frozen. The user approved it, or the
     decision is delegated to this independent review (by an agreement or a recorded choice in
     `relai/decisions.md`). Verify which applies.
 

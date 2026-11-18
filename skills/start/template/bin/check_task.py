@@ -23,6 +23,10 @@ leak and verifier checks instead of the harness ones: the workspace image fails 
 is in it, its git bundles hold the start commit and its ancestors only, nothing in tests/ or solution/ is
 visible to the agent, the verifier shares the agent's container and runs isolated, and the protected
 snapshot matches its manifest. --verifier does not apply to it: run the oracle and nop agents instead.
+An agent-neutral task with its own services ([metadata.relai.services], the eval skill's agent-neutral
+mode) gets service checks instead: every mock service is declared as an MCP server that points at a
+sidecar in environment/docker-compose.yaml, the agent's image copies none of a sidecar's files, and
+the verifier shares the agent's environment so it can read the services' journals.
 When every task checked is agent-neutral, [harbor] needs only its version (no harness).
 """
 
@@ -162,7 +166,9 @@ def check_static(task: Path, relai_dir: Path, report: Report, native: bool = Fal
 
     check_evaluators(task, config, report)
     neutral = is_agent_neutral(config)
-    if neutral:
+    if neutral and isinstance((config.get("metadata", {}).get("relai", {}) or {}).get("services"), dict):
+        check_services(task, config, relai_dir, report)
+    elif neutral:
         check_coding(task, config, relai_dir, report)
 
     for current, dirs, _files in os.walk(task):
@@ -275,13 +281,129 @@ def reaches_into(ignored: str, tracked: str) -> bool:
     return any(glob_regex(ignored).match(path) and glob_regex(tracked).match(path) for path in candidates)
 
 
+def check_neutral_basics(task: Path, config: dict, relai_dir: Path, report: Report, table: str, meta: dict,
+                         reads: str, shared_reason: str) -> None:
+    """What every agent-neutral task needs: a primary code check every agent and the oracle are scored on,
+    a shared verifier, an agent timeout, a reference solution and a base image without the harness."""
+    evaluators = declared_evaluators(config)
+    primary = next((ev for ev in evaluators if ev.get("id") == meta.get("primary")), None)
+    if primary is None:
+        report.error(f"[metadata.relai.{table}].primary must name the code evaluator that says the task was solved")
+    elif primary.get("type") != "code" or primary.get("trajectory"):
+        report.error(f"primary evaluator {primary.get('id')!r} must be a code evaluator that {reads}, "
+                     "not the trajectory, so every agent and the oracle are scored on it")
+    if is_separate(config):
+        report.error("an agent-neutral task's verifier shares the agent's container (leave environment_mode unset): "
+                     f"{shared_reason}")
+    timeout = (config.get("agent") or {}).get("timeout_sec")
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
+        report.error("[agent].timeout_sec is missing: Harbor has no default, so an agent that never stops runs forever")
+    if not (task / "solution" / "solve.sh").is_file():
+        report.error("solution/solve.sh is missing: the reference solution that shows the task can be solved")
+    dockerfile = task / "environment" / "Dockerfile"
+    harness = harness_tag(relai_dir)
+    if harness and dockerfile.is_file() and any(
+            op == "FROM" and harness in args for op, args in dockerfile_instructions(dockerfile.read_text(errors="ignore"))):
+        report.error("an agent-neutral task must not start FROM the configured harness image: Harbor installs "
+                     "the agent under test; use a base without that agent installation (public for the "
+                     "bundled hosted recipe, or authorized local/private infrastructure)")
+
+
+def compose_services(text: str) -> dict[str, str | None]:
+    """Service names in a docker-compose.yaml and each one's build context, or None when it has none.
+    A small reader for the plain layout Harbor's examples use, not a full YAML parser."""
+    services: dict[str, str | None] = {}
+    lines = text.lstrip("﻿").splitlines()
+    inside, service_indent, current, in_build = False, None, None, False
+    for line in lines:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        stripped = line.strip()
+        if indent == 0:
+            inside = stripped.rstrip() == "services:"
+            current = None
+            continue
+        if not inside:
+            continue
+        if service_indent is None:
+            service_indent = indent
+        if indent == service_indent and stripped.endswith(":"):
+            current = stripped[:-1].strip("'\"")
+            services[current] = None
+            in_build = False
+            continue
+        if current is None:
+            continue
+        key, _, value = stripped.partition(":")
+        value = value.strip().strip("'\"")
+        if key == "build":
+            in_build = not value
+            if value:
+                services[current] = value
+        elif in_build and key == "context" and value:
+            services[current] = value
+        elif indent <= service_indent + 2 and key != "build":
+            in_build = False
+    return services
+
+
+def check_services(task: Path, config: dict, relai_dir: Path, report: Report) -> None:
+    """An agent-neutral task with its own services: every agent reaches the same mock services through MCP,
+    and only the verifier reads what the services recorded."""
+    meta = config.get("metadata", {}).get("relai", {}) or {}
+    services = meta.get("services") if isinstance(meta.get("services"), dict) else {}
+    check_neutral_basics(task, config, relai_dir, report, "services", services,
+                         "reads the services' journals or final state",
+                         "its checks read the services' journals and state after the agent is done")
+    servers = (config.get("environment") or {}).get("mcp_servers") or []
+    if not servers:
+        report.error("declare each mock service as [[environment.mcp_servers]], so every agent Harbor installs "
+                     "registers the same tools")
+    compose_path = task / "environment" / "docker-compose.yaml"
+    compose = compose_services(compose_path.read_text(errors="ignore")) if compose_path.is_file() else {}
+    for server in servers if isinstance(servers, list) else []:
+        name = (server or {}).get("name", "?")
+        if (server or {}).get("transport", "sse") == "stdio":
+            report.warn(f"MCP server {name!r} runs over stdio inside the agent's container, where the agent can read "
+                        "its files, data and journal; serve it from a sidecar in environment/docker-compose.yaml")
+            continue
+        host = urllib.parse.urlsplit(str((server or {}).get("url") or "")).hostname
+        if not host:
+            report.error(f"MCP server {name!r} needs a url for its {server.get('transport', 'sse')} transport")
+        elif host == "main" or host not in compose:
+            report.error(f"MCP server {name!r} points at {host!r}, which is not a sidecar service in "
+                         "environment/docker-compose.yaml")
+    dockerfile = task / "environment" / "Dockerfile"
+    contexts = {svc: Path(ctx).parts[0] for svc, ctx in compose.items()
+                if svc != "main" and ctx and Path(ctx).parts and Path(ctx).parts[0] not in (".", "..")}
+    if dockerfile.is_file():
+        for op, args in dockerfile_instructions(dockerfile.read_text(errors="ignore")):
+            if op not in ("COPY", "ADD"):
+                continue
+            words = [a for a in args if not a.startswith("--")]
+            for source in words[:-1]:
+                parts = Path(source).parts
+                first = parts[0] if parts and parts[0] != "." else (parts[1] if len(parts) > 1 else ".")
+                if first == "." and contexts:
+                    report.error(f"environment/Dockerfile copies the whole context ({op} {source}), including the "
+                                 "sidecars' files: the agent could read the mock data and journals")
+                for svc, folder in contexts.items():
+                    if first == folder:
+                        report.error(f"environment/Dockerfile copies {source}, the build context of service {svc!r}: "
+                                     "the agent could read the mock data and journals")
+    if not services.get("origin"):
+        report.note("[metadata.relai.services].origin should name where the scenario came from (an issue URL, a "
+                    "dataset row, a session); the reviewer checks the instruction against it")
+
+
 def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> None:
     """An agent-neutral coding task: any coding agent can run it, and nothing it can see gives the answer away."""
     meta = config.get("metadata", {}).get("relai", {}) or {}
     coding = meta.get("coding") if isinstance(meta.get("coding"), dict) else {}
     if not coding:
         report.error("agent_neutral task has no [metadata.relai.coding] table (start_commit, fix_commit, primary, "
-                     "workspace)")
+                     "workspace), and no [metadata.relai.services] table for a task with its own services")
     workspace = coding.get("workspace", "/app")
     start, fix = coding.get("start_commit"), coding.get("fix_commit")
     fix = fix if isinstance(fix, str) and SHA_RE.match(fix) else None
@@ -291,39 +413,20 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
         report.error("[metadata.relai.coding].fix_commit must be the commit id of the real fix, which the workspace "
                      "must not contain; only a task written from scratch (source = \"written\") has none")
 
-    evaluators = declared_evaluators(config)
-    primary = next((ev for ev in evaluators if ev.get("id") == coding.get("primary")), None)
-    if primary is None:
-        report.error("[metadata.relai.coding].primary must name the code evaluator that says the task was solved")
-    elif primary.get("type") != "code" or primary.get("trajectory"):
-        report.error(f"primary evaluator {primary.get('id')!r} must be a code evaluator that reads the workspace, "
-                     "not the trajectory, so every agent and the oracle are scored on it")
-
-    if is_separate(config):
-        report.error("an agent-neutral task's verifier shares the agent's container (leave environment_mode unset): "
-                     "its checks read the workspace the agent left")
+    check_neutral_basics(task, config, relai_dir, report, "coding", coding, "reads the workspace",
+                         "its checks read the workspace the agent left")
     agent = config.get("agent") or {}
-    timeout = agent.get("timeout_sec")
-    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
-        report.error("[agent].timeout_sec is missing: Harbor has no default, so an agent that never stops runs forever")
     if coding.get("request") not in ("verbatim", "symptom"):
         report.note('[metadata.relai.coding].request should say where instruction.md came from: "verbatim" (the '
                     'developer\'s words) or "symptom" (written from the source); the reviewer checks them differently')
     if coding.get("public") is True and agent.get("network_mode") in (None, "public"):
         report.note("the fix is public and the agent's network is open, so an agent could fetch it; the default "
                     "is to restrict [agent].network_mode, fine if the user chose open (record it in the README)")
-    if not (task / "solution" / "solve.sh").is_file():
-        report.error("solution/solve.sh is missing: the reference fix that shows the task can be solved")
 
     env_dir = task / "environment"
     dockerfile = env_dir / "Dockerfile"
     if dockerfile.is_file():
         instructions = dockerfile_instructions(dockerfile.read_text(errors="ignore"))
-        harness = harness_tag(relai_dir)
-        if harness and any(op == "FROM" and harness in args for op, args in instructions):
-            report.error("an agent-neutral task must not start FROM the configured harness image: Harbor installs "
-                         "the agent under test; use a base without that agent installation (public for the "
-                         "bundled hosted recipe, or authorized local/private infrastructure)")
         workdirs = [args[0] for op, args in instructions if op == "WORKDIR" and args]
         effective = (config.get("environment") or {}).get("workdir") or (workdirs[-1] if workdirs else None)
         if effective != workspace:

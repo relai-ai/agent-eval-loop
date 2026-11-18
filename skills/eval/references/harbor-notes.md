@@ -48,6 +48,12 @@ and update this file.
 - **An installed agent's release is a kwarg.** Pass `--ak version=<release>`; without it Harbor
   installs whatever is newest, so runs on different days compare different agents.
   `[agent].user` runs the agent as that user instead of the image's default (often root).
+- **Installing without running.** Observed in 0.26.0: `harbor run --install-only` builds the
+  task environment, installs the agent and stops before the agent runs, so no model is called.
+  The trial's `result.json` records an install failure as its exception, and on success
+  `agent_info` shows the version Harbor detected. A successful install does not show that a
+  later step works: an agent's configuration or MCP registration runs only when the agent
+  starts, so the paid pilot still checks those.
 - **The verifier runs as `[verifier].user`, or the image's default user when unset.** It does not
   fall back to root: with a non-root agent (`[agent].user`, or a final `USER` in the Dockerfile),
   a verifier that must stop processes or write `/logs/verifier` needs `[verifier] user = "root"`,
@@ -97,5 +103,22 @@ and update this file.
   Harbor's trajectory. Read the agent's log before concluding that a file was not loaded.
 - **ATIF**: Harbor validates `ATIF-v1.0` to `v1.8`
   (`python -m harbor.utils.trajectory_validator <file>`); `check_trajectory.py` runs it.
+- **Task MCP servers reach an agent only through its integration.** Observed in 0.26.0 (Harbor's
+  documentation and a run of the plugin's example task): `[[environment.mcp_servers]]` is passed
+  to each installed agent whose capabilities list MCP servers (`claude-code`, `codex`, `openclaw`,
+  `hermes` and others), and "support" means the configuration is passed, not that the agent
+  connects. Confirm from the service journal that a pilot trial called the tools. Only some agents
+  forward HTTP `headers`, so do not rely on them to authenticate an agent to a mock.
+- **Sidecars need Compose.** A task with `environment/docker-compose.yaml` runs on `-e docker`
+  and the other environments Harbor lists for multi-container tasks; on the rest it fails. Harbor
+  reserves the service name `main` for the agent's container. With the verifier left in shared
+  mode, the sidecars are still running when `tests/test.sh` starts, so the verifier can read them
+  over their service names (observed in 0.26.0).
+- **A network limit cuts agents off from sidecars.** Observed in 0.26.0 on `-e docker`: with
+  `[agent] network_mode = "no-network"`, Harbor's egress control puts the task's services in its
+  sidecar's network namespace. A service that declares `expose` then fails to start ("conflicting
+  options: port exposing and the container type network mode"), and without `expose` its name no
+  longer resolves from the agent's container, so the oracle run cannot reach it. Keep the agent's
+  network public for tasks with their own services on this release.
 - **Rescoring**: `harbor trial regrade <trial dir> -p <task>` reruns only the verifier on a
   recorded run; `harbor job resume -p <job dir>` finishes an interrupted job.

@@ -24,6 +24,7 @@
   <a href="#two-ways-to-use-it">Use cases</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#why-relai">Why RELAI</a> ·
+  <a href="#how-relai-checks-each-eval">Eval checks</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="#documentation">Docs</a> ·
   <a href="DESIGN.md">Design</a>
@@ -180,10 +181,30 @@ using the linked project-copy policy.
   and distinguish agent failures from infrastructure and judge errors.
 - **You control changes and spend.** Agree on scope, guardrails and budget. Review scenarios and
   graders before runs. `relai/STATUS.md` records progress, pending decisions and spend when
-  managed state is useful. Fresh-context reviews check the harness, tests and delivered changes.
+  managed state is useful.
 
 Results describe the evaluated scenarios, with no guarantee against every regression.
 [Understand evaluation, review and the limits of the results](docs/evaluation-and-review.md).
+
+## How RELAI checks each eval
+
+Before an eval scores your agent, RELAI checks that it tests the right thing and grades fairly.
+You approve the plan and grading, or delegate that to an independent reviewer.
+
+1. **It comes from something real:** a trace, your feedback, a risk, a requirement, a bug fix
+   or a public bug report.
+2. **Its plan is reviewed before it is built.** For agents you build, a reviewer that did not
+   write the eval checks that the answer can't be read off the input, and that the eval can
+   trigger the failure it targets.
+3. **Its grading is tested before any agent runs.** In the eval's real environment, a reference
+   solution must pass, another correct solution must pass too, and doing nothing must fail.
+   You also see scores of sample runs that are wrong, empty or lazy (skipping the hard part);
+   each must fail.
+4. **A fresh reviewer checks the finished eval** for fairness and useful feedback.
+5. **It is locked before use.** RELAI fingerprints its files so later edits show; a first paid
+   run confirms everything works.
+
+[Details](docs/evaluation-and-review.md#check-tests-and-graders).
 
 ## How it works
 

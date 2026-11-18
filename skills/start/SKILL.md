@@ -10,7 +10,8 @@ RELAI helps teams understand and improve agent behavior. Choose the smallest use
 - [discover](../discover/SKILL.md): requirements, risks and open questions from code, docs or traces.
 - [trace-review](../trace-review/SKILL.md): build or adapt a UI for traces and source-linked
   feedback, including findings, questions and eval review when needed.
-- [eval](../eval/SKILL.md): build missing evaluations, reuse a benchmark, or measure current behavior.
+- [eval](../eval/SKILL.md): build missing evaluations, reuse a benchmark, or measure current behavior;
+  in agent-neutral mode, tests with their own mock services that several agents can run.
 - [improve](../improve/SKILL.md): a direct fix, regression check, or measured behavioral, cost or latency improvement.
 - [loop](../loop/SKILL.md): coordinate ongoing learning and experiments under one agreement.
 - [coding-evals](../coding-evals/SKILL.md): agent-neutral coding tasks from sessions, pull requests

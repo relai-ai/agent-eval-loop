@@ -42,6 +42,33 @@ Questions wait for a natural decision point: the end of `discover`; the start of
 
 ## Check tests and graders
 
+Each eval passes these checks before it counts. Who approves each step, you or an independent
+review, follows the agreement above.
+
+- **Grounded scenarios.** Each proposal names its source (a trace, feedback, a risk, a
+  requirement, a past fix or a public failure report), why the source failed, the trigger that
+  makes the case hard, and the cheapest strategy that would skip it.
+- **Scenario review** (application-agent evals). Before you see the scenarios, a reviewer with
+  fresh context checks that the answer cannot be read off the input or starting data, that the
+  scenario can trigger the source's failure, that one outcome is clearly right, and that the
+  failure leaves evidence a check can read. RELAI fixes what keeps the scenario's intent and
+  brings the rest to you with a recommended answer.
+- **Validation without a model.** These run in the eval's real environment, with no model call.
+  A reference solution scores full marks on every code check (Harbor's oracle run), doing
+  nothing fails the main check (Harbor's nop run), a different correct solution also passes where
+  one exists, and each judge is shown able to fail. A failing control points to a broken
+  environment or grader, so RELAI fixes it before anything is frozen.
+- **Grader preview.** You see each check's scores on passing, failing and empty runs, on recorded
+  traces that fit, and on the shortcut, which must fail. A shortcut that passes means the eval
+  leaks its answer, and RELAI fixes the scenario before freezing.
+- **Test review.** A reviewer that did not build the eval checks each one before it is frozen:
+  it measures the stated behavior, holds no answer in its input, can fail fairly, uses code for
+  facts and judges for meaning, gives useful feedback and stays faithful to its source.
+- **Freeze and pilot.** Frozen evals are fingerprinted; later changes need a recorded reason and
+  a fresh review. A paid pilot confirms the agent runs and every check scores before larger runs.
+
+Across the work:
+
 - Evals are frozen before comparison, with fresh-context reviews of the harness, evals and changes.
 - Measurement effort is chosen for the decision; "too few attempts to tell" is a valid result.
 - Optional held-out evals can be scored without reading their contents while improving the agent.

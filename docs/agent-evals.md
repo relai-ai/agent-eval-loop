@@ -41,6 +41,21 @@ Use RELAI's eval skill to bring in the benchmark at {path-to-benchmark}
 
 RELAI first checks a small pilot against the benchmark's own scorer. It respects the benchmark's splits: fixes are learned from train, validation decides what is kept, and test is reserved for final assessment. The benchmark is pinned to its commit and never edited.
 
+## Compare several agents on the same evals
+
+```text
+Use RELAI's eval skill to build agent-neutral evals for personal assistants from
+these issue reports, and compare OpenClaw and Hermes Agent on them
+```
+
+Each test brings its own mock services (mail, calendar, files, a simulated user) as MCP servers
+in sidecar containers. Harbor installs each agent under test and connects it to those servers, so
+every agent gets the same tools and data. The checks read what the services recorded, so every
+agent is scored the same way, whether or not it leaves a trajectory. RELAI validates each test
+without a model: a scripted reference solution must pass and doing nothing must fail. See
+[agent-neutral tests](../skills/eval/references/agent-neutral.md) and the complete example in
+[examples/agent-neutral-task](../examples/agent-neutral-task/move-one-on-one/README.md).
+
 ## Use a project-native runner
 
 RELAI can reuse a suitable project or benchmark runner instead of Harbor. The integration must

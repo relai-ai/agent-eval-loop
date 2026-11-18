@@ -41,8 +41,9 @@ invoked) is the choice of whoever builds the tests.
    each declared evaluator yields a score within its bounds plus feedback, or an explicit error.
    Project-native records may preserve this evidence in their own format. ATIF and the bundled
    trial layout are required when using integrations or checkers that consume them (`docs/native.md`). An
-   agent-neutral coding task is scored from the workspace when a run has no trajectory (Harbor's
-   oracle, or an agent it records without one); its evaluators that need one are "not recorded".
+   agent-neutral task is scored from the workspace (a coding task) or from its services' journals
+   and state (a task with its own services) when a run has no trajectory (Harbor's oracle, or an
+   agent it records without one); its evaluators that need one are "not recorded".
 3. **Containment.** Trials are contained. Containers are the default. Host execution needs explicit authorization
    (an existing agreement may cover it) and reviewed sandboxing or simulated tool boundaries that
    prevent access to hidden tests, graders, credentials, other trials and unrelated user files,
@@ -100,6 +101,32 @@ invoked) is the choice of whoever builds the tests.
   covered improvement work; otherwise use the current improvement agreement. Do not create
   conflicting duplicate budgets.
 - **Incumbent.** The last accepted version of the agent, initially the user's code.
+
+## Comparing agents
+
+Only when the user wants to compare different agents on agent-neutral tasks (coding tasks, or
+tasks with their own services). The tasks need no change; what differs between agents is what
+they read, what is recorded and what they cost.
+
+- **What each agent reads.** Agents read different instruction, persona, memory and skill files,
+  and which ones depends on the agent and its version. Compare either every agent bare, or each
+  with its **matched setup**: the same guidance written into each agent's own files. Never one
+  agent's setup against another bare. Confirm from a trial that each agent loaded the files meant
+  for it.
+- **Same conditions.** The same frozen tasks, attempts, network setting and web-tool setting for
+  every agent, with `[agent].timeout_sec` covering the slowest compared agent's normal runs; a
+  timed-out run is graded and counts as that agent's result, so report timeouts per agent.
+- **A fair basis.** The headline is the primary check's solved rate, which every agent and the
+  oracle are scored on. Beside it, compare only the checks recorded for every agent compared, and
+  show each agent's recording coverage: a judge that reads the run record is "not recorded" for an
+  agent Harbor records without one, so the pass rule over all checks covers different checks per
+  agent.
+- **Cost in one unit.** Report tokens and time per trial and per solved task; dollars only when
+  every compared agent pays per token.
+- **Paired against a baseline.** Pick one agent as the baseline and compare each other agent with
+  it task by task (`bin/summarize.py --baseline`); report the agents side by side from those runs.
+- **Say what is compared.** The same model on every agent compares the agents' harnesses; each
+  agent on its own default model compares the products. Report which one the runs measure.
 
 ## Maintain useful knowledge
 
@@ -214,8 +241,9 @@ or printing the value.
 - **Native:** the integration declares and checks its own runtime and containment (Fixed rules, *Containment*).
 - **When Harbor or a container engine is missing:** tell the user what is missing and the
   alternatives: start or install a supported engine, a native runner with authorized containment
-  (`docs/native.md`), or a hosted runner (`docs/harbor.md`). Agent-neutral coding tasks need
-  Harbor-compatible execution, locally or hosted.
+  (`docs/native.md`), or a hosted runner (`docs/harbor.md`). Agent-neutral tasks need
+  Harbor-compatible execution, locally or hosted; tasks with their own services also need an
+  environment that runs Harbor's multi-container tasks (`docker` or another with Compose support).
 
 ## Working with the user
 

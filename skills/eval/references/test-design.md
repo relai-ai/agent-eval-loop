@@ -109,7 +109,13 @@ requirement, the user's feedback on a run, a triage gap with how many real runs 
 compound of named signals or tests, or a harder rung of an existing test); the risks and
 requirements it covers; the scenario, naming the real data it uses; the trigger that makes it
 hard; what passing and failing look like; its opposite-direction partner, if any; its split; and
-what would make the probe invalid.
+what would make the probe invalid. Also state:
+
+- **The mechanism:** why the source failed, and concrete evidence that this scenario can trigger
+  that cause (a size, a count, a timing or a state). When it cannot, say what the test covers
+  instead.
+- **The shortcut:** the cheapest strategy that skips the trigger, and why it fails the test. The
+  grader preview later scores it ([eval](../SKILL.md), *Preview the graders before freezing*).
 
 When the request calls for coverage of a defined set of behaviors or findings, account for each
 within the agreed scope with a scenario that exercises it and an observable passing/failing

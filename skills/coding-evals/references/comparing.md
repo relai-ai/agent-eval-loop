@@ -62,29 +62,16 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
 
 ## Comparing agents
 
-Only when the user wants to compare different coding agents. The tasks need no change; what
-differs between agents is what they read, what is recorded and what they cost.
+Only when the user wants to compare different coding agents. Follow *Comparing agents* in
+`relai/README.md`, which holds the rules shared with other agent-neutral tasks. For coding agents:
 
-- **What each agent reads.** Agents read different instruction files (such as `CLAUDE.md` and
-  `.claude/`, or `AGENTS.md`), and which ones depends on the agent and its version (*Setups*).
-  Each task's README lists the agent instruction
-  files its workspace already holds at the start commit; when they favor some agents, say so and
-  offer a bare variant that removes them, or matched setups. Compare either bare against bare, or
-  each agent with its **matched setup**: the same team guidance written into each agent's own
-  files (`[[coding_evals.setups]]` with `agent`). Never one agent's setup against another bare.
-- **Same conditions.** The same frozen tasks, attempts, network setting and web-tool setting for
-  every agent, with `[agent].timeout_sec` covering the slowest compared agent's normal runs
-  (*Before any paid run*); a timed-out run is graded and counts as that agent's result, so report
-  timeouts per agent.
-- **A fair basis.** The headline is the primary check's solved rate, which every agent and the
-  oracle are scored on. Beside it, compare only the checks recorded for every agent compared, and
-  show each agent's recording coverage: a judge that reads the run record is "not recorded" for an
-  agent Harbor records without one, so the pass rule over all checks covers different checks per
-  agent.
-- **Cost in one unit.** Report tokens and time per trial and per solved task; dollars only when
-  every compared agent pays per token.
-- **Paired against a baseline.** Pick one agent as the baseline and compare each other agent with
-  it task by task (`summarize.py --baseline`); report the agents side by side from those runs.
+- **Instruction files in the workspace.** Coding agents read different instruction files (such as
+  `CLAUDE.md` and `.claude/`, or `AGENTS.md`), and which ones depends on the agent and its version
+  (*Setups*). Each task's README lists the agent instruction files its workspace already holds at
+  the start commit; when they favor some agents, say so and offer a bare variant that removes
+  them, or matched setups written as `[[coding_evals.setups]]` with `agent`.
+- **Timeouts.** Set `[agent].timeout_sec` from the slowest compared agent's measured trial
+  (*Before any paid run*).
 
 ## Setups: does our setup help?
 

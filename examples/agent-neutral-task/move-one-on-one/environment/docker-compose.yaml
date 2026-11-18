@@ -1,0 +1,18 @@
+services:
+  main:
+    depends_on:
+      office:
+        condition: service_healthy
+  office:
+    build:
+      context: ./office
+    expose:
+      - "8000"
+    environment:
+      RELAI_VERIFIER_TOKEN: "4e84d5d658bae8afe4af53bf05843b73"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=2)"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 3s

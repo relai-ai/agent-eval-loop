@@ -1,6 +1,6 @@
 ---
 name: coding-evals
-description: Build and run agent-neutral coding evals from sessions, PRs or git history for a team's coding agent, including one developed here. Measure its baseline or compare models, versions, setup changes and agents. Use eval for application-agent scenarios and harnesses.
+description: Build and run agent-neutral coding evals from sessions, PRs or git history for a team's coding agent, including one developed here. Measure its baseline or compare models, versions, setup changes and agents. Use eval for application-agent scenarios and harnesses, and for agent-neutral tasks that are not coding work, such as personal or business assistants using mail, calendars or other services.
 ---
 
 # Evals for coding agents

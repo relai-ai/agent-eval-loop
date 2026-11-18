@@ -83,6 +83,16 @@ baseline = true                # the version other runs are compared against
 id = "team"
 path = "setups/team"         # relative to relai/
 agent = "<agent id>"         # optional: the agent whose files it is written in; matched setups share the same guidance
+
+[[agents]]                   # optional: agents run on agent-neutral tasks with their own services (the eval skill)
+id = "<label>"
+agent = "<Harbor agent name>"  # passed to `harbor run -a`; it must support task MCP servers
+model = "<provider/model>"     # passed as -m
+version = "<agent release>"    # passed as --ak version=...; recorded before the first paid run
+auth = "api-key"               # or "subscription"
+env = ["<CREDENTIAL_NAME>"]    # names only
+setup = "setups/<id>"          # optional: the instruction, persona, memory or skill files installed for it
+baseline = true                # the agent the others are compared against
 ```
 
 Invalid runner kinds or isolation values are errors.
@@ -192,6 +202,61 @@ trajectory, evaluators that need one are "not recorded" and left out of the pass
 
 Missing params or hidden files are errors: the task itself is broken.
 
+### An agent-neutral task with its own services
+
+A task any agent Harbor installs can run (the `eval` skill's agent-neutral mode): the agent reaches
+the task's mock services as MCP servers in sidecar containers, and the verifier reads what the
+services recorded. Beside the shared table it declares:
+
+```toml
+[agent]
+timeout_sec = 900                    # required: Harbor has no default
+
+[[environment.mcp_servers]]          # one per service; Harbor registers them with each agent that supports it
+name = "office"
+transport = "streamable-http"
+url = "http://office:8000/mcp"       # a sidecar service in environment/docker-compose.yaml
+
+[metadata.relai]
+agent_neutral = true
+
+[metadata.relai.services]
+source = "issue"                     # issue, request, session or written
+origin = "openclaw/openclaw#1234"    # where the scenario came from
+primary = "moved-the-meeting"        # the code evaluator that says the task was solved; reads the services
+category = "calendar"
+
+[[metadata.relai.evaluators]]
+id = "confirms-new-time"
+type = "judge"
+inputs = ["verifier/mock-journal.jsonl"]   # what the agent sent, from the service journal
+# ...
+```
+
+Layout:
+
+```
+relai/tests/<id>/
+├── task.toml, instruction.md, README.md
+├── environment/
+│   ├── Dockerfile               # the agent's container: base image and any workspace; copies nothing from a sidecar
+│   ├── docker-compose.yaml      # the sidecars, with RELAI_VERIFIER_TOKEN in each service's environment
+│   └── <service>/               # a sidecar's build context: mcp_service.py, tools.json, handlers.py, state.json
+├── solution/solve.sh            # the reference solution, calling the same MCP tools; Harbor's oracle agent runs it
+└── tests/
+    ├── test.sh, verify.py       # clear /logs/verifier, then run the checks isolated (python3 -I -S)
+    ├── evaluate.py              # the plugin's helper for score files
+    ├── params.json              # each service's URL and the verifier token
+    └── judges/                  # rubrics
+```
+
+The verifier shares the agent's environment (leave `environment_mode` unset) so it can reach the
+sidecars. It reads each service's `/relai/journal` and `/relai/state` with the token, which
+arrives only with `tests/`, and copies the journal to `/logs/verifier/mock-journal.jsonl` for
+judges. The plugin's `examples/mcp_service.py` serves these endpoints, and
+`examples/agent-neutral-task/` holds a complete task. `check_task.py` checks that every MCP
+server points at a sidecar and that the agent's image copies nothing from one.
+
 ## The smoke test: `harness/smoke/`
 
 A task for the declared runner whose only job is to prove the harness works: the real agent ran,
@@ -229,7 +294,7 @@ available results using current task definitions and reports that limitation thr
 `evaluator_source` and a notice. Current bounds are not verified historical definitions.
 
 **The pass rule.** An attempt (one trial) is scored when it has a trajectory (an agent-neutral
-coding task's attempt needs none), the runner did not
+task's attempt needs none), the runner did not
 end it before grading completed, and every evaluator the test declares has a score within its
 bounds. The attempt's score is the mean, over those evaluators, of
 `(score - min_score) / (max_score - min_score)`. A test passes when the mean of its scored
@@ -253,12 +318,17 @@ lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.j
 ## Mocks
 
 Each mock is listed in `harness/mocks/MOCKS.md` with the dependency it replaces, its real hosts
-or functions, why, and the applicable authorization (an approval or covering agreement). A mock
+or functions, why, and the applicable authorization (an approval or covering agreement); in an
+agent-neutral task with its own services, the task's README lists its sidecars instead. A mock
 appends one JSON line per call to
-`/logs/agent/mock-journal.jsonl` (or `agent/mock-journal.jsonl` in a native trial):
+`/logs/agent/mock-journal.jsonl` (or `agent/mock-journal.jsonl` in a native trial; a sidecar
+serves its journal to the verifier, which copies it to `/logs/verifier/mock-journal.jsonl`):
 `{"target", "operation", "input", "outcome", "response"}`, where `outcome` is `matched`,
 `unmatched` or `error`. A call that changes the mock's state also records the change as
-`state_change`. No journal means no calls.
+`state_change`. No journal means no calls. A mock may add `seq` (its handling order) and
+`received_at` and `responded_at` (Unix seconds), as the plugin's `examples/mcp_service.py` does,
+so a check can tell whether one call was sent before the agent saw another's result. A check
+never reads them as anything the agent saw.
 
 ## `frozen.json`
 
@@ -359,7 +429,8 @@ Ratings are `low`, `medium`, `high` or `critical`. `Threatens` lists requirement
 
 Committed decision records, so teammates can see what was approved and reviewed:
 `eval/<date>-scenarios.md` and `eval/<date>-grader-preview.md` (eval builds), `reviews/` (fresh
-reviews of harnesses, tests, coding tasks and changes), `improve/` and `loop/` below. Keep them
+reviews of harnesses, proposed scenarios, tests, coding tasks and changes), `improve/` and
+`loop/` below. Keep them
 short and redacted like wiki excerpts: link to runs and traces rather than copying their content,
 and keep protected assessment contents out. Raw runs, candidates and scratch stay in `work/`.
 
