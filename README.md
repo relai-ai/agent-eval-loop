@@ -141,6 +141,18 @@ You can start at any step without completing the full workflow.
 
 ## Installation
 
+### Ask your coding agent
+
+Paste this into any coding agent. It picks the install method that fits that agent:
+
+```text
+Install the RELAI plugin from https://github.com/relai-ai/agent-eval-loop for this
+coding agent, following docs/installation.md in that repository. Tell me when to
+start a new session
+```
+
+Or run the commands yourself:
+
 ### Claude Code
 
 ```bash

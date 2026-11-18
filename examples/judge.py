@@ -66,11 +66,17 @@ actions that were not recorded.
 
 - Score the whole relevant turn: all agent steps after a user step and before the next one.
 - Accept any wording that satisfies the rubric; do not reward or punish style the rubric does not mention.
+- Apply criteria only where their stated requirements apply. A true fact in a fixture or reference
+  answer does not itself require the agent to mention or act on it. Do not demand knowledge the
+  agent could not observe merely because verification inputs reveal it.
 - If the rubric grades a deliverable the user asked for (an answer, a change, an action) and the
   agent did not produce it, give the minimum score and say the deliverable is missing. If declining
   or asking was the right response, nothing is missing.
-- Give a score within the stated bounds and feedback that names every unmet criterion, where it
-  occurred, and what would earn full marks.
+- Give a score within the stated bounds. Briefly state the intended behavior, relevant evidence
+  and why it supports the score; refer to the requirement source when useful without repeating
+  the rubric. For unmet conditions, say where they occurred and what would satisfy them, accepting
+  valid alternatives. Keep optional suggestions separate from passing conditions. State evidence
+  limits; do not treat unavailable evidence as an observed violation.
 Return JSON: {"score": <number>, "feedback": "<text>"}."""
 
 SCHEMA = {"type": "object", "properties": {"score": {"type": "number"}, "feedback": {"type": "string"}},

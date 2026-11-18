@@ -21,7 +21,8 @@ coverage can be easy; difficult probes need realistic grounds. Flag consequentia
 preferences for the user, and verify that the planned measures support the intended decision.
 
 1. **Faithful request.** With `request = "verbatim"`, `instruction.md` is the developer's request
-   as given (redacted), with no file name, diagnosis, approach or test name they did not give. With
+   as given (redacted), with no file name, diagnosis, approach or test name they did not give, and
+   at most a marked maintainer line [sources](sources.md) allows, which `decisions.md` records. With
    `request = "symptom"`, it states only the symptom a developer would report, agrees with the
    source, and gives nothing of how the fix works. Either way, a correction the developer made in
    reaction to an agent's mistake is not in it; it is a check instead.

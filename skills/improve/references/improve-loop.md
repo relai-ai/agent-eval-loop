@@ -27,6 +27,14 @@ new runs. A round may investigate failures, test wiring, collect evidence, compa
 apply a coherent fix, or try a justified bundle. It need not produce a patch. Explain the question,
 expected learning or benefit, evidence needed, and spend before expensive work.
 
+Before another revision, use observed execution costs and durations to consider whether the
+available resources can cover its investigation and final verification. Check consequential
+boundaries that could rule it out early. If the next change would leave inadequate verification,
+consider checking the incumbent, a cheaper diagnostic or stopping with an explicitly limited
+result. Follow the agreement's delivery or exploration expectation and the
+[shared resource policy](../../start/template/README.md#resources-and-expectations); no fixed
+reserve percentage or candidate count applies.
+
 Distinguish three selections, which may overlap and need not be small or equal in size:
 
 - **Investigation cases:** development evidence needed to understand a mechanism or coverage gap.
@@ -85,13 +93,21 @@ the evidence.
 3. **Intent.** For each test, state what it literally checks, the broader user scenario it stands
    for, and the capability that is legitimately in scope for this agent. The test input is a
    probe, not the objective; aim at the scenario.
+   When feedback is unclear, consequential or inconsistent, trace the criterion to its requirement
+   and inspect the evaluator implementation as needed, using permitted development evidence.
+   Follow [eval's conflict guidance](../../eval/references/test-design.md#checking-compatible-criteria);
+   inspect favorable grades too when evidence suggests a mismatch. Keep this investigation targeted
+   and respect protected-evidence boundaries.
 4. **Alternatives.** Consider changes across the surfaces that shape behavior: context and memory,
    tools and what they return, the reasoning workflow, the model and generation settings (only if
    allowed), capabilities and skills, the output contract, and runtime reliability. For each,
    consider adding or strengthening, revising or retargeting, disabling or removing, or replacing
    a mechanism. Compare a prompt or configuration change, a capability added on the normal path,
    and a structural fix. If a gentle nudge would be too weak, consider a stronger in-scope change
-   instead of giving up.
+   instead of giving up. For repeated violations of an exact contract, inspect where it is enforced
+   on the normal path and consider executable enforcement when the architecture permits it.
+   Verify actual actions and preservation of valid behavior; a prompt or setting alone does not
+   establish the guarantee.
 5. **Authenticity.** Keep a capability only if it is on the normal path, reusable beyond the
    literal probe, authorized in cost and scope, and something a product owner would want with the
    tests out of view. General parsers, handlers and deterministic capabilities can be legitimate

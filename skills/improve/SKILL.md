@@ -49,7 +49,9 @@ measured-improvement agreement, settle before editing:
   and off-limits surfaces.
 - **Budget and evidence:** the decision to support, the relevant task distribution, measurement
   effort and estimated spend ([eval: measure](../eval/references/measure.md)). No universal repetition
-  count applies.
+  count applies. Resolve consequential outcome and resource expectations under the
+  [shared policy](../start/template/README.md#resources-and-expectations), including a delivery
+  commitment versus an exploration checkpoint when not already clear.
 - **Check-ins and delivery:** rounds or stopping rule; a branch or worktree for review by
   default, or the user's working tree if already authorized.
 
@@ -72,19 +74,24 @@ report, never targets ([agent-neutral](../eval/references/agent-neutral.md)).
   you reported the verified behavior, checks, delivery location and remaining uncertainty.
 - Regression check: you reported relevant before/after evidence, regressions and uncovered
   behavior, or explained a missing test or baseline rather than implying complete coverage.
-- Measured improvement:
-  - Baseline and candidate runs are comparable; test selections and sampling, including baseline
+- Measured work:
+  - Comparisons use comparable baseline and candidate runs; test selections and sampling, including baseline
     reuse, differing counts and unmatched cases, are recorded. Candidates stay within the agreed
     scope; changes to supporting tooling follow the shared
     [adaptation policy](../start/template/README.md#adapting-supplied-implementations), preserving
     measurement meaning or restoring comparable evidence before claiming improvement.
-  - Evidence supports meaningful improvement on the objective, guardrails hold, and the predicted
-    mechanism is exercised.
-  - A fresh review ([review-change](references/review-change.md)) of the delivered diff and its evidence found
+  - Accept an improvement only when evidence supports meaningful improvement within the claimed
+    scope, the agreed guardrails hold within their bounds with supporting evidence, and the
+    predicted mechanism is exercised. Material unmeasured risks can block acceptance; disclosed
+    gaps do not establish that guardrails hold.
+  - A kept improvement has a fresh review ([review-change](references/review-change.md)) of the delivered diff and its evidence that found
     nothing blocking. Any later change to the delivered revision is reviewed again.
   - Every attempted change is recorded in `relai/changes.md` or the project's equivalent history;
     update `relai/STATUS.md` when using managed state. You reported the objective, before/after evidence, remaining failures, candidates tried, selection
     basis, spend, delivery location and evidence limits, or why no change survived.
+  - When the agreement is exploration only, report what was learned and what would need further
+    verification without claiming an accepted improvement. Preserve the incumbent when acceptance
+    is not established; promising candidates can remain available for follow-up.
 
 ## Shared rules
 
@@ -114,10 +121,15 @@ suggested methods to the request while preserving authorization and honest evide
   missing evidence when useful and authorized; otherwise report the limits rather than implying
   the missing evidence supports a conclusion. Summarizer notices inform this judgment; successful
   execution of a comparison does not establish comparability.
-- Stop optimizing against a suspected bad test; investigate it through the `eval` skill separately,
-  record justified repairs under the *Frozen tests* rule (`relai/README.md`; `freeze.py
-  --begin-repair` once the repair is agreed) and establish comparable measurements before resuming. A low score
-  alone does not establish a test defect. No change kept is a valid result.
+- Stop optimizing against a suspected bad test and investigate through the `eval` skill separately
+  ([criterion sources and conflicts](../eval/references/test-design.md#checking-compatible-criteria)).
+  Preserve raw scores and the evidence for disagreement, including defects missed by favorable
+  grades. When repair is outside scope, pause affected optimization and continue unaffected work
+  only where the original objective and guardrails remain assessable. Ask when the disagreement
+  changes the acceptance decision; do not silently drop criteria or revise the selection rule.
+  Authorized repairs follow the *Frozen tests* rule (`relai/README.md`; `freeze.py --begin-repair`
+  once agreed), with comparable measurements restored before reuse. A score alone does not
+  establish a test defect. No change kept is a valid result.
 
 ## Choosing among candidates
 

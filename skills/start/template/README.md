@@ -1,4 +1,4 @@
-<!-- relai 0.1.0 -->
+<!-- relai 0.1.1 -->
 # relai/
 
 This directory holds RELAI's state for the agent in this repository: what the agent must do and
@@ -382,16 +382,53 @@ RELAI is something the user steers, not a black box.
   process at a high level: the sources you examined, how you checked the work (such as grader
   previews, pilot runs or independent review) and what the user approved or delegated. Say how
   thorough it was: what it covered, what it left out or could not check, and how much evidence
-  supports each result, with counts read from records. Keep it short enough to read at a glance
+  supports each result, with counts read from records. Explain resource-limited outcomes and
+  useful follow-up under [resources and expectations](#resources-and-expectations).
+  Keep it short enough to read at a glance
   and link to files for detail.
 - **Counts come from records.** Trial counts, outcomes and spend that you report or put on the
   board are read from the runs' recorded results (`bin/summarize.py` reads them for the supplied
   runners, including runs in progress), never from memory or estimates. Missing cost records are
-  unknown, not zero. Do not report a percentage complete or time remaining.
+  unknown, not zero. Remaining authorized allowance may be reported from recorded limits and
+  usage, with its unit and scope. It is not a completion forecast. Do not report a percentage
+  complete or an unsupported estimate of time to completion.
 - **Cost before spend.** Before any paid run, state trials × attempts and the cost and time per
   trial, measured from a previous trial when one exists, otherwise marked as an estimate. For a
   long run, tell the user how to follow it themselves (`bin/summarize.py` on its run directory or
   the runner's own output), and report when it ends.
+
+### Resources and expectations
+
+Reuse the covering agreement and ask only about missing choices that affect the work. Establish
+what the current allowance should deliver: a verified result, useful exploration followed by a
+checkpoint, or another outcome the user specifies. Separately establish whether the allowance is
+the full allocation or another round may be considered, when that affects planning. An ordinary
+improvement request defaults to pursuing a verified improvement within current authorization.
+Record consequential choices in the existing agreement or decision record; no extra form is needed.
+
+Name the relevant limits and what they cover, such as money, active work time, elapsed time or
+attempts, and whether they are cumulative or additional. Do not require every kind of cap for
+every task. Keep experiment resources separate from the evaluated agent's runtime limits; changing
+the latter can change what is measured and needs the applicable authorization and comparability checks.
+
+Before substantial spending, use comparable records or an authorized pilot to assess feasibility.
+Explain when the allowance is likely to support only a narrower result, with estimates and their
+uncertainty distinguished from recorded usage. Recommend a useful choice, such as narrower scope,
+different measurement effort or a justified extension. Continue covered work while awaiting a
+choice when it does not depend on the answer. Do not repeat budget questions that existing
+instructions settle.
+
+Reassess when observed costs, failures or another proposed revision materially change what can be
+established, including the capacity left for final verification. Raise that tradeoff while the
+user can still redirect the work. All caps remain binding until changed by authorization: a
+possible follow-up does not permit overruns, transfers between pools or resets.
+
+At a limit or stopping point, report which constraint mattered, what was established and what
+remains unsupported. Recommend further resources only for a credible investigation or measurement
+that could change the decision, explaining the expected learning and uncertainty rather than
+promising an improvement. If broken measurement or a missing approach is the bottleneck, explain
+what must change before more repetitions would help. An inconclusive result or no accepted change
+can be the appropriate outcome.
 
 ### Host notes
 

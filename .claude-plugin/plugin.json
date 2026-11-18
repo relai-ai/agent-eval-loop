@@ -1,7 +1,7 @@
 {
   "name": "relai",
   "displayName": "RELAI",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Eval-driven improvement for AI agents. Build evals first, then improve your agent against them: evals from your traces, code and risks for agent applications, and from sessions, pull requests and git history for coding agents.",
   "author": {
     "name": "RELAI"

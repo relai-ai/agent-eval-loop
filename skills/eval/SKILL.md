@@ -111,8 +111,9 @@ filenames are not required.
 ## Ask the user
 
 Use the start, scenario approval and grader preview as the usual build checkpoints (or combine
-approvals when the user chose one sitting below). Ask consequential blockers when they arise;
-continue independent work. Skip any
+approvals when the user chose one sitting below). Consequential blockers follow the
+[shared question timing](../start/template/README.md#working-with-the-user); continue independent
+work. Skip any
 question that the request, `relai/decisions.md`, the wiki or an agreement already answers. At the
 start, ask together only what is still open:
 
@@ -184,6 +185,8 @@ its case should get (a failing case not scored low,
 a passing one below full marks, a missing required deliverable above the minimum; see
 [test-design](references/test-design.md#rules), *Missing deliverables and prohibitions*). For a
 pure prohibition, preview an actual violation to show that check can fail.
+Check relevant overlapping criteria and valid alternatives using
+[test-design](references/test-design.md#checking-compatible-criteria).
 Summarize the rest per test in
 one line, such as "4 code checks scored as expected". Ask whether the current subset needs scoring
 changes or is missing anything the user cares about; separate independent choices as the shared
