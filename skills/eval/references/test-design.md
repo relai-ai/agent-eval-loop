@@ -81,6 +81,9 @@ Sort the dimensions the log and feedback suggest:
   why the recording cannot show it. Reuse established requirements without asking again.
 - **Candidate**: the log or feedback suggests a useful expectation whose authority or applicability
   remains ambiguous. Investigate the sources, then ask about consequential unresolved choices.
+  Keep consequential unresolved expectations as
+  [open questions](../../start/template/README.md#working-with-the-user) until settled; do not use
+  them as mandatory passing conditions.
 - **Unsupported**: there is no reliable expected behavior or source of truth. Do not evaluate it.
 
 Keep distinct confirmed criteria in separate evaluators, so one failure cannot hide behind
