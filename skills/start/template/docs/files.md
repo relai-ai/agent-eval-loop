@@ -222,7 +222,7 @@ agent_neutral = true
 
 [metadata.relai.services]
 source = "issue"                     # issue, request, session or written
-origin = "openclaw/openclaw#1234"    # where the scenario came from
+origin = "owner/repo#1234"           # where the scenario came from
 primary = "moved-the-meeting"        # the code evaluator that says the task was solved; reads the services
 category = "calendar"
 

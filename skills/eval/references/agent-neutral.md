@@ -1,7 +1,7 @@
 # Agent-neutral tests: several agents on the same tasks
 
 Use this mode when the user wants to run several agents or agent harnesses on the same tests (for
-example personal or business assistants such as OpenClaw, Hermes Agent, Claude Code or Codex), or
+example personal or business assistants, or general-purpose agents that Harbor installs), or
 wants tests that people outside the project can run against their own agent. To evaluate the one
 agent this repository builds, use the default mode, which runs that agent through its real
 entrypoint. For tasks built from coding work, use the `coding-evals` skill.

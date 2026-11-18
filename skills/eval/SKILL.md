@@ -1,6 +1,6 @@
 ---
 name: eval
-description: Build and run evaluations for an AI agent or LLM application, including harnesses, failure-based tests, benchmarks and shared evaluators. Also build agent-neutral tests that bring their own mock services, so several agents or harnesses (personal or business assistants such as OpenClaw, Hermes Agent, Claude Code or Codex) run on the same tasks and are compared. Analyze evaluation coverage or design scenarios without requiring implementation or execution. Repair broken tests or mock unreachable dependencies. Use improve for changing the agent or comparing changes; use coding-evals for agent-neutral coding tasks, including agents developed here.
+description: Build and run evaluations for an AI agent or LLM application, including harnesses, failure-based tests, benchmarks and shared evaluators. Also build agent-neutral tests that bring their own mock services, so several agents or harnesses (for example personal or business assistants) run on the same tasks and are compared. Analyze evaluation coverage or design scenarios without requiring implementation or execution. Repair broken tests or mock unreachable dependencies. Use improve for changing the agent or comparing changes; use coding-evals for agent-neutral coding tasks, including agents developed here.
 ---
 
 # Build and run evals

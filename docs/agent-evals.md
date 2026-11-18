@@ -44,8 +44,8 @@ RELAI first checks a small pilot against the benchmark's own scorer. It respects
 ## Compare several agents on the same evals
 
 ```text
-Use RELAI's eval skill to build agent-neutral evals for personal assistants from
-these issue reports, and compare OpenClaw and Hermes Agent on them
+Use RELAI's eval skill to build agent-neutral evals from {issue reports, requests
+or traces}, and compare {agent A} and {agent B} on them
 ```
 
 Each test brings its own mock services (mail, calendar, files, a simulated user) as MCP servers

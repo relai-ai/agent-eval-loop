@@ -105,8 +105,8 @@ and update this file.
   (`python -m harbor.utils.trajectory_validator <file>`); `check_trajectory.py` runs it.
 - **Task MCP servers reach an agent only through its integration.** Observed in 0.26.0 (Harbor's
   documentation and a run of the plugin's example task): `[[environment.mcp_servers]]` is passed
-  to each installed agent whose capabilities list MCP servers (`claude-code`, `codex`, `openclaw`,
-  `hermes` and others), and "support" means the configuration is passed, not that the agent
+  to each installed agent whose capabilities list MCP servers (check the agent's capabilities in
+  the recorded release), and "support" means the configuration is passed, not that the agent
   connects. Confirm from the service journal that a pilot trial called the tools. Only some agents
   forward HTTP `headers`, so do not rely on them to authenticate an agent to a mock.
 - **Sidecars need Compose.** A task with `environment/docker-compose.yaml` runs on `-e docker`
