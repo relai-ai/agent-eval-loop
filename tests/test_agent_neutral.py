@@ -229,6 +229,33 @@ class TaskFixture(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
 
+class ServiceJournalTest(TaskFixture):
+    def setUp(self) -> None:
+        super().setUp()
+        module = load(EXAMPLES / "mcp_service.py", "journal_service")
+        self.service = module.Service(self.task / "environment" / "notes", "notes")
+
+    def test_later_state_changes_preserve_the_response_previously_seen_by_the_agent(self):
+        result = self.service.call("list_notes", {})
+        observed = json.loads(result["content"][0]["text"])
+        self.service.call("save_note", {"text": "A later note"})
+        self.assertEqual(self.service.journal[0]["response"], observed)
+        self.assertEqual(len(self.service.state["notes"]), len(observed) + 1)
+
+    def test_a_handler_retaining_arguments_cannot_rewrite_the_recorded_input_or_response(self):
+        def retain_request(state, arguments):
+            state["request"] = arguments
+            return arguments
+
+        arguments = {"nested": {"text": "original"}}
+        with patch.object(self.service.handlers, "list_notes", side_effect=retain_request):
+            result = self.service.call("list_notes", arguments)
+        observed = json.loads(result["content"][0]["text"])
+        self.service.state["request"]["nested"]["text"] = "changed later"
+        self.assertEqual(self.service.journal[0]["input"], observed)
+        self.assertEqual(self.service.journal[0]["response"], observed)
+
+
 class ServiceFixture:
     def __init__(self, folder: Path) -> None:
         self.module = load(EXAMPLES / "mcp_service.py", "example_mcp_service")

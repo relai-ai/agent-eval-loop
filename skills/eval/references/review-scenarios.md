@@ -27,9 +27,8 @@ sources, coverage, measures and planned reporting support the intended claim.
    leaked answer or ignoring the relevant instruction. The proposal's own shortcut entry
    ([test-design](test-design.md), *Proposing a test*) is a starting point, not the limit of
    your search.
-2. **It can reach the source's mechanism.** For a failure or difficult probe, the proposal names why the source failed (the
-   mechanism, not only the visible symptom) and gives concrete evidence that the scenario can
-   trigger it: a size, a count, a timing or a state. When it cannot, the proposal narrows what
+2. **It can reach the source's mechanism.** For a failure or difficult probe, name the mechanism,
+   not only the visible symptom, with concrete evidence that the scenario can trigger it: a size, a count, a timing or a state. When it cannot, the proposal narrows what
    the test claims to cover. Ordinary coverage needs a relevant behavior, not an invented failure
    mechanism or added difficulty.
 3. **One defensible expected outcome.** A careful person reading the input and data would reach

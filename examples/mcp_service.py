@@ -72,7 +72,7 @@ class Service:
         return {t["name"] for t in self.tools}
 
     def call(self, tool: str, arguments: dict) -> dict:
-        entry = {"target": self.name, "operation": tool, "input": arguments}
+        entry = {"target": self.name, "operation": tool, "input": copy.deepcopy(arguments)}
         handler = getattr(self.handlers, tool, None) if tool in self.tool_names() else None
         with self.lock:
             if not callable(handler):
@@ -84,7 +84,7 @@ class Service:
             try:
                 value = handler(self.state, arguments)
                 text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
-                entry.update(outcome="matched", response=value)
+                entry.update(outcome="matched", response=copy.deepcopy(value))
                 result = {"content": [{"type": "text", "text": text}], "isError": False}
             except ToolError as exc:
                 entry.update(outcome="matched", response={"error": str(exc)})

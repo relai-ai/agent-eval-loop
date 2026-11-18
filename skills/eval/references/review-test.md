@@ -19,8 +19,8 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
 1. **Measures the intended outcome.** The test contributes to the agreed purpose, case selection
    and outcome priorities under the shared [purpose guidance](../../start/template/README.md#establish-the-purpose).
    The scenario exercises the stated behavior and its evaluators reward it. Flag uncovered
-   consequential user choices; scenario approval alone does not settle them. Valid alternative paths are accepted when they exercise the same
-   required behavior; completion without a claimed challenge does not establish that capability.
+   consequential user choices; scenario approval alone does not settle them. Accept valid
+   alternative paths when they exercise the same required behavior; completion without a claimed challenge does not establish that capability.
 2. **No answer in the input.** The agent-facing input holds only the original task and its
    context: no expected answer, diagnosis, root cause, or suggested fix. When used, a simulated user's
    instructions hold the user's goal and knowledge, never the expected agent behavior.
@@ -39,8 +39,7 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    intentional differences are disclosed, and the chosen integration demonstrates containment
    and authentic evidence. Implementation defaults are not universal requirements. An agent
    without the behavior would score low; a missing required deliverable scores the minimum;
-   a structurally broken recording errors instead of scoring
-   zero; nothing rewards activity in place of outcome.
+   a structurally broken recording errors instead of scoring zero; nothing rewards activity in place of outcome.
 6. **Useful feedback.** Every score below full marks says what was missing and what full marks need.
    Check the [feedback contract](../../start/template/docs/files.md#feedback), including the
    intended behavior and relevant evidence for favorable scores.
