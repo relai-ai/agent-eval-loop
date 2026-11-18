@@ -245,10 +245,26 @@ lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.j
 - Judge only what the trajectory shows; do not assume actions that were not recorded.
 - Score the whole relevant turn: all agent steps after a user step and before the next one.
 - Accept any wording that satisfies the rubric; do not reward or punish style it does not mention.
+- Apply criteria only where their requirements apply; incidental facts do not create obligations.
+  Verification inputs do not establish what the evaluated agent could observe.
 - If the rubric grades a deliverable the user asked for and the agent did not produce it, give the
   minimum and say it is missing. If declining or asking was the right response, nothing is missing.
-- Give a score within the bounds and feedback that names every unmet criterion, where it occurred,
-  and what would earn full marks.
+- Give a score within the bounds and follow the [feedback contract](#feedback).
+
+### Feedback
+
+For code checks and judges, briefly state the intended behavior, the relevant evidence and why
+it supports the assessment. Point to the applicable requirement when useful; an existing linked
+criterion or rubric can supply its source without repeating it in every result. Keep passing
+feedback proportional to the claim, such as "Obtained approval for $25 before charging."
+
+Below full marks, identify each unmet condition, where it occurred (turn, call, state or file),
+and what would satisfy it. Give the full accepted literal or pattern when exact matching is
+required, and allow equivalent behavior where the requirement permits it. Keep optional
+suggestions separate from passing conditions. State evidence limits instead of asserting an
+unobserved violation; use the existing error or validity reporting when the check cannot establish
+a score or the challenge was not exercised. Evidence references must support the assessment;
+absence-based findings need a relevant observation scope rather than an invented event citation.
 
 ## Mocks
 

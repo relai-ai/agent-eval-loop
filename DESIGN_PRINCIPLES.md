@@ -124,6 +124,8 @@ integration separate from shared machinery and respect the repository’s conven
 
 A trace records what happened. A diagnosis proposes why. A requirement establishes what
 should happen. Keep these distinctions explicit, including uncertainty and conflicting sources.
+A fact being true in a trace, fixture or reference answer does not by itself make it required
+behavior.
 
 ### 19. Make consequential claims traceable
 
@@ -149,7 +151,8 @@ does not establish a test defect.
 ### 23. Validate evaluators before relying on them
 
 Check meaningful passing and failing examples, compare judgments with user expectations,
-and revisit scoring when disagreement reveals a problem.
+accept valid alternative behavior, and check that applicable criteria are compatible. Revisit
+scoring when disagreement reveals a problem.
 
 ### 24. Match conclusions to the strength of the evidence
 

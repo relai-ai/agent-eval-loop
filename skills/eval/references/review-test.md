@@ -34,8 +34,11 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
    deliverable scores the minimum; a structurally broken recording errors instead of scoring
    zero; nothing rewards activity in place of outcome.
 6. **Useful feedback.** Every score below full marks says what was missing and what full marks need.
+   Check the [feedback contract](../../start/template/docs/files.md#feedback), including the
+   intended behavior and relevant evidence for favorable scores.
 7. **Faithful to its source.** A test from a run keeps the original input; one from a requirement
-   matches the requirement's text.
+   matches the requirement's text. Verify criterion sources and applicability using
+   [test-design](test-design.md#choosing-what-to-evaluate-from-a-run-and-feedback).
 8. **Detects the risk.** For a hard case, the evaluators named for the risk would fail on its
    observable failure, and nothing in the scenario or criteria rules out the risk's mechanism.
 9. **Both directions.** When the behavior is one an improvement could overcorrect (escalating,
@@ -46,6 +49,8 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
     every evaluator and matches the evaluators to be frozen. The user approved it, or the
     decision is delegated to this independent review (by an agreement or a recorded choice in
     `relai/decisions.md`). Verify which applies.
+    Check relevant overlaps and calibration contrasts under
+    [test-design](test-design.md#checking-compatible-criteria).
 
 Report each verdict, then findings: what is wrong, the evidence, and the change that would fix it,
 marked blocking or advisory. Write the report to `relai/records/reviews/test-<id>-<date>.md` if you

@@ -93,6 +93,11 @@ the evidence.
 3. **Intent.** For each test, state what it literally checks, the broader user scenario it stands
    for, and the capability that is legitimately in scope for this agent. The test input is a
    probe, not the objective; aim at the scenario.
+   When feedback is unclear, consequential or inconsistent, trace the criterion to its requirement
+   and inspect the evaluator implementation as needed, using permitted development evidence.
+   Follow [eval's conflict guidance](../../eval/references/test-design.md#checking-compatible-criteria);
+   inspect favorable grades too when evidence suggests a mismatch. Keep this investigation targeted
+   and respect protected-evidence boundaries.
 4. **Alternatives.** Consider changes across the surfaces that shape behavior: context and memory,
    tools and what they return, the reasoning workflow, the model and generation settings (only if
    allowed), capabilities and skills, the output contract, and runtime reliability. For each,

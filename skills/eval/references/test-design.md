@@ -26,7 +26,7 @@ How to design each test for the `eval` skill, whose Rules bind; this adds the me
 ## Ask the user
 
 - When the target, expected outcome or how to evaluate it is still ambiguous after reading the
-  code and wiki, including criteria a run log suggests but feedback does not state. Batch related
+  code, requirements and prior decisions, including a proposed criterion's applicability. Batch related
   questions in manageable groups, recommendation first, with each independent decision in a
   separate prompt or labeled row, as the
   [shared user-interaction guidance](../../start/template/README.md#working-with-the-user) describes.
@@ -46,8 +46,9 @@ Ask of each criterion: could two correct replies differ in how they satisfy it?
   Refusing or redirecting, explaining, tone and helpfulness, whether a claim in prose is correct,
   whether an answer is equivalent to an expected one. A keyword list or regex cannot cover every
   valid phrasing, however complete it looks.
-- Code may match the agent's text only for a literal the task requires (an id, a code, a fixed
-  phrase), after ignoring Markdown, punctuation and case.
+- Code may match the agent's text only for a literal the applicable requirement specifies (an id,
+  a code, a fixed phrase). Derive the match boundary and any permitted normalization from that
+  requirement; a required whole response cannot be checked by substring alone.
 - Never use a judge for a fact code could check: it adds noise and cost to something certain.
 - Split a criterion with both parts. "Looks up the order and explains the refund window" is a
   code evaluator for the lookup and a judge for the explanation, so either failure shows on its
@@ -67,23 +68,52 @@ source evidence. Efficiency changes must preserve measurement meaning or follow 
 
 ### Choosing what to evaluate from a run and feedback
 
-Sort every dimension the log and feedback suggest:
+For each criterion, identify the intended behavior, its requirement source and when it applies.
+Use existing rubric text, metadata or links to the task, policy, interface contract or approved
+evaluation objective; no separate requirement document is needed. Distinguish facts used to check
+correctness from facts the agent must communicate or act on. A fixture, reference answer or prior
+trace alone does not establish an obligation. A grader's feedback can suggest a criterion but
+cannot establish its own authority.
 
-- **Explicit**: the feedback or the user's answer states it. Cover it, or say why the recording
-  cannot show it.
-- **Candidate**: the log suggests it but the feedback does not. Ask before evaluating it; present
-  related candidates at the same checkpoint, keeping independent choices separately answerable.
+Sort the dimensions the log and feedback suggest:
+
+- **Established**: an applicable requirement or the user's decision supports it. Cover it, or say
+  why the recording cannot show it. Reuse established requirements without asking again.
+- **Candidate**: the log or feedback suggests a useful expectation whose authority or applicability
+  remains ambiguous. Investigate the sources, then ask about consequential unresolved choices.
 - **Unsupported**: there is no reliable expected behavior or source of truth. Do not evaluate it.
 
 Keep distinct confirmed criteria in separate evaluators, so one failure cannot hide behind
 another. Do not turn wording or values that only happen to appear in the log into exact checks,
 and avoid expected values that change over time unless that exact instance is the point.
 
+### Checking compatible criteria
+
+During design and grader preview, compare overlapping criteria against their sources and the
+scenarios where they apply. Different scores for distinct dimensions can be valid; a conflict
+arises when applicable criteria demand incompatible behavior or interpret the same requirement
+inconsistently. Resolve discrepancies using established authority and recorded decisions.
+
+When a consequential ambiguity remains, ask the coding agent's user with the conflicting
+expectations, their consequence and a recommendation, following the
+[shared question timing](../../start/template/README.md#working-with-the-user). Ask immediately
+when valid scoring or acceptance depends on the answer; otherwise raise it at the next review
+checkpoint, before freezing or relying on the affected measurement. Pause only dependent work.
+Existing frozen evaluators require controlled repair; preserve their original results.
+
+Calibrate the relevant overlapping evaluators on the same examples. Choose contrasts that could
+expose a defect: correct behavior omitting optional facts, a valid alternative path, or apparent
+task success that violates a consequential requirement. Check required literals at their actual
+match boundaries. Include tool arguments and downstream summaries when the criterion covers
+them, and verify that cited evidence supports the verdict. Hidden verification facts can establish
+outcomes, but do not make unobserved information something the agent should have known. Missing
+evidence or an unexercised challenge must remain distinguishable from a violation.
+
 ### Feedback the agent's owner can act on
 
-Below full marks, name every unmet condition, where it happened (the turn, call or file), what
-was observed, and what would be accepted. When a check needs an exact string or pattern, state
-the full accepted string or pattern, not an example; when equivalent wording is accepted, say so.
+Follow the shared [feedback contract](../../start/template/docs/files.md#feedback) for code checks
+and judges. Make requirement sources available in the evaluator's inputs or packaged rubric;
+a link the grader cannot access is insufficient context.
 
 ### Reusable code evaluators
 

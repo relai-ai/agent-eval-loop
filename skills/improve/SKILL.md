@@ -112,7 +112,8 @@ suggested methods to the request while preserving authorization and honest evide
   missing evidence when useful and authorized; otherwise report the limits rather than implying
   the missing evidence supports a conclusion. Summarizer notices inform this judgment; successful
   execution of a comparison does not establish comparability.
-- Stop optimizing against a suspected bad test and investigate through the `eval` skill separately.
+- Stop optimizing against a suspected bad test and investigate through the `eval` skill separately
+  ([criterion sources and conflicts](../eval/references/test-design.md#checking-compatible-criteria)).
   Preserve raw scores and the evidence for disagreement, including defects missed by favorable
   grades. When repair is outside scope, pause affected optimization and continue unaffected work
   only where the original objective and guardrails remain assessable. Ask when the disagreement

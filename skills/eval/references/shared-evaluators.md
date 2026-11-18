@@ -6,8 +6,8 @@ says what full marks need.
 ## Done when
 
 - `relai/evaluators/<id>/` holds the evaluator (code, or a judge rubric) and a `README.md` stating
-  the criterion, its method, concrete scoring criteria (what earns full marks, partial credit and
-  zero), and which tests it applies to and why, or that it applies to none.
+  the criterion and its requirement source, its method, concrete scoring criteria (what earns full
+  marks, partial credit and zero), and which tests it applies to and why, or that it applies to none.
 - Each test it applies to declares it and carries it under its own `tests/` (a separate verifier
   sees only `tests/`).
 - `check_task.py` passes, plus `--verifier` for Harbor or synthetic grading checks for native tests, and with API judges `relai/bin/judge.py --self-test`
@@ -32,8 +32,8 @@ says what full marks need.
 
 ## Ask the user
 
-- When an existing evaluator overlaps the new criterion unclearly, or two evaluators would score
-  the same thing differently.
+- When consequential ambiguity remains after checking overlapping criteria and their sources,
+  following [test-design](test-design.md#checking-compatible-criteria).
 - Before reducing a frozen test's coverage by removing or loosening an evaluator, when existing
   authorization does not cover that decision.
 
@@ -43,6 +43,7 @@ says what full marks need.
 
 Before writing a shared evaluator, decide whether an existing one already covers the criterion:
 fully (reuse it), partly (extend it, or add a narrower one), or not at all (write it).
+Check overlapping criteria using [test-design](test-design.md#checking-compatible-criteria).
 
 ### Write it for every test it applies to
 
@@ -52,10 +53,10 @@ trajectory.
 - A shared judge's rubric reads the task inputs and relevant context to learn what the scenario
   requires, then judges the agent's outputs and actions against that. Check that they are correct,
   consistent with information available to the agent, and free of unsupported claims, with clarity
-  and completeness where required. Its feedback cites the evidence behind the score and what
-  would score higher.
-- Decide whether a deliverable is required from the task and applicable requirements, not from
-  the evaluator: when asking, declining or taking no action is correct, nothing is missing.
+  and completeness where required. Follow the shared
+  [feedback contract](../../start/template/docs/files.md#feedback).
+- Derive applicability from the [requirement sources](test-design.md#choosing-what-to-evaluate-from-a-run-and-feedback),
+  including when asking, declining or taking no action satisfies them.
 
 ### Repairing it
 
