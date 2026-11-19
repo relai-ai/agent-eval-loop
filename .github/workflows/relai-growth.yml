@@ -1,0 +1,67 @@
+name: RELAI GitHub growth
+
+on:
+  schedule:
+    - cron: '19 8 * * *'
+      timezone: America/New_York
+    - cron: '13 9 * * 1'
+      timezone: America/New_York
+  workflow_dispatch:
+    inputs:
+      send_digest:
+        description: Send the Monday F4 digest after collecting
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: relai-growth
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      RELAI_SITE_SERVICE_TOKEN: ${{ secrets.RELAI_SITE_SERVICE_TOKEN }}
+      SEND_DIGEST: ${{ github.event.schedule == '13 9 * * 1' || inputs.send_digest == true }}
+    steps:
+      - name: Update the private dashboard
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, *args):
+                  return None
+
+          token = os.environ["RELAI_SITE_SERVICE_TOKEN"]
+          if not token:
+              sys.exit("Set RELAI_SITE_SERVICE_TOKEN in repository Actions secrets.")
+          payload = json.dumps({"digest": os.environ["SEND_DIGEST"] == "true"}).encode()
+          request = urllib.request.Request(
+              "https://github-tracking.relai-4217.chatgpt.site/api/automation",
+              data=payload,
+              headers={
+                  "Content-Type": "application/json",
+                  "OAI-Sites-Authorization": f"Bearer {token}",
+              },
+              method="POST",
+          )
+          try:
+              with urllib.request.build_opener(NoRedirect()).open(request, timeout=75) as response:
+                  result = json.load(response)
+          except urllib.error.HTTPError as error:
+              sys.exit(f"Private dashboard returned HTTP {error.code}. Check Site access and collection health.")
+          except (urllib.error.URLError, TimeoutError, ValueError):
+              sys.exit("Could not reach the private dashboard. Check collection health before retrying.")
+          if result.get("ok") is not True:
+              sys.exit("The dashboard update is incomplete. See collection health on the private dashboard.")
+          print("Private dashboard update confirmed.")
+          PY
