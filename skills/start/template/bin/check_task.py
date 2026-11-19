@@ -3,6 +3,7 @@
 
 Usage:
   python3 relai/bin/check_task.py relai/tests/<id> [more task dirs] [--verifier [--fixture DIR]] [--json]
+  python3 relai/bin/check_task.py relai/tests/<id> --results DIR [--expect-error ID] [--json]
 
 Harbor runs also check relai.toml [harbor]. With --cloud, check portability to the bundled hosted
 builder (relai/README.md, Fixed rules: Reproducible tasks): each
@@ -17,6 +18,11 @@ synthetic normal trajectory and a synthetic empty-reply trajectory, requiring a 
 from every declared code evaluator (needs a docker- or podman-compatible container engine). --fixture DIR copies DIR's files into
 /logs/agent beside the synthetic trajectory, for evaluators that also read state the harness
 exports there (a database dump, a mock journal). Writes nothing in the repository.
+
+--results DIR only checks existing verifier output against one task's declared code evaluators.
+It runs offline without static infrastructure checks, Harbor, containers or models. Repeat it for
+each preview case. --expect-error ID requires that evaluator to report an error without a score
+for an intentional negative control. Judge previews and behavioral correctness need separate review.
 
 An agent-neutral coding task ([metadata.relai].agent_neutral = true, the `coding-evals` skill) gets
 leak and verifier checks instead of the harness ones: the workspace image fails to build if the real fix
@@ -309,9 +315,9 @@ def check_neutral_basics(task: Path, config: dict, relai_dir: Path, report: Repo
     harness = harness_tag(relai_dir)
     if harness and dockerfile.is_file() and any(
             op == "FROM" and harness in args for op, args in dockerfile_instructions(dockerfile.read_text(errors="ignore"))):
-        report.error("an agent-neutral task must not start FROM the configured harness image: Harbor installs "
-                     "the agent under test; use a base without that agent installation (public for the "
-                     "bundled hosted recipe, or authorized local/private infrastructure)")
+        report.error("an agent-neutral task must not start FROM the configured repository-agent harness image: "
+                     "keep the task base independent of the agent under test. Runner-managed installation "
+                     "caches or pinned runtime layers must preserve fresh trial state and hidden-data boundaries")
 
 
 def compose_services(text: str) -> dict[str, str | None]:
@@ -1085,28 +1091,11 @@ def run_verifier(task: Path, config: dict, report: Report, fixture: Path | None)
             if ran.returncode:
                 report.error(f"{case}: {cli} run failed: {ran.stderr.strip()[-800:]}")
                 continue
-            rewards, feedback, errors = read_verifier_outputs(logs / "verifier", case, report)
-            for ev in codes:
-                ev_id, low, high = ev.get("id"), ev.get("min_score", 0.0), ev.get("max_score", 1.0)
-                value = rewards.get(ev_id)
-                if ev_id in errors and value is None:
-                    hint = "" if fixture else (" If it reads state the harness exports to /logs/agent, pass that state "
-                                               "with --fixture DIR")
-                    report.error(f"{case}: evaluator {ev_id} reported an error on a well-formed trajectory: "
-                                 f"{str(errors[ev_id])[-600:]}.{hint}")
-                    continue
-                if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
-                    report.error(f"{case}: reward.json has no numeric score for declared evaluator {ev_id}")
-                    continue
-                if not low <= value <= high:
-                    report.error(f"{case}: evaluator {ev_id} scored {value}, outside [{low}, {high}]")
-                if not str(feedback.get(ev_id, "")).strip():
-                    report.error(f"{case}: feedback.json has no feedback for evaluator {ev_id}")
-                if case == "empty-reply":
-                    empty_scores.append(normalized(value, low, high))
-            for key in rewards:
-                if key not in {ev.get("id") for ev in evaluators}:
-                    report.warn(f"{case}: reward.json key {key!r} is not a declared evaluator")
+            hint = "" if fixture else (" If it reads state the harness exports to /logs/agent, pass that state "
+                                       "with --fixture DIR")
+            scores = validate_verifier_outputs(logs / "verifier", config, case, report, error_hint=hint)
+            if case == "empty-reply":
+                empty_scores.extend(scores)
     has_judges = any(ev.get("type") == "judge" for ev in evaluators)
     prohibition = config.get("metadata", {}).get("relai", {}).get("prohibition", False)
     if codes and not has_judges and empty_scores and min(empty_scores) >= 1.0 and not prohibition:
@@ -1114,13 +1103,54 @@ def run_verifier(task: Path, config: dict, report: Report, fixture: Path | None)
                      "tests a prohibition, set [metadata.relai].prohibition = true")
 
 
+def validate_verifier_outputs(verifier: Path, config: dict, case: str, report: Report,
+                              expected_errors: set[str] | None = None, error_hint: str = "") -> list[float]:
+    expected_errors = expected_errors or set()
+    evaluators = declared_evaluators(config)
+    codes = [ev for ev in evaluators if ev.get("type") == "code"]
+    code_ids = {ev["id"] for ev in codes}
+    for ev_id in sorted(expected_errors - code_ids):
+        report.error(f"{case}: expected error {ev_id!r} is not a declared code evaluator")
+    rewards, feedback, errors = read_verifier_outputs(verifier, case, report)
+    for ev_id, error in errors.items():
+        if ev_id in rewards:
+            report.error(f"{case}: evaluator {ev_id} has both a score and an error")
+        if not isinstance(error, str) or not error.strip():
+            report.error(f"{case}: evaluator {ev_id} has no error message")
+        if ev_id not in expected_errors:
+            report.error(f"{case}: evaluator {ev_id} reported an unexpected error: {str(error)[-600:]}.{error_hint}")
+    scores = []
+    for ev in codes:
+        ev_id, low, high = ev["id"], ev.get("min_score", 0.0), ev.get("max_score", 1.0)
+        if ev_id in expected_errors:
+            if ev_id not in errors:
+                report.error(f"{case}: evaluator {ev_id} did not report its expected error")
+            continue
+        if ev_id in errors:
+            continue
+        value = rewards.get(ev_id)
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
+            report.error(f"{case}: reward.json has no numeric score for declared evaluator {ev_id}")
+            continue
+        if not low <= value <= high:
+            report.error(f"{case}: evaluator {ev_id} scored {value}, outside [{low}, {high}]")
+        message = feedback.get(ev_id)
+        if not isinstance(message, str) or not message.strip():
+            report.error(f"{case}: feedback.json has no feedback for evaluator {ev_id}")
+        scores.append(normalized(value, low, high))
+    for key in rewards:
+        if key not in {ev["id"] for ev in evaluators}:
+            report.warn(f"{case}: reward.json key {key!r} is not a declared evaluator")
+    return scores
+
+
 def read_verifier_outputs(verifier: Path, case: str, report: Report):
     rewards: dict = {}
     if (verifier / "reward.json").is_file():
         try:
             rewards = json.loads((verifier / "reward.json").read_text())
-        except json.JSONDecodeError as exc:
-            report.error(f"{case}: reward.json is not JSON: {exc}")
+        except (ValueError, OSError) as exc:
+            report.error(f"{case}: cannot read reward.json as JSON: {exc}")
         if not isinstance(rewards, dict):
             report.error(f"{case}: reward.json must be an object of evaluator id to number")
             rewards = {}
@@ -1140,8 +1170,8 @@ def read_verifier_outputs(verifier: Path, case: str, report: Report):
                     target.update(data)
                 else:
                     report.error(f"{case}: {name} must be a JSON object keyed by evaluator id")
-            except json.JSONDecodeError as exc:
-                report.error(f"{case}: {name} is not JSON: {exc}")
+            except (ValueError, OSError) as exc:
+                report.error(f"{case}: cannot read {name} as JSON: {exc}")
     return rewards, feedback, errors
 
 
@@ -1162,11 +1192,30 @@ def main() -> int:
     parser.add_argument("tasks", nargs="+", help="task directories (for example relai/tests/<id>)")
     parser.add_argument("--verifier", action="store_true", help="also run the verifier on synthetic trajectories (docker or podman)")
     parser.add_argument("--fixture", help="directory whose files are copied into /logs/agent for --verifier")
+    parser.add_argument("--results", help="only validate existing verifier output in DIR for one task, offline")
+    parser.add_argument("--expect-error", action="append", default=[], metavar="ID",
+                        help="with --results, require an evaluator error instead of a score (repeatable)")
     parser.add_argument("--no-harbor", action="store_true", help="skip Harbor's own task loading")
     parser.add_argument("--cloud", action="store_true", help="also check portability to the bundled hosted Harbor builder")
     parser.add_argument("--relai-dir", help="the relai/ directory (default: inferred)")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     args = parser.parse_args()
+    if args.expect_error and not args.results:
+        parser.error("--expect-error requires --results")
+    if args.results:
+        if len(args.tasks) != 1 or args.verifier or args.fixture or args.cloud:
+            parser.error("--results requires exactly one task and cannot be combined with --verifier, --fixture or --cloud")
+        task = Path(args.tasks[0]).resolve()
+        report = Report()
+        try:
+            config = load_toml(task / "task.toml")
+            check_evaluators(task, config, report)
+            if not report.errors:
+                validate_verifier_outputs(Path(args.results), config, "results", report, set(args.expect_error))
+                report.note("checked declared code evaluators only; behavioral correctness and judge previews need separate review")
+        except (ValueError, OSError) as exc:
+            report.error(str(exc))
+        return report.emit(f"verifier results for {task.name}", args.json)
     relai_dir = relai_root(args.relai_dir)
     tasks = [Path(raw).resolve() for raw in args.tasks]
     suite = Report()

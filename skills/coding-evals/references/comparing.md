@@ -8,16 +8,18 @@ least one task from each repository and each builder. This pilot is itself paid:
 expected cost and get the user's yes (or a covering agreement) first, then use it to estimate the
 full run for the budget question. It also shows that the agent installs, reaches its model
 and does work, so a trial with no model calls is fixed before any larger run. The pilot is the
-first run of an agent's own work against the checks, so treat a check that every version fails
-on a task, or a trial that changed no code, as a suspected task defect, and read those
-trajectories before the full run. When no task changes after the pilot, its trials count as the
-full run's first attempt. Then follow "Cost before spend" in `relai/README.md`.
+first run of an agent's own work against the checks. When every version fails a check or a trial
+changes no code, inspect solvability, integration, grading and the trajectory before scaling up;
+these outcomes alone do not establish a task defect. When no task changes after the pilot, its
+trials count as the full run's first attempt. Then follow "Cost before spend" in `relai/README.md`.
 Choose attempts for the decision, observed variability and budget; coding agents can vary between
 runs. Reuse deterministic work only when it preserves the uncertainty being measured.
 
 **Agent timeout.** Set `[agent].timeout_sec` at build for an agent doing the work, never from
-the reference fix, which runs instantly. When the measured trial of any version runs near it,
-raise it under the *Frozen tests* rule before the run counts.
+the reference fix, which runs instantly. Preserve an agreed latency limit when speed is part of
+the outcome. Otherwise use measured trials to check whether setup or execution limits obstruct
+the intended measurement. Repair accidental limits under the *Frozen tests* rule and establish
+comparable evidence; do not silently discard genuine time-budget failures.
 
 ## Running
 
@@ -68,10 +70,8 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   from the agent's time. State units and distinguish agent time from feedback overhead where
   measured. Preserve per-run setup/evaluator
   identity and available contents/revisions; do not infer a subscription bill from recorded USD
-  or causation from a sequence of setup edits alone. Some agents record no cost for some models:
-  then run versions one at a time on a shared key, or give each its own key, and report the
-  change in the key's usage over each version's run as its cost. Without either record, the cost
-  is unknown (`relai/README.md`, *Counts come from records*).
+  or causation from a sequence of setup edits alone. Use the shared spending-visibility and
+  missing-cost guidance in `relai/README.md`, *Counts come from records*.
 
 ## Comparing agents
 
@@ -83,8 +83,8 @@ Only when the user wants to compare different coding agents. Follow *Comparing a
   (*Setups*). Each task's README lists the agent instruction files its workspace already holds at
   the start commit; when they favor some agents, say so and offer a bare variant that removes
   them, or matched setups written as `[[coding_evals.setups]]` with `agent`.
-- **Timeouts.** Set `[agent].timeout_sec` from the slowest compared agent's measured trial
-  (*Before any paid run*).
+- **Timeouts.** Use the agreed time budget for comparisons that measure speed; otherwise size
+  `[agent].timeout_sec` using the slowest compared agent's measured trial (*Before any paid run*).
 
 ## Setups: does our setup help?
 

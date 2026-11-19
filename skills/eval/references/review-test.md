@@ -56,6 +56,11 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
     any exist) covers every evaluator and matches the evaluators to be frozen. The user approved it, or the
     decision is delegated to this independent review (by an agreement or a recorded choice in
     `relai/decisions.md`). Verify which applies.
+    Validate each case's code-evaluator output with `check_task.py <task> --results <directory>`
+    or a project-native equivalent using the full task declaration. An expected evaluator error
+    in a negative control must be explicit (`--expect-error <id>`); omitted scores or unexpected
+    errors invalidate the preview. This checks completeness and format, not scoring correctness
+    or judge calibration.
     Check relevant overlaps and calibration contrasts under
     [test-design](test-design.md#checking-compatible-criteria).
 

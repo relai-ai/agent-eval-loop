@@ -88,6 +88,10 @@ An unsuitable default calls for adaptation; an unmet guarantee blocks the affect
   access under the selected release ([Harbor notes](harbor-notes.md)).
 - Check each selected agent's MCP capabilities and actual compatibility. When needed, adapt its
   Harbor integration to register task servers. Do not assume advertised support proves access.
+- Runner-supported installation caches or pinned runtime layers can avoid repeated setup. Keep
+  task definitions independent of the agent, record runtime versions and configuration, and
+  verify that each trial starts with fresh state and no hidden task data in the agent runtime.
+  The bundled task format does not use the repository-agent harness image as its base.
 - Keep the verifier shared so it reaches the services after the agent finishes. It reads state
   and journals through its token, then exports evidence under `/logs/verifier/` for judges.
 - Service-task `primary` may name a code evaluator or judge; coding tasks retain their code
@@ -117,10 +121,13 @@ Use the selected runner and shared comparison rules in `relai/README.md`. For Ha
 score judges and use `summarize.py --baseline` for paired comparisons.
 
 - **Integration before scale.** Use an authorized representative pilot or integration probe to
-  establish input delivery, available tools and output recording. A journal call can demonstrate
-  connectivity, but no calls alone cannot distinguish broken wiring from an agent choosing not
-  to act. Fix demonstrated integration failures before counting affected results; preserve genuine
-  task failures and disclose remaining uncertainty.
+  establish input delivery, effective tools and routing, and output recording under the final
+  agent version and configuration. Check that unintended native integrations cannot bypass the
+  agreed services, including through tool names or namespace aliases. Use tool inventories,
+  configuration inspection or safe probes as appropriate; mock connectivity alone does not prove
+  containment. No calls alone cannot distinguish broken wiring from an agent choosing not to act.
+  Fix demonstrated integration failures before counting affected results; preserve genuine task
+  failures and disclose remaining uncertainty.
 - **Report per agent.** Show primary solved rates with scored/attempted counts, common recorded
   checks, coverage and missing-result reasons, relevant conditions, cost and time, and tasks that
   distinguish agents. Report capability subsets separately. Selection for difficult cases measures

@@ -42,6 +42,7 @@ preferences for the user, and verify that the planned measures support the inten
    fails the primary check, as does a recorded first attempt; the shortcut probes found no way to
    pass or blind a check without the fix, or the README says why one remains. Verifier health is not evidence for omitted agent commands. If health
    or validation results do not exist yet, mark this check pending and say what you need.
+   Check code-output completeness using the shared [preview validation](../../eval/references/review-test.md).
 5. **Honest suite.** Tests that already fail at the start commit are deselected and listed in the
    README; the suite passes with the reference fix; it does not depend on the network. The suite and
    hidden-test commands call the test runner directly, or through a script inside the protected

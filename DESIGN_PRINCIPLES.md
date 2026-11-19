@@ -141,6 +141,8 @@ comparable runs. Preserve enough context for someone else to inspect the conclus
 
 Use the relevant entrypoint, configuration, lifecycle, permissions, and tool behavior.
 Confirm that the proposed change is active on the evaluated path.
+Verify effective capabilities and dependency behavior that support the claim; configuration
+intent and interface compatibility alone do not establish the conditions actually exercised.
 
 ### 21. Keep measurement stable while assessing a change
 
@@ -158,6 +160,8 @@ does not establish a test defect.
 Check meaningful passing and failing examples, compare judgments with user expectations,
 accept valid alternative behavior, and check that applicable criteria are compatible. Revisit
 scoring when disagreement reveals a problem.
+Check completeness against the declared evaluators so omitted checks and evaluator errors
+cannot appear to be successful measurement.
 
 ### 24. Match conclusions to the strength of the evidence
 

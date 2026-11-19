@@ -35,9 +35,10 @@ it. Do not substitute production actions for an unavailable mock or sandbox.
 
 ## Approach
 
-### Keep what the agent sees unchanged
+### Preserve the declared service contract
 
-A mock changes where calls go, never what the agent's model sees or what its code handles.
+A mock replaces the dependency at its client boundary. For an existing integration, preserve the
+interface and behavior the agent relies on:
 
 - A mocked tool server (an MCP server, for example) copies the real server's tool names,
   descriptions and input and output schemas, so the model sees the same tools.
@@ -45,6 +46,14 @@ A mock changes where calls go, never what the agent's model sees or what its cod
   tool schema.
 - Errors use the exception types and error shapes the agent's code already handles. A failure the
   agent should see is returned the way the real service returns it, not raised inside the mock.
+
+Before freezing, check behavior that could affect the graded outcome against the declared
+service's documentation or observed behavior: defaults such as search scope, implicit side
+effects, partial results and unsupported requests. Keep descriptions and annotations consistent
+with that behavior. Record the supporting source in `MOCKS.md`.
+For a synthetic interface or an intentional adaptation, state the contract and consequential
+differences explicitly, and limit claims accordingly. A useful test condition need not reproduce
+every real service, but must not silently stand in for one with different behavior.
 
 ### Fail closed
 

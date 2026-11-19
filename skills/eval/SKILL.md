@@ -185,6 +185,7 @@ its case should get (a failing case not scored low,
 a passing one below full marks, a missing required deliverable above the minimum; see
 [test-design](references/test-design.md#rules), *Missing deliverables and prohibitions*). For a
 pure prohibition, preview an actual violation to show that check can fail.
+Validate code-output completeness as the [test review brief](references/review-test.md) describes.
 Check relevant overlapping criteria and valid alternatives using
 [test-design](references/test-design.md#checking-compatible-criteria).
 Summarize the rest per test in

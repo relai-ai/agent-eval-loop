@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import contextlib
+import importlib.util
+import io
 import json
 import os
 import shutil
+import sys
 import unittest
+from unittest.mock import patch
 
 from helpers import GOOD_TASK_TOML, HARBOR_TEST_VERSION, Repo, container_engine, harbor_job, harbor_trial, trajectory
 
@@ -140,6 +145,108 @@ class CheckTaskTest(Base):
         result = self.repo.run("check_task.py", str(task), "--verifier")
         self.assertEqual(result.returncode, 1)
         self.assertIn("no numeric score for declared evaluator looks-up-order", result.stdout)
+
+
+class VerifierResultsTest(Base):
+    def setUp(self):
+        super().setUp()
+        self.task = self.repo.task()
+        self.results = self.repo.root / "preview"
+        self.results.mkdir()
+        self.write_results({"looks-up-order": 1}, {"looks-up-order": "Found the order."})
+
+    def write_results(self, rewards, feedback=None, errors=None):
+        for name, data in (("reward", rewards), ("feedback", feedback or {}), ("errors", errors or {})):
+            (self.results / f"{name}.json").write_text(json.dumps(data))
+
+    def check(self, *args):
+        return self.repo.run("check_task.py", str(self.task), "--results", str(self.results), *args)
+
+    def test_complete_results_pass_without_judge_scores(self):
+        ran = self.check("--json")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertTrue(json.loads(ran.stdout)["ok"])
+
+    def test_results_mode_does_not_execute_or_load_infrastructure(self):
+        spec = importlib.util.spec_from_file_location("offline_check_task", self.repo.relai / "bin" / "check_task.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.repo.write("relai/relai.toml", "invalid project infrastructure configuration")
+        (self.task / "environment" / "Dockerfile").unlink()
+        output = io.StringIO()
+        with patch.object(sys, "argv", ["check_task.py", str(self.task), "--results", str(self.results)]), \
+                patch.object(module, "check_static", side_effect=AssertionError("static checks ran")), \
+                patch.object(module, "secret_values", side_effect=AssertionError("credentials read")), \
+                patch.object(module.subprocess, "run", side_effect=AssertionError("process started")), \
+                contextlib.redirect_stdout(output):
+            self.assertEqual(module.main(), 0, output.getvalue())
+
+    def test_all_declared_code_evaluators_are_required(self):
+        config = (self.task / "task.toml").read_text()
+        code = config[config.index("[[metadata.relai.evaluators]]"):config.rindex("[[metadata.relai.evaluators]]")]
+        with (self.task / "task.toml").open("a") as handle:
+            handle.write("\n" + code.replace('id = "looks-up-order"', 'id = "forgotten"'))
+        ran = self.check()
+        self.assertEqual(ran.returncode, 1)
+        self.assertIn("no numeric score for declared evaluator forgotten", ran.stdout)
+
+    def test_invalid_scores_fail(self):
+        for value in (True, None, "1", float("nan"), float("inf"), -0.1, 1.1):
+            with self.subTest(value=value):
+                self.write_results({"looks-up-order": value}, {"looks-up-order": "Evidence."})
+                self.assertEqual(self.check().returncode, 1)
+
+    def test_missing_or_invalid_feedback_fails(self):
+        for value in (None, "", " ", [], 1):
+            with self.subTest(value=value):
+                self.write_results({"looks-up-order": 1}, {"looks-up-order": value})
+                ran = self.check()
+                self.assertEqual(ran.returncode, 1)
+                self.assertIn("has no feedback", ran.stdout)
+
+    def test_unexpected_error_and_score_error_conflict_fail(self):
+        for scores in ({}, {"looks-up-order": 1}):
+            with self.subTest(scores=scores):
+                self.write_results(scores, {"looks-up-order": "Evidence."}, {"looks-up-order": "broken recording"})
+                ran = self.check()
+                self.assertEqual(ran.returncode, 1)
+                self.assertIn("unexpected error", ran.stdout)
+                if scores:
+                    self.assertIn("both a score and an error", ran.stdout)
+
+    def test_expected_negative_control_error_requires_message_and_no_score(self):
+        self.write_results({}, errors={"looks-up-order": "recording is missing"})
+        ran = self.check("--expect-error", "looks-up-order")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        for scores, errors in (({}, {}), ({}, {"looks-up-order": ""}),
+                               ({"looks-up-order": 1}, {"looks-up-order": "recording is missing"})):
+            with self.subTest(scores=scores, errors=errors):
+                self.write_results(scores, errors=errors)
+                self.assertEqual(self.check("--expect-error", "looks-up-order").returncode, 1)
+
+    def test_expected_error_must_name_declared_code_evaluator(self):
+        for ev_id in ("unknown", "explains"):
+            with self.subTest(ev_id=ev_id):
+                ran = self.check("--expect-error", ev_id)
+                self.assertEqual(ran.returncode, 1)
+                self.assertIn("not a declared code evaluator", ran.stdout)
+
+    def test_malformed_or_missing_results_fail(self):
+        for name in ("reward", "feedback", "errors"):
+            for content in ("not JSON", "[]"):
+                with self.subTest(name=name, content=content):
+                    self.write_results({"looks-up-order": 1}, {"looks-up-order": "Evidence."})
+                    (self.results / f"{name}.json").write_text(content)
+                    self.assertEqual(self.check().returncode, 1)
+        (self.results / "reward.json").unlink()
+        self.assertEqual(self.check().returncode, 1)
+
+    def test_invalid_flag_combinations_fail(self):
+        for extra in (("--verifier",), ("--fixture", str(self.results)), ("--cloud",), (str(self.task),)):
+            with self.subTest(extra=extra):
+                self.assertEqual(self.check(*extra).returncode, 2)
+        ran = self.repo.run("check_task.py", str(self.task), "--expect-error", "looks-up-order")
+        self.assertEqual(ran.returncode, 2)
 
 
 class CheckTrajectoryTest(Base):
