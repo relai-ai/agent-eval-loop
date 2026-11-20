@@ -38,6 +38,53 @@ RELAI helps you build evals, measure agent behavior and compare improvements. It
 skills in your coding agent, with no separate RELAI service. You keep the tests, review tools
 and results in your own project. Each skill works independently; start where your question needs it.
 
+### Coding agents your team uses
+
+https://github.com/user-attachments/assets/c8002907-e339-4679-9328-246a66a2bea1
+
+For Claude Code, Codex, OpenHands or your own setup. Build tests from your team's work to
+measure whether a model, instruction file or skill improves results on your repositories:
+
+**1. Turn past work into evals**
+
+```text
+Use RELAI's coding-evals skill to build 20 evals from the last six months of
+merged pull requests and reverts in {repository}
+```
+
+This creates tasks that start before the original fix, include the repository and its toolchain,
+and score the evaluated agent using hidden tests and reviewed checks. Any coding agent can run
+them. You can measure solved rate and cost per solved task, then compare changes to your setup.
+
+<details>
+<summary>Full walkthrough: build tasks, evaluate and compare</summary>
+
+Continue from the task-building request above:
+
+**2. Evaluate your coding agent**
+
+```text
+Use RELAI's coding-evals skill to evaluate Claude Code on these evals and report
+the solved rate and cost per solved task
+```
+
+This reports the agent's results on your tasks, with uncertainty and cost per solved task.
+
+**3. Improve your setup before you roll it out**
+
+```text
+Use RELAI's improve skill to improve our CLAUDE.md and skills against these evals
+```
+
+You get a branch with the improved setup, the solved rate with its noise before and after, cost
+per solved task, and the evals where the two setups differ.
+
+You can start at any step without completing the full workflow.
+
+</details>
+
+[Task sources, grading safeguards and eval-project setup](docs/coding-evals.md).
+
 ### AI agents you build
 
 https://github.com/user-attachments/assets/53ce7659-21f8-4f42-897e-a5e3cc4d1ffa
@@ -91,53 +138,6 @@ optimize task success first, then cost
 [Explore discovery and runner options](docs/agent-evals.md),
 [review and annotate traces](docs/agent-evals.md#review-traces-in-an-app), or
 [bring an existing benchmark](docs/agent-evals.md#bring-your-own-benchmark).
-
-### Coding agents your team uses
-
-https://github.com/user-attachments/assets/c8002907-e339-4679-9328-246a66a2bea1
-
-For Claude Code, Codex, OpenHands or your own setup. Build tests from your team's work to
-measure whether a model, instruction file or skill improves results on your repositories:
-
-**1. Turn past work into evals**
-
-```text
-Use RELAI's coding-evals skill to build 20 evals from the last six months of
-merged pull requests and reverts in {repository}
-```
-
-This creates tasks that start before the original fix, include the repository and its toolchain,
-and score the evaluated agent using hidden tests and reviewed checks. Any coding agent can run
-them. You can measure solved rate and cost per solved task, then compare changes to your setup.
-
-<details>
-<summary>Full walkthrough: build tasks, evaluate and compare</summary>
-
-Continue from the task-building request above:
-
-**2. Evaluate your coding agent**
-
-```text
-Use RELAI's coding-evals skill to evaluate Claude Code on these evals and report
-the solved rate and cost per solved task
-```
-
-This reports the agent's results on your tasks, with uncertainty and cost per solved task.
-
-**3. Improve your setup before you roll it out**
-
-```text
-Use RELAI's improve skill to improve our CLAUDE.md and skills against these evals
-```
-
-You get a branch with the improved setup, the solved rate with its noise before and after, cost
-per solved task, and the evals where the two setups differ.
-
-You can start at any step without completing the full workflow.
-
-</details>
-
-[Task sources, grading safeguards and eval-project setup](docs/coding-evals.md).
 
 ## Installation
 

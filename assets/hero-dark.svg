@@ -28,7 +28,7 @@
   <text x="72" y="304" font-size="27" font-weight="400" fill="#a3ada6">Then improve your agent against them.</text>
   <rect x="72" y="338" width="700" height="50" rx="12" fill="#0f1830" stroke="#27324a" stroke-width="1.5"/>
   <path d="M 94 355 l 8 8 l -8 8" fill="none" stroke="#3fb37f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="118" y="369.5" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#f1f4ef">Use RELAI&#39;s loop skill to improve this agent from ./traces</text>
+  <text x="118" y="369.5" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#f1f4ef">Use RELAI&#39;s coding-evals skill to build evals from our PRs</text>
   <path d="M 1051.6 131.7 A 116 116 0 0 1 1125.7 248.1" fill="none" stroke="url(#arc0)" stroke-width="5" stroke-linecap="round"/>
   <polygon points="1124.1,261.1 1134.8,246.5 1116.9,245.6" fill="#3fb37f" stroke="#3fb37f" stroke-width="2" stroke-linejoin="round"/>
   <path d="M 1083.0 330.1 A 116 116 0 0 1 945.1 336.2" fill="none" stroke="url(#arc1)" stroke-width="5" stroke-linecap="round"/>
