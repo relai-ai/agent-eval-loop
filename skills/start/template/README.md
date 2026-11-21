@@ -70,6 +70,13 @@ invoked) is the choice of whoever builds the tests.
    dependencies. Hosted portability is required only when the work needs it. The bundled
    hosted-builder recipe has additional image and build constraints (`docs/harbor.md`); other
    integrations may demonstrate equivalent execution guarantees through their own infrastructure.
+   Establish the conditions under which the scenario, expected outcomes and claimed challenge
+   remain valid. Control relevant dependencies where practical; otherwise record and check those
+   conditions before relying on scores. Use executable guards for known, mechanically checkable
+   restrictions, checking before execution where possible. Preserve the actual conditions and
+   evidence of affected trials. When a condition fails, report the affected measurement as
+   invalid or unmeasured, separately from agent failure, using the integration's explicit
+   error or validity reporting so it cannot silently enter success rates.
 
 ## Terms
 

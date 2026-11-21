@@ -52,6 +52,11 @@ A simulation is a targeted measurement, not a default step after every change.
 
 - Reuse tests that already cover the behavior, preferring ones the change updated. Name the exact
   tests and attempts before running.
+- Before execution, check relevant validity conditions under the shared
+  [reproducible-task rule](../../start/template/README.md#fixed-rules), including restrictions
+  that could be crossed during a batch. Use existing integration guards and recorded conditions;
+  do not infer validity from a frozen digest or successful grading. Report affected measurements
+  separately as the integration's error or validity mechanism requires.
 - Never fall back to the whole suite, a broad selection or unrelated tests because they are
   convenient.
 - When no test covers the behavior, say so and recommend the next step: nothing, a wiki update,
@@ -98,9 +103,12 @@ before spending, consider observed variation, consequences and budget, and recor
 choices and revisions as evidence arrives.
 
 Reuse a baseline only for comparable runs (`relai/README.md`, Terms), and record why;
-re-baseline when comparability is uncertain, not merely because a new round began. When a commit
-plus an unexplained dirty tree is all you have, recover its snapshot or rerun. When evidence is
-inadequate or unrepresentative, say so rather than inventing a resolution.
+check that relevant validity conditions held on both sides. Generated instances may differ in
+difficulty even when frozen files match; inspect the relevant recorded conditions and qualify
+comparisons accordingly. Re-baseline when comparability is uncertain, not merely because a new
+round began. When a commit plus an unexplained dirty tree is all you have, recover its snapshot
+or rerun. When evidence is inadequate or unrepresentative, say so rather than inventing a
+resolution.
 
 `summarize.py` reports observations (Terms). Zero spread over identical scores is not certainty,
 and unavailable estimates are null. `noise` and `se` are descriptive, not decision thresholds:

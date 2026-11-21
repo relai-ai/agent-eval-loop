@@ -143,6 +143,8 @@ Use the relevant entrypoint, configuration, lifecycle, permissions, and tool beh
 Confirm that the proposed change is active on the evaluated path.
 Verify effective capabilities and dependency behavior that support the claim; configuration
 intent and interface compatibility alone do not establish the conditions actually exercised.
+Identify conditions on which a measurement's validity depends, and recheck them when later use
+or changed conditions could invalidate the scenario, expected outcome or claimed challenge.
 
 ### 21. Keep measurement stable while assessing a change
 

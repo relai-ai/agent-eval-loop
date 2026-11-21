@@ -91,7 +91,56 @@ Sort the dimensions the log and feedback suggest:
 
 Keep distinct confirmed criteria in separate evaluators, so one failure cannot hide behind
 another. Do not turn wording or values that only happen to appear in the log into exact checks,
-and avoid expected values that change over time unless that exact instance is the point.
+and handle changing expected values under [validity across runs](#validity-across-runs).
+
+### Validity across runs
+
+Apply the shared [reproducible-task rule](../../start/template/README.md#fixed-rules).
+Identify dependencies that could change the scenario's meaning, correct answer or claimed
+challenge between trials, such as time, policy revisions, external data or service behavior.
+Record relevant assumptions and how they are controlled or checked in the existing scenario
+and integration records; no separate artifact is required.
+
+For time-dependent cases, inspect where the agent learns the time, including runtime prompts,
+the operating system and tools. Establish the relevant time zone and reference time for each
+trial. Keep prompts, fixtures, simulated users and evaluators consistent with that choice.
+Preserve relationships such as an event being past, a deadline being actionable or a holiday
+changing an answer. Relative dates alone do not establish them: Wednesday this week is still
+in the future on Monday.
+
+Investigate feasible approaches before recommending one:
+
+- Generate scenarios relative to actual time when the agent retains its normal clocks.
+  Instances can differ in difficulty, so validate the relationships that make the probe useful.
+- Control relevant time sources when the integration can demonstrate consistent time without
+  violating the agreed operating conditions. Mocking one service's clock does not establish
+  control of the agent's other clocks.
+- Keep fixed dates for an explicitly historical scenario when that preserves the intended task.
+- Retain a validity window when the intended scenario genuinely requires it, with the guard and
+  reporting required by the shared rule. Documentation alone does not enforce the restriction.
+
+At the existing harness or scenario checkpoint, surface uncovered choices that materially
+change realism, coverage, participant compatibility, maintenance effort or cost. Use the shared
+[user-interaction guidance](../../start/template/README.md#working-with-the-user): present the
+evidence, feasible alternatives, consequences and a recommendation; carry prior decisions forward
+and pause only dependent work. Recording a choice does not replace asking about it.
+
+Derive changing expected answers from the instantiated scenario and give judges those facts
+through their declared evidence inputs ([Scores](../../start/template/docs/files.md#scores)).
+Keep hidden keys outside the evaluated agent's readable boundary. A rubric should explain how
+to use the facts rather than embed a stale answer or independently interpret today's date.
+
+In grader preview, choose contrasting conditions that could break the relevant assumptions.
+For calendar cases these may be weekday, month or year boundaries, holidays, or daylight-saving
+changes when relevant. Check correct alternatives, failures and shortcuts against the affected
+evaluators under those conditions. A correct answer remaining correct does not establish that
+the claimed challenge remains exercised. Choose effort by consequences and uncertainty; use
+deterministic fixture and evaluator checks where sufficient. An offline time override does not
+prove control of the evaluated agent's clocks during real execution.
+
+Repair existing tests through the *Frozen tests* rule. Check whether a proposed repair changes
+coverage: company closures can exercise counting around closures while omitting public-holiday
+knowledge. Preserve earlier evidence and disclose such differences before making comparisons.
 
 ### Checking compatible criteria
 
@@ -158,8 +207,10 @@ requirement, the user's feedback on a run, a triage gap with how many real runs 
 compound of named signals or tests, or a harder rung of an existing test); the risks and
 requirements it covers; the scenario, naming the real data it uses; relevant operating conditions
 and intended difficulty; what passing and failing look like; its opposite-direction partner, if
-any; its split; and what would make the probe invalid. Link to the agreed purpose, selection and
-outcome priorities in the existing records, explaining how this case contributes. Also state:
+any; its split; and what would make the probe invalid, including relevant changing dependencies
+and how they are controlled or checked under [validity across runs](#validity-across-runs).
+Link to the agreed purpose, selection and outcome priorities in the existing records, explaining
+how this case contributes. Also state:
 
 - **The mechanism:** for a failure or difficult probe, why the source failed or the risk is
   plausible, and evidence that this scenario can trigger it. For ordinary coverage, state the

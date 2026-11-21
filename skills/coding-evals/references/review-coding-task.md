@@ -71,6 +71,9 @@ preferences for the user, and verify that the planned measures support the inten
 11. **Reproducible.** The base image is pinned (tag or digest), dependencies install from the
     lockfile, and `[agent].timeout_sec` leaves an agent time to do the work
     ([comparing](comparing.md), *Before any paid run*).
+    Apply the shared [reproducible-task rule](../../start/template/README.md#fixed-rules) to
+    assumptions that could change task validity between runs. Use
+    [validity across runs](../../eval/references/test-design.md#validity-across-runs) when relevant.
 
 Report each verdict, then findings: what is wrong, the evidence, and the change that would fix it,
 marked blocking or advisory. Write the report to `relai/records/reviews/coding-task-<id>-<date>.md`

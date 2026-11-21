@@ -63,6 +63,10 @@ Check, with a verdict (pass, fail, unsure) and quoted evidence for each:
     or judge calibration.
     Check relevant overlaps and calibration contrasts under
     [test-design](test-design.md#checking-compatible-criteria).
+    Verify relevant condition contrasts and validity controls against
+    [validity across runs](test-design.md#validity-across-runs), including whether the claimed
+    challenge and shortcut distinction survive. A documented restriction without its required
+    executable guard is blocking.
 
 Report each verdict, then findings: what is wrong, the evidence, and the change that would fix it,
 marked blocking or advisory. Write the report to `relai/records/reviews/test-<id>-<date>.md` if you

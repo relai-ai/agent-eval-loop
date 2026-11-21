@@ -118,6 +118,8 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   merely different code or a hypothetical pass is insufficient. Control incidental time,
   randomness and initialization state in fixtures. Where ordering matters, ensure timestamps and
   insertion order express the intended scenario; do not impose an order the request leaves open.
+  For dependencies that can change task validity between runs, apply
+  [validity across runs](../../eval/references/test-design.md#validity-across-runs).
   Preview process judges on synthetic run records that satisfy and violate each applicable rule,
   keeping the final output identical where possible. For a required lint run after edits, include
   a successful run, a skipped run and a run followed by another relevant edit. Also check a

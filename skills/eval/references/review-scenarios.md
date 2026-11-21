@@ -35,6 +35,9 @@ sources, coverage, measures and planned reporting support the intended claim.
    the outcome the evaluators reward. For a simulated or scripted user, every answer the user
    gives decides each case the scoring depends on, with nothing a reasonable agent could read
    either way.
+   Check relevant changing dependencies and proposed controls under
+   [validity across runs](test-design.md#validity-across-runs). Flag uncovered consequential
+   tradeoffs as **User decides**.
 4. **Within the agreed boundary.** The inputs, interaction, services, outputs and permissions
    fit the intended participants or stated compatibility requirements. Any intentional interface
    or capability differences have an agreed interpretation. Flag conflicts before dependent work.

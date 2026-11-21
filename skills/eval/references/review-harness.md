@@ -45,6 +45,8 @@ or a trajectory step):
 5. **Declared stand-ins.** Anything not run for real is replaced only at a dependency's client
    boundary, is listed in `relai/harness/mocks/MOCKS.md`, and applicable authorization covers it
    (an approval or covering agreement).
+   Check integration controls and recorded conditions for relevant changing dependencies using
+   [validity across runs](test-design.md#validity-across-runs).
 6. **Truthful trajectory.** Every recorded step happened, in order, and nothing that matters is
    missing: inputs, model messages, tool calls with arguments and results tied to their calls, as applicable.
 7. **Output reaches evaluators.** What the agent produces (a reply, a file, a record) is visible

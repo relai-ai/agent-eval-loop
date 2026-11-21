@@ -188,6 +188,8 @@ pure prohibition, preview an actual violation to show that check can fail.
 Validate code-output completeness as the [test review brief](references/review-test.md) describes.
 Check relevant overlapping criteria and valid alternatives using
 [test-design](references/test-design.md#checking-compatible-criteria).
+For relevant changing dependencies, include the contrasts and evidence described in
+[validity across runs](references/test-design.md#validity-across-runs).
 Summarize the rest per test in
 one line, such as "4 code checks scored as expected". Ask whether the current subset needs scoring
 changes or is missing anything the user cares about; separate independent choices as the shared

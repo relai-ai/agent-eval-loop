@@ -31,6 +31,9 @@ opening checkpoint, recommending an approach and explaining what each choice cha
   are relevant? Recommend shared-capability tasks for a controlled comparison. For product
   comparisons, agree whether unsupported capabilities count as failures of a product requirement
   or are excluded and reported as coverage gaps; keep subsets and denominators explicit.
+  Include relevant changing dependencies using
+  [validity across runs](test-design.md#validity-across-runs); inspect each participant's actual
+  time sources before proposing shared clock behavior.
 
 A common contract can use different native interfaces. An adapter translates inputs and collects
 actual outputs without solving the task, inventing agent actions or changing difficulty silently.

@@ -13,6 +13,8 @@ and checker commands below describe that implementation, with project-native equ
 Read the [relevant execution guarantees](../../start/template/README.md#fixed-rules) in the project
 contract and only the `relai/docs/` formats this integration uses; check its
 prerequisites for the selected runner and fix what fails.
+For dependencies that can change scenario validity between trials, establish the integration's
+controls and evidence using [validity across runs](test-design.md#validity-across-runs).
 
 ## Done when
 

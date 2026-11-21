@@ -86,7 +86,9 @@ longer being tested.
 
 - Keep mutable data in an explicit state object, never in module globals, so it starts fresh in
   each trial and its changes can be journaled.
-- Use a seeded clock, random source and id sequence instead of the wall clock, `random` or `uuid`.
+- Use seeded random sources and id sequences instead of `random` or `uuid`. Choose clock
+  behavior using [validity across runs](test-design.md#validity-across-runs), inspecting the time
+  sources the agent actually observes before choosing a controlled clock or actual time.
 - Keep mock behavior self-contained and reproducible. Additional files, outbound calls or
   subprocesses need a task-relevant reason and must preserve containment, authorization and
   evidence. A simulated-user provider is one such dependency; account for its data and cost.
