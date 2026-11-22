@@ -142,6 +142,10 @@ For a cost or latency objective, follow [cost-latency](cost-latency.md).
 - Choose additional measurements or checks when they could affect the decision and fit the budget.
   Use [regression](regression.md) for guardrails. For benchmarks, preserve the commit and supplied splits and
   record runs.
+- When the targeted tests have no held-out split, passing them does not show the change works
+  beyond their exact inputs. Before accepting, offer a short probe of unseen variants of the target
+  scenarios (other wording, other inputs that need the same behavior), record its result in
+  `changes.md`, and propose missed variants as new tests through the `eval` skill.
 - Verify the delivered revision with coverage justified by its reach, risks and intended claims.
   Broad shared changes may warrant broad suites; a narrow fix need not run every frozen test.
   Disclose gaps. Review the delivered diff again after any rollback.
