@@ -92,10 +92,14 @@ def relai_root(explicit: str | None = None) -> Path:
 
 
 def test_key(task_dir: Path, relai_dir: Path) -> str:
-    """A test's identity: its path relative to relai/ (tests/<id>, benchmarks/<id>/...), else its name."""
+    """A test's identity: its path relative to the nearest enclosing relai/ (tests/<id>,
+    benchmarks/<id>/...), else its name. The nearest one, so that a checkout's copy of relai/,
+    such as a candidate worktree under relai/work/candidates/<name>/, gives the same identity."""
     task_dir = task_dir.resolve()
-    if task_dir.is_relative_to(relai_dir):
-        return task_dir.relative_to(relai_dir).as_posix()
+    relai_dir = relai_dir.resolve()
+    for ancestor in task_dir.parents:
+        if ancestor == relai_dir or ancestor.name == relai_dir.name:
+            return task_dir.relative_to(ancestor).as_posix()
     return task_dir.name
 
 
