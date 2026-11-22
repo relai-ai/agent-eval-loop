@@ -729,6 +729,39 @@ class AnyProviderTest(unittest.TestCase):
         self.assertEqual(calls[1][0], "http://llm:4000/v1/chat/completions")
         self.assertEqual(calls[1][1]["authorization"], "Bearer llm-test-0123456789")
 
+    def test_compatible_json_object_response_format_for_servers_without_json_schema(self):
+        calls = self.fake()
+        traj = trajectory([{"source": "user", "message": "hi"}, {"source": "agent", "message": "ok"}])
+        config = {"provider": "openai-compatible", "model": "m", "base_url": "http://llm:8081/v1",
+                  "api_key_env": "LLM_KEY"}
+        self.judge.judge_one(config, self.repo.relai, self.task, self.ev, traj, {})
+        self.assertEqual(calls[0][2]["response_format"]["type"], "json_schema")
+        r = self.judge.judge_one({**config, "response_format": "json_object"}, self.repo.relai, self.task,
+                                 self.ev, traj, {})
+        self.assertEqual(r["score"], 1)
+        self.assertEqual(calls[1][2]["response_format"], {"type": "json_object", "schema": self.judge.SCHEMA})
+        with self.assertRaises(SystemExit):
+            self.judge.judge_one({**config, "response_format": "text"}, self.repo.relai, self.task, self.ev, traj, {})
+
+    def test_replies_that_do_not_match_the_schema_record_an_error(self):
+        traj = trajectory([{"source": "user", "message": "hi"}, {"source": "agent", "message": "ok"}])
+        config = {"provider": "openai-compatible", "model": "m", "base_url": "http://llm:8081/v1",
+                  "api_key_env": "LLM_KEY", "response_format": "json_object"}
+        for content, problem in (('{"score": "high", "feedback": "x"}', "reply.score"),
+                                 ('{"score": true, "feedback": "x"}', "reply.score"),
+                                 ('{"score": 1}', "missing 'feedback'"),
+                                 ('{"score": 1, "feedback": "x", "extra": 1}', "unexpected key 'extra'"),
+                                 ('[1]', "reply is not of type object")):
+            with self.subTest(content=content):
+                self.judge.post = lambda url, headers, body: {"choices": [{"message": {"content": content}}]}
+                r = self.judge.judge_one(config, self.repo.relai, self.task, self.ev, traj, {})
+                self.assertNotIn("score", r)
+                self.assertIn(problem, r["error"])
+        triage = load("triage")
+        nested = self.judge.schema_errors({"outcome": "maybe", "evidence": [{"quote": 1}]}, triage.SCHEMA)
+        self.assertTrue(any("reply.outcome is not one of" in e for e in nested), nested)
+        self.assertIn("reply.evidence[0].quote is not of type string", nested)
+
     def test_simulated_user_compatible_needs_base_url(self):
         launcher = load("launcher")
         seen = []

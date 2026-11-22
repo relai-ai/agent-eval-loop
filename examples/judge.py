@@ -35,6 +35,7 @@ relai.toml:
   [judge]
   mode = "api"                # or "subagent": a fresh coding-agent subagent writes the same files
   provider = "anthropic"      # or "openai", "openrouter", "openai-compatible" (+ base_url, api_key_env)
+  response_format = "json_object"  # optional, OpenAI-format providers: for servers without json_schema
   model = "<model id>"        # required: choose it deliberately, there is no default
 """
 
@@ -162,8 +163,7 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
         model = config.get("model") or sys.exit(MISSING_MODEL)
         body = {"model": model, "messages": [{"role": "system", "content": system},
                                              {"role": "user", "content": prompt}],
-                "response_format": {"type": "json_schema",
-                                    "json_schema": {"name": name, "strict": True, "schema": schema}}}
+                "response_format": response_format(config, name, schema)}
         if provider == "openrouter":
             body["usage"] = {"include": True}
         data = post(url, {"authorization": f"Bearer {api_key(key_name, relai_dir)}"}, body)
@@ -173,7 +173,10 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
         message = data["choices"][0]["message"]
         if message.get("refusal"):
             raise RuntimeError(f"the judge model refused: {message['refusal']}")
-        return json.loads(message.get("content") or "{}"), data.get("model", model), data.get("usage") or {}
+        verdict = json.loads(message.get("content") or "{}")
+        if body["response_format"]["type"] == "json_object":
+            verdict = conforming(verdict, schema)
+        return verdict, data.get("model", model), data.get("usage") or {}
     model = config.get("model") or sys.exit(MISSING_MODEL)
     data = post("https://api.anthropic.com/v1/messages",
                 {"x-api-key": api_key("ANTHROPIC_API_KEY", relai_dir), "anthropic-version": "2026-10-21",
@@ -189,6 +192,49 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
         raise RuntimeError("the judge model declined to grade this trajectory")
     text = "".join(block.get("text", "") for block in data.get("content", []) if block.get("type") == "text")
     return json.loads(text or "{}"), data.get("model", model), data.get("usage") or {}
+
+
+def response_format(config: dict, name: str, schema: dict) -> dict:
+    """The OpenAI-format response_format that [judge].response_format selects (default "json_schema")."""
+    kind = config.get("response_format", "json_schema")
+    if kind == "json_schema":
+        return {"type": "json_schema", "json_schema": {"name": name, "strict": True, "schema": schema}}
+    if kind == "json_object":
+        return {"type": "json_object", "schema": schema}
+    sys.exit(f"error: unknown response_format {kind!r}; use json_schema or json_object")
+
+
+JSON_TYPES = {"object": dict, "array": list, "string": str, "boolean": bool, "number": (int, float)}
+
+
+def schema_errors(value, schema: dict, where: str = "reply") -> list[str]:
+    """Check the subset of JSON Schema the shipped schemas use: type, enum, properties, required, items."""
+    expected = JSON_TYPES.get(schema.get("type"), object)
+    if not isinstance(value, expected) or (schema.get("type") == "number" and isinstance(value, bool)):
+        return [f"{where} is not of type {schema.get('type')}"]
+    if "enum" in schema and value not in schema["enum"]:
+        return [f"{where} is not one of {schema['enum']}"]
+    errors = []
+    if isinstance(value, dict):
+        properties = schema.get("properties", {})
+        errors += [f"{where} is missing {key!r}" for key in schema.get("required", []) if key not in value]
+        if schema.get("additionalProperties") is False:
+            errors += [f"{where} has unexpected key {key!r}" for key in value if key not in properties]
+        for key, item in value.items():
+            if key in properties:
+                errors += schema_errors(item, properties[key], f"{where}.{key}")
+    if isinstance(value, list) and "items" in schema:
+        for index, item in enumerate(value):
+            errors += schema_errors(item, schema["items"], f"{where}[{index}]")
+    return errors
+
+
+def conforming(verdict, schema: dict) -> dict:
+    """Return the parsed reply, or raise when it does not match the schema; json_object servers may not enforce it."""
+    errors = schema_errors(verdict, schema)
+    if errors:
+        raise ValueError("the reply does not match the response schema: " + "; ".join(errors[:5]))
+    return verdict
 
 
 MISSING_MODEL = ("error: set model in relai.toml's [judge] table (or [triage] for triage.py); there is no "

@@ -24,6 +24,7 @@ mode = "api"                 # "api" (bin/judge.py, copied from the plugin) or "
 provider = "anthropic"       # or "openai", "openrouter", "openai-compatible" (model required)
 # base_url = "http://localhost:4000/v1"   # openai-compatible only (LiteLLM, vLLM, ...)
 # api_key_env = "LITELLM_API_KEY"         # openai-compatible only: the key's variable name
+# response_format = "json_object"         # servers without json_schema (llama-cpp-python); judge.py checks replies
 model = "claude-opus-5-5"     # required; no default
 effort = "medium"            # optional, Anthropic only
 
