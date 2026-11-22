@@ -84,11 +84,11 @@ class EvalsAgent(BaseAgent):
             if name not in SETTINGS and len(env[name]) >= 8:
                 log = log.replace(env[name], f"[redacted {name}]")
         (self.logs_dir / "launcher.log").write_text(log, encoding="utf-8")
-        self._record_usage(context)
         if result.return_code != 0:
             raise RuntimeError(f"launcher exited {result.return_code}; last output:\n{log[-4000:]}")
 
-    def _record_usage(self, context: AgentContext) -> None:
+    def populate_context_post_run(self, context: AgentContext) -> None:
+        """Record token usage from the trajectory; Harbor calls this once the agent's logs are on the host."""
         path = self.logs_dir / "trajectory.json"
         try:
             metrics = json.loads(path.read_text(encoding="utf-8")).get("final_metrics") or {}

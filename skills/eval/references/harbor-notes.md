@@ -90,6 +90,11 @@ and update this file.
   `--no-delete` keeps them for the next trial.
 - **A custom agent class is imported from Harbor's tool environment.** `uv tool run` does not
   add the working directory to `sys.path`; set `PYTHONPATH` to the directory holding it.
+- **A custom agent's logs reach the host only after `run()`.** Checked in 0.25.0 and 0.27.0:
+  Harbor downloads `/logs/agent` (or, on Linux `-e docker`, makes the mounted files readable)
+  after `run()` returns or fails, so a `trajectory.json` read inside `run()` is missing or
+  unreadable and the usage stays empty. Read it in `populate_context_post_run`, as
+  `examples/harbor_agent.py` does.
 - **A missing reward file is an exception**, and `reward.txt` holds one number. Write
   `reward.json` with one key per evaluator.
 - **Instruction files loaded at startup can be missing from the trajectory.** Observed in 0.26.0

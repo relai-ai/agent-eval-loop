@@ -1,4 +1,4 @@
-"""Tests for the example scripts in examples/: launcher, judge, evaluator helper and trace triage.
+"""Tests for the example scripts in examples/: launcher, Harbor agent, judge, evaluator helper and trace triage.
 Run: python3 -m unittest discover -s tests"""
 
 from __future__ import annotations
@@ -80,6 +80,36 @@ class LauncherTest(unittest.TestCase):
         result, _ = self.run_launcher({"SKIP_RECORDING": "1"})
         self.assertEqual(result.returncode, 4)
         self.assertIn("no readable trajectory", result.stderr)
+
+
+class HarborAgentTest(unittest.TestCase):
+    def load_agent(self):
+        stubs = {"harbor": SimpleNamespace(), "harbor.agents": SimpleNamespace(),
+                 "harbor.agents.base": SimpleNamespace(BaseAgent=object),
+                 "harbor.environments": SimpleNamespace(),
+                 "harbor.environments.base": SimpleNamespace(BaseEnvironment=object),
+                 "harbor.models": SimpleNamespace(), "harbor.models.agent": SimpleNamespace(),
+                 "harbor.models.agent.context": SimpleNamespace(AgentContext=object)}
+        with patch.dict(sys.modules, stubs):
+            module = load("harbor_agent")
+        agent = module.EvalsAgent()
+        agent.logs_dir = Path(tempfile.mkdtemp(prefix="relai-harbor-agent-"))
+        return agent
+
+    def test_usage_is_recorded_after_run_from_the_downloaded_trajectory(self):
+        agent = self.load_agent()
+        (agent.logs_dir / "trajectory.json").write_text(json.dumps({"final_metrics": {
+            "total_prompt_tokens": 34010, "total_completion_tokens": 990, "total_cost_usd": -1}}))
+        context = SimpleNamespace(n_input_tokens=None, n_output_tokens=None, n_cache_tokens=None, cost_usd=None)
+        agent.populate_context_post_run(context)
+        self.assertEqual((context.n_input_tokens, context.n_output_tokens), (34010, 990))
+        self.assertIsNone(context.cost_usd)
+
+    def test_missing_trajectory_leaves_usage_unmeasured(self):
+        agent = self.load_agent()
+        context = SimpleNamespace(n_input_tokens=None)
+        agent.populate_context_post_run(context)
+        self.assertIsNone(context.n_input_tokens)
 
 
 class JudgeTest(unittest.TestCase):
