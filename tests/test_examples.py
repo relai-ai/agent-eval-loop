@@ -134,6 +134,16 @@ class JudgeTest(unittest.TestCase):
         self.judge.post = post
         return calls
 
+    def test_self_test_fails_full_marks_and_warns_on_partial_credit_for_an_empty_reply(self):
+        expected = {1.0: (1, "FAIL explains:"), 0.5: (0, "WARN explains:"), 0.0: (0, "PASS explains:")}
+        for score, (status, line) in expected.items():
+            with self.subTest(score=score):
+                output = io.StringIO()
+                with patch.object(self.judge, "judge_one", return_value={"score": score, "feedback": "f"}), \
+                        contextlib.redirect_stdout(output):
+                    self.assertEqual(self.judge.self_test(self.task, {}, self.repo.relai), status)
+                self.assertIn(line, output.getvalue())
+
     def test_a_missing_model_is_an_error_not_a_silent_default(self):
         calls = self.fake({})
         traj = trajectory([{"source": "user", "message": "hi"}, {"source": "agent", "message": "ok"}])

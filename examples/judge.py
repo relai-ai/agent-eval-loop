@@ -20,7 +20,9 @@ Optional relai.toml keys: [judge].effort (Anthropic effort, default "medium").
 
 --self-test runs each judge of a task on a synthetic empty-reply trajectory and fails when a
 judge gives it full marks (a judge that cannot fail is not measuring anything), unless the
-task sets [metadata.relai].prohibition = true.
+task sets [metadata.relai].prohibition = true. It warns when an empty reply scores above the
+judge's min_score: for a criterion that needs a reply, that judge gives credit for nothing, so
+check it in the grader preview before relying on it.
 
 Keys: ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY or the variable [judge].api_key_env names,
 from the environment (exported, or set by your secrets tool) or relai/.env. The script
@@ -357,6 +359,10 @@ def self_test(task: Path, config: dict, relai_dir: Path) -> int:
         elif result["score"] >= ev.get("max_score", 1.0) and not prohibition:
             print(f"FAIL {ev['id']}: full marks for an empty reply, so this judge cannot fail. Feedback: {result['feedback']}")
             status = 1
+        elif result["score"] > ev.get("min_score", 0.0) and not prohibition:
+            print(f"WARN {ev['id']}: empty reply scored {result['score']}, above min_score "
+                  f"{ev.get('min_score', 0.0)}; if the criterion needs a reply, check this judge in the "
+                  f"grader preview. Feedback: {result['feedback']}")
         else:
             print(f"PASS {ev['id']}: empty reply scored {result['score']}")
     return status
