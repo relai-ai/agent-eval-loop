@@ -1,5 +1,8 @@
 """Descriptive reports preserve evidence without imposing improvement or confidence gates."""
 import json
+import shutil
+import subprocess
+import sys
 import unittest
 from helpers import Repo, harbor_job, harbor_trial
 
@@ -66,6 +69,26 @@ class DescriptiveSummaryTest(unittest.TestCase):
         self.assertEqual((usage['calls'], usage['cost_reported']), (2, 2))
         self.assertAlmostEqual(usage['cost_usd'], 0.03)
         self.assertIn('Judge usage: 2 call(s), $0.0300', result.stdout)
+
+    def test_candidate_worktree_under_relai_work_pairs_with_the_baseline(self):
+        self.assertEqual(self.repo.run('freeze.py', str(self.task)).returncode, 0)
+        worktree_relai = self.repo.relai / 'work/candidates/c1/relai'
+        shutil.copytree(self.repo.relai / 'tests', worktree_relai / 'tests')
+        shutil.copytree(self.repo.relai / 'bin', worktree_relai / 'bin')
+        shutil.copy(self.repo.relai / 'README.md', worktree_relai / 'README.md')
+        base = self.run_data('baseline', [0.0, 0.0])
+        cand = harbor_job(worktree_relai / 'work/runs', 'c1', 2)
+        for index in range(2):
+            harbor_trial(cand, f't{index}', worktree_relai / 'tests/orders', {'looks-up-order': 1.0}, checksum='same',
+                         feedback={'looks-up-order': 'synthetic feedback'},
+                         judges={'explains': {'score': 1.0, 'feedback': 'synthetic feedback'}})
+        result, data = self.compare(base, cand)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([row['test'] for row in data['comparison']['rows']], ['tests/orders'])
+        self.assertNotIn('not frozen', result.stdout)
+        own_copy = subprocess.run([sys.executable, str(worktree_relai / 'bin/summarize.py'), str(cand),
+                                   '--baseline', str(base)], capture_output=True, text=True, cwd=self.repo.root)
+        self.assertIn('higher 1', own_copy.stdout, own_copy.stdout + own_copy.stderr)
 
     def test_unequal_counts_keep_unavailable_spread_null(self):
         result, data = self.compare(self.run_data('before', [1.0]), self.run_data('after', [1.0, 1.0, 1.0]))
