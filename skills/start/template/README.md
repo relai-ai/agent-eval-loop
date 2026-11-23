@@ -412,12 +412,25 @@ RELAI is something the user steers, not a black box.
 
 ### Resources and expectations
 
-Reuse the covering agreement and ask only about missing choices that affect the work. Establish
-what the current allowance should deliver: a verified result, useful exploration followed by a
-checkpoint, or another outcome the user specifies. Separately establish whether the allowance is
-the full allocation or another round may be considered, when that affects planning. An ordinary
-improvement request defaults to pursuing a verified improvement within current authorization.
-Record consequential choices in the existing agreement or decision record; no extra form is needed.
+Reuse the request and covering agreement to establish the objective, guardrails, authorized scope
+and resource allowance. An ordinary improvement request defaults to pursuing a verified improvement
+within current authorization, keeping the incumbent when improvement is not established. Clarify
+uncovered intent or required spending authorization before dependent work; use the
+[interaction guidance](#working-with-the-user) for questions. Further resources require new
+authorization; whether more might become available later need not be settled at intake.
+
+Within those boundaries, the coding agent owns the experimental plan: allocating resources among
+analysis, candidate attempts and confirmation, choosing candidate count, cases, batching,
+repetitions, targeted or broader evaluation, concurrency and sequence. Explain provisional choices
+and their rationale, then adapt them to evidence and remaining resources. Routine allocation is
+not an approval checkpoint or a menu of methods for the user to enable or disable. Record these
+choices as agent decisions rather than user requirements. Candidate estimates and unsuccessful
+attempts inform reassessment; they do not establish an additional fixed stopping quota.
+
+Honor explicit user restrictions on methods, counts, check-ins or delivery. Ask when work requires
+an unresolved user preference, an uncovered action or a change to objectives, scope, constraints or
+limits. Preserve those boundaries when choosing how to investigate and verify. Record the agreement
+and consequential decisions in existing project records; no extra form is needed.
 
 Name the relevant limits and what they cover, such as money, active work time, elapsed time or
 attempts, and whether they are cumulative or additional. Do not require every kind of cap for

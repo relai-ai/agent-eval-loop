@@ -31,9 +31,9 @@ Before another revision, use observed execution costs and durations to consider 
 available resources can cover its investigation and final verification. Check consequential
 boundaries that could rule it out early. If the next change would leave inadequate verification,
 consider checking the incumbent, a cheaper diagnostic or stopping with an explicitly limited
-result. Follow the agreement's delivery or exploration expectation and the
-[shared resource policy](../../start/template/README.md#resources-and-expectations); no fixed
-reserve percentage or candidate count applies.
+result. Follow the [shared resource policy](../../start/template/README.md#resources-and-expectations)
+for allocation authority and questions, preserving the agreement's delivery or exploration expectation;
+no fixed reserve percentage or candidate count applies.
 
 Distinguish three selections, which may overlap and need not be small or equal in size:
 
