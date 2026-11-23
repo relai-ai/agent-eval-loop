@@ -24,8 +24,9 @@ deterministic fix needs no unrelated evaluation questionnaire.
   [terms](../start/template/README.md#terms) when absent. Use the [start skill](../start/SKILL.md)
   only when you need RELAI's managed records or checkers, and the [eval skill](../eval/SKILL.md)
   only for missing measurement capabilities or coverage. Reuse working project infrastructure.
-  Follow [improve-loop](references/improve-loop.md), and [cost-latency](references/cost-latency.md) for a cost or latency
-  objective.
+  Follow [improve-loop](references/improve-loop.md) for focused analysis batches, repeated synthesis and
+  staged behavioral experiments; choose their size, concurrency and timing within the agreement.
+  Use [cost-latency](references/cost-latency.md) for a cost or latency objective.
 - **Check a change:** use the relevant available checks and state uncovered behavior. For an
   existing agent suite, follow [regression](references/regression.md); do not build unrelated infrastructure.
 

@@ -55,13 +55,56 @@ For several alternatives, follow [candidate-selection](candidate-selection.md). 
 a reversible diff and an account of attribution limits: a bundle's success does not prove each
 component helped. Use isolation or ablation when attribution matters.
 
-Delegate analysis when independent investigation or context management warrants it, not because
-of a trajectory count. Give an analyzer only permitted development evidence and scope.
-Independent review of the delivered measured improvement remains required.
+Independent review of the delivered measured improvement remains required. Analysis delegation and
+that review serve different purposes; exploratory analysts do not approve their own candidate.
 
 When what to investigate next is unclear, [prioritization](prioritization.md) offers optional suggestions; they
 never set selection, batch size, evidence, budget or acceptance. On a benchmark, record the exact
 development selection with `benchmark.py batch <id> --case-ids ...`.
+
+## Analyze focused batches and synthesize as useful
+
+For substantial diagnosis, organize permitted development evidence into focused batches. Independent
+batches can run concurrently through subagents when supported and useful; serial analysis also works.
+Choose the cases, concurrency and timing within the resource agreement. With one context, keep batch
+findings distinct and delay settling on a preferred explanation while meaningfully different cases
+remain unexplored; this does not provide the independence of fresh contexts.
+
+Size a batch for close comparison of decisions, actions and outcomes, including relevant successful
+or opposite-correct cases. As starting heuristics, try 3–5 short or moderate cases, or one long or
+complex case with its related trials. Around 20–40k tokens of working evidence can be a useful point
+to reconsider scope, within the actual context capacity and with room for instructions, reasoning
+and tools. These are adjustable engineering heuristics, not validated cutoffs or minimum coverage.
+Use complexity and observed analysis quality to adapt; split or refocus when evidence references
+blur, independent mechanisms get flattened together, or analysis becomes superficial. Preserve
+coherent episodes and source access rather than blindly truncating traces to meet a number.
+
+For independent exploratory analysis, supply the objective, constraints, necessary code/context and
+selected evidence without steering analysts toward the coordinator's preferred diagnosis or other
+analysts' conclusions. Directed follow-up is appropriate when testing a stated hypothesis. Ask for
+source-linked observations, possible mechanisms and interventions, contradictory evidence and
+uncertainty. A batch need not produce a proposal.
+
+Synthesize available findings when they can inform a useful decision; all batches need not finish
+first. Reconcile duplicates and disagreements, check important claims against source, and preserve
+competing explanations. Consider the cases a proposal should help, those it could harm and evidence
+that would contradict it. Recurrence in a selected batch is not a population prevalence estimate.
+Choose a coherent intervention or staged alternatives; synthesis does not mean applying every
+suggestion together.
+
+Decide whether further batch analysis, synthesis, targeted evaluation or broader confirmation could
+most usefully change the next decision for its cost. Early synthesis may reveal a gap requiring
+more analysis; a failed candidate may justify fresh exploratory batches rather than elaborating
+its original explanation. Explain consequential choices within existing authority without handing
+routine experiment selection back to the user. No fixed batch count, sequence, subagent requirement
+or analysis quota applies. Preserve the source references and distinctions needed for the next
+synthesis in existing work records.
+
+The context rationale is informed by [Lost in the Middle](https://arxiv.org/abs/2307.03172),
+[Anthropic's parallel research architecture](https://www.anthropic.com/research/multi-agent-research-system)
+and [context-engineering guidance](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents).
+They support attention to context and independent exploration, not the numeric heuristics above.
+Pilot useful batch sizes on representative material when that could improve analysis within budget.
 
 ## Establish comparable evidence
 
@@ -73,7 +116,12 @@ the summarizer only describes observations.
 Use relevant existing wiring and grader checks; investigate an implausible gain or disconnected
 mechanism before spending on more candidates. For configuration changes or expensive passes,
 a cheap premise probe can establish that the setting is accepted and the resolved scope matches
-what was authorized. Reuse adequate prior checks.
+what was authorized. Such a probe establishes wiring, not behavioral benefit. Before a broad run,
+consider a targeted behavioral comparison on cases the proposal should help and relevant regression
+cases. Choose repetitions and progression for the uncertainty and decision: inconclusive or mixed
+results may justify more investigation, a revision or a broader measurement with a stated rationale.
+Reuse adequate prior checks. Diagnostic runs consume the agreed budget, and their selected scores
+do not estimate overall gains or replace required complete-set selection or final evaluation.
 
 ## Diagnosing and proposing changes
 
