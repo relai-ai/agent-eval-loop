@@ -460,6 +460,7 @@ Starting points, not rules. Change them here or in an agreement, and record why 
 | Questions per sitting | 8 |
 | Judge flagged for low agreement | below 90% over 3 or more judge checks |
 | Judge checks per new or changed judge | 1 or 2 (a high and a low score) |
+| Labelled pull request revisions per repository for judge calibration (`coding-evals`) | about 10, recent, at least 3 accepted and 3 changed; declined ones when the history has them |
 | Traces that call for triage instead of reading each in full | about 50 or more |
 | Review app threshold: traces to review above which RELAI builds a review app without asking | 5 |
 | Triage pilot before a full run | 20 traces |

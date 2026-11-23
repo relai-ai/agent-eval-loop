@@ -78,6 +78,8 @@ README is part of the runner's task checksum, so later comparisons would report 
   and `review-ready` evaluators exist under `relai/evaluators/`, with approved repository
   requirements routed by evidence: process requirements in trajectory judges, output requirements
   in code checks or `review-ready` ([checks](references/checks.md#repository-requirements));
+  when [calibration](references/calibration.md) applies, the diff judges' agreement with
+  maintainers' verdicts is recorded, or that the user declined it or the history was too thin;
   the answers are in `decisions.md`.
 - **Build:**
   - **Task list approved:** the user, or an independent reviewer when the approval is delegated
@@ -211,11 +213,11 @@ they do. Resolve each finding (fix it, or record why not). Every change after th
 only blocking fixes, is confirmed by the reviewer or a fresh review scoped to that change, which
 also says which checks to rerun. Record the reviewed revision in the task record and freeze only
 that revision, so the user approves a reviewed task once. Then preview every judge's
-rubric summary, the review's verdict and what changed after it, and any unexpected control
-score; summarize expected scores per task. Following the shared
-[decision-effort rule](../start/template/README.md#working-with-the-user), ask about scoring and
-coverage choices still needing approval, in manageable subsets. If sign-off changes a task,
-review the change before freezing. Freeze only the approved, validated subset. A delegated
+rubric summary and its calibration agreement when recorded, the review's verdict and what changed
+after it, and any unexpected control score; summarize expected scores per task. Following the
+shared [decision-effort rule](../start/template/README.md#working-with-the-user), ask about
+scoring and coverage choices still needing approval, in manageable subsets. If sign-off changes
+a task, review the change before freezing. Freeze only the approved, validated subset. A delegated
 reviewer can cover preview approval and independent review in one pass when both are delegated;
 unresolved tasks stay pending.
 

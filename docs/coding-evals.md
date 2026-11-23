@@ -16,7 +16,7 @@ Use RELAI's coding-evals skill to check whether our new CLAUDE.md helps on our t
 
 - **From your real work.** Build tasks from a corrected coding session, pull request, revert or past fix in git history. Each task begins at the commit where the work started; the real fix is kept out of the workspace.
 - **Any agent can run it.** Harbor installs the agent under test; the task brings the repository and its toolchain.
-- **Your standards.** Draft "good" from CLAUDE.md, AGENTS.md, contributing guides, lint configuration and past review comments; you confirm it.
+- **Your standards.** Draft "good" from CLAUDE.md, AGENTS.md, contributing guides, lint configuration and past review comments; when building a set, RELAI can also check the judges against how your maintainers reviewed recent pull requests. You confirm it.
 - **Checks beyond task success.** Use hidden tests, existing tests as regression checks, and checks for edited tests, out-of-scope changes, unsafe work and claims that do not match what happened.
 - **Comparable results.** Report solved rate with its noise, cost per solved task and the tasks that separate the agents or setups being compared.
 
@@ -39,7 +39,7 @@ extra agent in it); the last column shows spending beyond that session.
 | 2. Build | Writes each task (workspace at the start commit, request, hidden tests) | No |
 | 3. Validate | Checks, with no model, that the real fix gets full marks, the untouched code fails the main check (the task's hidden tests) and a different correct fix also passes | No |
 | 4. Independent review | A reviewer that did not build the task checks it, alongside stage 3; RELAI resolves what it finds | No |
-| 5. Your sign-off | You (or a reviewer you delegate to) approve the reviewed checks once | No |
+| 5. Your sign-off | You (or a reviewer you delegate to) approve the reviewed checks once, with how the judges scored past pull requests when calibrated | Judge calls in API mode, when calibrating |
 | 6. Freeze | RELAI freezes the tasks; later changes need a recorded reason and a fresh review | No |
 | 7. Pilot run | One trial per agent or setup compared measures cost and time and confirms the setup loaded | Yes, agent runs |
 | 8. Full run | The remaining runs, within your budget | Yes, agent runs |

@@ -28,10 +28,11 @@ one pull request or session needs the source repository, where the eval project 
 live, and standards
 drafted from the instruction files and contributing docs at hand, shown with the task list rather
 than in a round of their own. Mining review comments, other repositories and kinds of work suits
-a request to mine a repository or build a set. The agent's model, version and authentication are
-not needed for building; ask them with the run plan (*Ask the run plan*). Adding
-standards to a shared evaluator later changes frozen tasks that carry it, under the *Frozen tests*
-rule; new tasks pick it up.
+a request to mine a repository or build a set; [calibration](calibration.md) says how to mine
+review history and check the diff judges against it.
+The agent's model, version and authentication are not needed for building; ask them with the
+run plan (*Ask the run plan*). Adding standards to a shared evaluator later changes frozen tasks
+that carry it, under the *Frozen tests* rule; new tasks pick it up.
 
 ## Find out first
 
@@ -51,8 +52,9 @@ rule; new tasks pick it up.
   run, and whether tasks could ever be shared. Ask only when it cannot be told.
 - **Draft standards and never-do's** from the team's instruction files (CLAUDE.md, AGENTS.md),
   CONTRIBUTING, README, pull request templates, lint and CI configuration, and recent review
-  comments, including applicable nested files and linked guidance. Cite each source and separate
-  output requirements from process requirements using [checks](checks.md#repository-requirements).
+  history ([calibration](calibration.md)), including applicable nested files and linked
+  guidance. Cite each source and separate output requirements from process requirements using
+  [checks](checks.md#repository-requirements).
   Show each with the evaluator that will read it, so a required gate with no check (a lint
   command the instruction file requires) shows at the scope checkpoint, not in review.
 - **How each repository's developers add tests**, from recent fixes and its guidance: in new
@@ -76,6 +78,9 @@ the drafted standards), then ask only what remains open, following
    repository*), unless already settled.
 4. **Where task code may live** (`task_code`), only when it could leave the eval project's
    repository: `"private"`, kept there (default), or `"shareable"`. Never assume shareable.
+5. **Calibrating the diff judges**, when [calibration](calibration.md) applies: whether to do it,
+   and if so the judge mode and model the runs will use, with the calibration run's estimated
+   cost and where it sends code.
 
 When some fix can be found online (a public source, a published release), state the network default with the findings: tasks whose fix can be
 found online run without network ([task-format](task-format.md), *The network and web tools*).
