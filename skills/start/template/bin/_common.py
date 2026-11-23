@@ -13,6 +13,8 @@ from pathlib import Path
 
 HARBOR_PYTHON = "3.12"
 
+SETUP_RECORD = "relai-setup.json"
+
 JUNK_DIRS = {
     "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", ".tox", ".nox",
     "node_modules", ".venv", "venv", ".git", ".hg", ".svn",
@@ -94,13 +96,35 @@ def relai_root(explicit: str | None = None) -> Path:
 def test_key(task_dir: Path, relai_dir: Path) -> str:
     """A test's identity: its path relative to the nearest enclosing relai/ (tests/<id>,
     benchmarks/<id>/...), else its name. The nearest one, so that a checkout's copy of relai/,
-    such as a candidate worktree under relai/work/candidates/<name>/, gives the same identity."""
+    such as a candidate worktree under relai/work/candidates/<name>/, gives the same identity. A run
+    copy built by apply_setup.py keeps the identity of the frozen test it was built from."""
     task_dir = task_dir.resolve()
     relai_dir = relai_dir.resolve()
     for ancestor in task_dir.parents:
-        if ancestor == relai_dir or ancestor.name == relai_dir.name:
+        if ancestor == relai_dir or ancestor.name == relai_dir.name or (ancestor / SETUP_RECORD).is_file():
             return task_dir.relative_to(ancestor).as_posix()
     return task_dir.name
+
+
+def setup_run(task_dir: Path) -> dict | None:
+    """What apply_setup.py recorded for a run copy: the setup, its digest and this test's digests.
+    None for a task that is not a run copy."""
+    task_dir = task_dir.resolve()
+    for ancestor in task_dir.parents:
+        path = ancestor / SETUP_RECORD
+        if not path.is_file():
+            continue
+        try:
+            record = load_json(path)
+        except (OSError, json.JSONDecodeError):
+            record = None
+        if not isinstance(record, dict):
+            return {"setup": "?", "digest": None, "error": f"{path} could not be read"}
+        tests = record.get("tests") if isinstance(record.get("tests"), dict) else {}
+        entry = tests.get(task_dir.relative_to(ancestor).as_posix())
+        return {"setup": str(record.get("setup") or "?"), "digest": record.get("digest"),
+                **(entry if isinstance(entry, dict) else {"error": f"{path} does not list this test"})}
+    return None
 
 
 def resolve_task_dir(raw: str, relai_dir: Path, job_dir: Path | None = None) -> Path | None:

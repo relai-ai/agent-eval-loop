@@ -132,11 +132,14 @@ README is part of the runner's task checksum, so later comparisons would report 
   allows.
 - **The baseline is the setup the team runs.** Measure the agent with the files the repository
   holds, read the way that agent reads them. Adding a file so it reads guidance it otherwise
-  ignores (a `CLAUDE.md` that imports `AGENTS.md`) makes a setup variant to compare, not the
-  baseline; report guidance the agent does not read as an observation.
+  ignores (a `CLAUDE.md` that imports `AGENTS.md`) makes a setup to compare, not the
+  baseline; report guidance the agent does not read as an observation. User-level skills are
+  also a setup to compare, unless the team confirms it uses them in daily work on this
+  repository; then that setup is the baseline, recorded in `decisions.md`.
 - **Comparable.** Every agent runs at a recorded version, model and authentication, on the same frozen tasks and
-  attempts. Setup variants keep the request and grading logic identical; only declared setup
-  baseline inputs differ ([comparing](references/comparing.md), *Setups*). Different agents are
+  attempts. A setup is installed on run copies of the frozen tasks, so the request and grading
+  stay identical and each run records which setup it used
+  ([comparing](references/comparing.md), *Setups*). Different agents are
   compared under the shared comparison rules: recommend bare or matched setups for controlled
   comparisons, and disclose intentional native setup differences for as-deployed comparisons
   ([comparing](references/comparing.md), *Comparing agents*). Report differences as observations

@@ -28,7 +28,7 @@ Turn the approved requirements from [scope](scope.md) into explicit criteria. Fo
 its source and revision, applicable paths and conditions, the evidence needed and the evaluator
 that reads it. Use the approved requirements that apply to the code at the task's start commit,
 wherever they are written (the start commit's files, the setup the team runs, contributing docs);
-resolve conflicting or inapplicable guidance before freezing. Every setup variant of a task is
+resolve conflicting or inapplicable guidance before freezing. Every setup applied to a task is
 graded on the same criteria ([comparing](comparing.md), *Setups*).
 
 - **Output requirements** go to code checks when exact, or `review-ready` when they need

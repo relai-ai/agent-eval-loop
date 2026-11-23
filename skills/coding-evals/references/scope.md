@@ -20,6 +20,11 @@ application-agent harness: Harbor installs supported coding agents. A custom cod
 a suitable installer/adapter that executes the real agent and preserves the task/result contract;
 inspect existing support before proposing new integration work. A team's setups (instruction
 files, skills, hooks, MCP configuration) live under `relai/setups/<id>/`, laid out as in a repository root.
+Skills the team keeps at user level, outside any repository, are copied under `relai/` and listed
+one by one in the setup's `skills`. Propose only the skills that apply to this repository's
+work and let the user confirm the list; never copy a whole user-level skill folder. Ask
+whether the team uses them in daily work on this repository, which decides whether they belong
+to the baseline (the *baseline* rule in the skill).
 
 ## Size it to the request
 
