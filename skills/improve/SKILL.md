@@ -49,7 +49,9 @@ these from the request and project evidence before dependent work:
   rather than inventing a weighted objective or an improvement threshold the user did not request.
 - **Scope:** the allowed agent files, model/settings changes, supporting work and off-limits surfaces.
 - **Resources:** applicable allowances, limits and their coverage. Ask for a missing limit when
-  paid execution or the integration requires it; do not require every kind of cap for every task.
+  paid execution or the integration requires it, including a maximum concurrency before parallel
+  runs ([resource policy](../start/template/README.md#resources-and-expectations)); do not require
+  every kind of cap for every task.
 - **Evidence and delivery:** record your provisional measurement and verification approach
   ([eval: measure](../eval/references/measure.md)) under the shared policy. Reuse covered expectations
   and check-ins. Use a branch or worktree for review by default, or the user's working tree if
