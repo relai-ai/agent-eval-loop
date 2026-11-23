@@ -62,8 +62,8 @@ Tell the user when the authorized budget is exhausted, and ask before exceeding 
 
 In an eval project for coding agents, the thing improved is a team's setup (`relai/setups/<id>/`:
 instruction files, skills, hooks) rather than code in this repository: the scope is those files,
-each candidate is measured as a variant of the frozen tasks
-([comparing](../coding-evals/references/comparing.md)), and everything below applies unchanged.
+each candidate is applied to the frozen tasks without re-freezing them
+([comparing](../coding-evals/references/comparing.md), *Setups*), and everything below applies unchanged.
 With agent-neutral tests that several agents run, improve one agent at a time: its setup files,
 or its code when this repository develops it. The other agents' scores are context for the
 report, never targets ([agent-neutral](../eval/references/agent-neutral.md)).

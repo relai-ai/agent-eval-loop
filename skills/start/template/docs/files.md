@@ -82,7 +82,8 @@ baseline = true                # the version other runs are compared against
 
 [[coding_evals.setups]]      # optional: a team's setup to compare or improve
 id = "team"
-path = "setups/team"         # relative to relai/
+path = "setups/team"         # optional: files installed into the workspace, relative to relai/
+skills = ["skills/<name>"]   # optional: user-level skill directories the agent gets, relative to relai/ and outside path
 agent = "<agent id>"         # optional: the agent whose files it is written in; matched setups share the same guidance
 
 [[agents]]                   # optional: agents run on shared service tasks (the eval skill); this example uses Harbor

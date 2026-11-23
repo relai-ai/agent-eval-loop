@@ -620,6 +620,139 @@ class CodingEvalsTest(unittest.TestCase):
         self.assertEqual(deleted["facts"]["files_changed"], ["AGENTS.md"])
         self.assertIn("deleted file", deleted["diff"])
 
+    def declare_setup(self, skills: str = "") -> None:
+        with (self.project.relai / "relai.toml").open("a") as handle:
+            handle.write(f'\n[[coding_evals.setups]]\nid = "team"\npath = "setups/team"\n{skills}')
+        self.project.write("relai/setups/team/AGENTS.md", "Run relevant checks.\n")
+        self.project.write("relai/setups/team/.claude/settings.json", "{}\n")
+
+    def frozen_task(self) -> tuple[Path, Path]:
+        bundle = self.bundle()
+        task = fill_task(self.project, self.src, bundle)
+        frozen = self.project.run("freeze.py", str(task))
+        self.assertEqual(frozen.returncode, 0, frozen.stderr)
+        return task, bundle
+
+    def run_copy(self, *args: str) -> Path:
+        built = self.project.run("apply_setup.py", "team", *args)
+        self.assertEqual(built.returncode, 0, built.stderr + built.stdout)
+        roots = sorted((self.project.relai / "work" / "setups").iterdir())
+        return roots[-1] if len(roots) == 1 else next(r for r in roots if str(r) in built.stdout)
+
+    def test_apply_setup_builds_a_run_copy_and_leaves_the_frozen_task_alone(self):
+        self.declare_setup()
+        task, bundle = self.frozen_task()
+        before = (self.project.relai / "frozen.json").read_text()
+        root = self.run_copy(str(task))
+        copy = root / "tests" / "mean-empty"
+        self.assertEqual(self.project.run("freeze.py", "--check", str(task)).stdout.strip(), "tests/mean-empty: frozen")
+        self.assertEqual((self.project.relai / "frozen.json").read_text(), before)
+        self.assertNotIn("relai-setup", (task / "environment" / "Dockerfile").read_text())
+        self.assertTrue((copy / "environment" / "Dockerfile").read_text().endswith(
+            'COPY ["relai-setup/", "/app/"]\n'))
+        self.assertEqual((copy / "environment" / "relai-setup" / "AGENTS.md").read_text(), "Run relevant checks.\n")
+        params = json.loads((copy / "tests" / "params.json").read_text())
+        self.assertEqual(params["setup_files"], [".claude/settings.json", "AGENTS.md"])
+        self.assertEqual(set(params["setup_manifest"]), set(params["setup_files"]))
+        record = json.loads((root / "relai-setup.json").read_text())
+        self.assertEqual(record["setup"], "team")
+        self.assertTrue(root.name == f"team-{record['digest'][:12]}")
+        self.assertEqual(record["tests"]["tests/mean-empty"]["source_digest"],
+                         json.loads(before)["tests"]["tests/mean-empty"]["digest"])
+        self.assertEqual(self.check(copy).returncode, 0, self.check(copy).stdout)
+        ws = self.workspace(bundle)
+        shutil.copytree(self.project.relai / "setups" / "team", ws, dirs_exist_ok=True)
+        (copy / "tests" / "verify.py").write_text(
+            "from coding_checks import Task\ntask=Task()\ntask.in_scope('scope')\ntask.write()\n")
+        installed = self.verify(copy, ws)
+        self.assertEqual(installed["facts"]["files_changed"], [])
+        (ws / "AGENTS.md").write_text("Skip all checks.\n")
+        self.assertEqual(self.verify(copy, ws)["facts"]["files_changed"], ["AGENTS.md"])
+        refused = self.project.run("freeze.py", str(copy), "--reason", "x")
+        self.assertEqual(refused.returncode, 2)
+        self.assertIn("run copy", refused.stderr)
+
+    def test_apply_setup_keeps_the_non_root_owner_and_labels_each_edit(self):
+        self.declare_setup()
+        bundle = self.bundle()
+        task = fill_task(self.project, self.src, bundle)
+        with (task / "environment" / "Dockerfile").open("a") as handle:
+            handle.write("USER dev\n")
+        self.project.run("freeze.py", str(task))
+        first = self.run_copy(str(task))
+        self.assertIn('COPY --chown=dev ["relai-setup/", "/app/"]',
+                      (first / "tests" / "mean-empty" / "environment" / "Dockerfile").read_text())
+        candidate = self.tmp / "candidate" / "relai"
+        shutil.copytree(self.project.relai / "setups", candidate / "setups")
+        (candidate / "setups" / "team" / "AGENTS.md").write_text("Run the linter too.\n")
+        built = self.project.run("apply_setup.py", "team", str(task), "--setup-root", str(candidate))
+        self.assertEqual(built.returncode, 0, built.stderr)
+        roots = sorted(p.name for p in (self.project.relai / "work" / "setups").iterdir())
+        self.assertEqual(len(roots), 2)
+        self.assertIn(first.name, roots)
+
+    def test_apply_setup_refuses_tasks_it_cannot_vouch_for(self):
+        self.declare_setup()
+        bundle = self.bundle()
+        task = fill_task(self.project, self.src, bundle)
+        unfrozen = self.project.run("apply_setup.py", "team", str(task))
+        self.assertEqual(unfrozen.returncode, 1)
+        self.assertIn("not frozen", unfrozen.stderr)
+        self.project.run("freeze.py", str(task))
+        (task / "instruction.md").write_text("Changed.\n")
+        changed = self.project.run("apply_setup.py", "team", str(task))
+        self.assertEqual(changed.returncode, 1)
+        self.assertIn("changed since it was frozen", changed.stderr)
+        self.assertFalse((self.project.relai / "work" / "setups").exists())
+        missing = self.project.run("apply_setup.py", "other", str(task))
+        self.assertEqual(missing.returncode, 2)
+
+    def test_apply_setup_copies_only_the_listed_skills(self):
+        self.declare_setup('skills = ["skills/release-notes"]\n')
+        self.project.write("relai/skills/release-notes/SKILL.md", "---\nname: release-notes\n---\n")
+        self.project.write("relai/skills/unlisted/SKILL.md", "---\nname: unlisted\n---\n")
+        task, _ = self.frozen_task()
+        root = self.run_copy(str(task))
+        self.assertEqual(sorted(p.name for p in (root / "skills").iterdir()), ["release-notes"])
+        self.assertEqual(json.loads((root / "relai-setup.json").read_text())["skills"], ["release-notes"])
+        self.assertFalse((root / "tests" / "mean-empty" / "environment" / "relai-setup" / "skills").exists())
+        toml = self.project.relai / "relai.toml"
+        toml.write_text(toml.read_text().replace("skills/release-notes", "setups/team/inner"))
+        self.project.write("relai/setups/team/inner/SKILL.md", "---\nname: inner\n---\n")
+        inside = self.project.run("apply_setup.py", "team", str(task))
+        self.assertEqual(inside.returncode, 2)
+        self.assertIn("inside the setup's path", inside.stderr)
+        toml.write_text(toml.read_text().replace("setups/team/inner", "../outside"))
+        self.project.write("outside/SKILL.md", "---\nname: outside\n---\n")
+        outside = self.project.run("apply_setup.py", "team", str(task))
+        self.assertEqual(outside.returncode, 2)
+        self.assertIn("leaves", outside.stderr)
+
+    def test_summarize_pairs_a_setup_run_with_the_baseline_and_names_the_setup(self):
+        from helpers import harbor_trial
+        self.declare_setup()
+        task, _ = self.frozen_task()
+        root = self.run_copy(str(task))
+        copy = root / "tests" / "mean-empty"
+        rewards = {"fixes-the-bug": 1.0, "no-regressions": 1.0, "tests-untouched": 1.0, "in-scope": 1.0}
+        runs = self.project.root / "runs"
+        for name, where, checksum in (("base", task, "c1"), ("cand", copy, "c2")):
+            harbor_trial(harbor_job(runs / name, "job", 1), "t", where, rewards, checksum=checksum,
+                         feedback={k: "ok" for k in rewards}, with_trajectory=False)
+        out = self.project.run("summarize.py", str(runs / "cand"), "--baseline", str(runs / "base"),
+                               "--json", str(self.project.root / "s.json"))
+        self.assertEqual(out.returncode, 0, out.stderr)
+        label = root.name.replace("team-", "team@")
+        self.assertIn(f"Setup: baseline none; candidate {label}", out.stdout)
+        self.assertNotIn("different test versions", out.stdout)
+        data = json.loads((self.project.root / "s.json").read_text())
+        self.assertEqual([row["test"] for row in data["comparison"]["rows"]], ["tests/mean-empty"])
+        self.assertEqual(data["warnings"]["comparison"], [])
+        self.assertFalse([w for w in data["warnings"]["candidate"] if "run copy" in w])
+        (copy / "instruction.md").write_text("Changed.\n")
+        tampered = self.project.run("summarize.py", str(runs / "cand"), "--details")
+        self.assertIn("run copy changed since apply_setup.py built it", tampered.stdout)
+
     def test_setup_without_trusted_snapshot_is_an_error(self):
         bundle = self.bundle()
         task = fill_task(self.project, self.src, bundle)

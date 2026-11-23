@@ -58,7 +58,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (
     declared_evaluators, dir_digest, evals_config, relai_root, frozen_state, load_json, load_toml, normalized,
-    pass_mark, resolve_task_dir, test_key,
+    pass_mark, resolve_task_dir, setup_run, test_key,
 )
 
 DEFINITIONS_UNAVAILABLE = "original evaluator definitions are unavailable"
@@ -192,6 +192,20 @@ def trial_timing(result: dict) -> dict:
     return timing
 
 
+def setup_label(setup: dict | None) -> str:
+    """How a trial's setup is named in reports: none, or the setup id with the start of its digest."""
+    if not setup:
+        return "none"
+    return f"{setup['setup']}@{str(setup.get('digest') or '?')[:12]}"
+
+
+def started_at(result: dict):
+    try:
+        return datetime.datetime.fromisoformat(str(result["started_at"]).replace("Z", "+00:00"))
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def runner_label(result: dict) -> str:
     """Stable measurement identity; candidate paths/settings may vary without changing it."""
     kind = result.get("runner") or "harbor"
@@ -232,7 +246,8 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
             warnings.append(f"trajectory JSON could not be read ({type(exc).__name__})")
     base = {"trial": trial_dir.name, "dir": str(trial_dir), "checksum": result.get("task_checksum"),
             "exception": exception, "score": None, "evaluators": {}, "usage": usage,
-            "runner": runner_label(result), "warnings": warnings, "timing": trial_timing(result), "primary": None}
+            "runner": runner_label(result), "warnings": warnings, "timing": trial_timing(result), "primary": None,
+            "setup": setup_run(task_path) if task_path is not None else None, "started_at": started_at(result)}
     if task_path is None:
         return {**base, "test": Path(raw_path).name or result.get("task_name", "?"), "task_path": raw_path,
                 "status": "task not found",
@@ -364,7 +379,8 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
         if rec["checksum"]:
             entry["checksums"].add(rec["checksum"])
     summary = {"tests": {}, "trials": len(records), "status_counts": {s: 0 for s in STATUSES}, "jobs": [],
-               "runners": sorted({rec["runner"] for rec in records})}
+               "runners": sorted({rec["runner"] for rec in records}),
+               "setups": sorted({setup_label(rec.get("setup")) for rec in records})}
     for rec in records:
         summary["status_counts"][rec["status"]] += 1
     for job_dir, job in jobs:
@@ -435,6 +451,7 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
             "full_marks": sum(1 for s in scored if s >= 1.0),
             "checksums": sorted(entry["checksums"]),
             "runners": sorted({r["runner"] for r in recs}),
+            "setups": sorted({setup_label(r.get("setup")) for r in recs}),
             "task_path": entry["task_path"],
             "split": recs[0].get("split") if wrapped else task_split(entry["task_path"]),
             "cost_usd": sum(costs) if costs else None,
@@ -523,6 +540,8 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
     counts = summary["status_counts"]
     print(f"## {label}")
     print("Runner: " + ", ".join("native" if r == "native:native" else r for r in summary["runners"]))
+    if summary["setups"] != ["none"]:
+        print("Setup: " + ", ".join(summary["setups"]))
     print(f"Trials: {summary['trials']} (" + ", ".join(f"{k} {v}" for k, v in counts.items() if v) + ")")
     for job in summary["jobs"]:
         total, done, open_ = job.get("n_total_trials"), job.get("n_finished_trials", 0), job.get("n_unfinished_trials", 0)
@@ -637,6 +656,16 @@ def frozen_warnings(relai_dir: Path, summary: dict) -> list[str]:
         path = relai_dir / name
         if path.is_dir() and dir_digest(path) != entry.get("digest"):
             warnings.append(f"{name} changed since it was frozen")
+        copies = {trial["task_path"]: trial["setup"] for trial in test["trials"] if trial.get("setup")}
+        for copy, setup in copies.items():
+            label = setup_label(setup)
+            if setup.get("error"):
+                warnings.append(f"{name}: setup {label}: {setup['error']}")
+            elif setup.get("source_digest") != entry.get("digest"):
+                warnings.append(f"{name}: the setup {label} run copy was built from another version of the test "
+                                "than the frozen one; rebuild it with apply_setup.py")
+            elif Path(copy).is_dir() and dir_digest(Path(copy)) != setup.get("run_digest"):
+                warnings.append(f"{name}: the setup {label} run copy changed since apply_setup.py built it")
     return warnings
 
 
@@ -648,6 +677,8 @@ def evidence_warnings(summary: dict) -> list[str]:
             warnings.append(f"{name}: mixed test versions within this run")
         if len(test["runners"]) > 1:
             warnings.append(f"{name}: mixed runner identities within this run")
+        if len(test["setups"]) > 1:
+            warnings.append(f"{name}: mixed setups within this run ({', '.join(test['setups'])})")
         missing = sum(not trial["checksum"] for trial in test["trials"])
         if missing:
             warnings.append(f"{name}: test version identity is missing for {missing} attempt(s)")
@@ -676,6 +707,7 @@ def compare(base: dict, cand: dict) -> dict:
                      "attempts": f"{b['scored']}/{c['scored']}",
                      "baseline_solved": solved_pair(b), "candidate_solved": solved_pair(c)})
     return {"rows": rows, "overall": overall(rows),
+            "setups": {"baseline": base["setups"], "candidate": cand["setups"]},
             "baseline only": sorted(set(base["tests"]) - set(cand["tests"])),
             "candidate only": sorted(set(cand["tests"]) - set(base["tests"]))}
 
@@ -689,7 +721,21 @@ def solved_cell(pair) -> str:
     return f"{pair['solved']}/{pair['scored']}" if pair else "-"
 
 
-def comparison_warnings(base: dict, cand: dict) -> list[str]:
+def source_versions(test: dict) -> set:
+    return {trial["setup"].get("source_digest") for trial in test["trials"] if trial.get("setup")}
+
+
+def refrozen_after_start(test: dict, entry: dict | None) -> bool:
+    """Whether a test run without a setup started before the test's current freeze."""
+    starts = [trial["started_at"] for trial in test["trials"] if not trial.get("setup") and trial.get("started_at")]
+    try:
+        frozen_at = datetime.datetime.fromisoformat(str((entry or {})["frozen_at"]))
+        return bool(starts) and min(starts) < frozen_at
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
+def comparison_warnings(base: dict, cand: dict, frozen: dict | None = None) -> list[str]:
     warnings = []
     if base["runners"] != cand["runners"]:
         warnings.append("runs use different runners or measurement identities")
@@ -697,7 +743,14 @@ def comparison_warnings(base: dict, cand: dict) -> list[str]:
         b, c = base["tests"][name], cand["tests"][name]
         if b["runners"] != c["runners"]:
             warnings.append(f"{name}: different runners or measurement identities between runs")
-        if b["checksums"] != c["checksums"]:
+        if b["setups"] != c["setups"]:
+            versions = [source_versions(side) for side in (b, c)]
+            if all(versions) and versions[0] != versions[1]:
+                warnings.append(f"{name}: the two setups' run copies were built from different versions of the test")
+            elif any(refrozen_after_start(side, (frozen or {}).get(name)) for side in (b, c)):
+                warnings.append(f"{name}: the run without a setup started before the test was last frozen, so the "
+                                "two runs may have used different versions of the test (frozen history)")
+        elif b["checksums"] != c["checksums"]:
             warnings.append(f"{name}: different test versions between runs (Harbor's checksum also changes when only "
                             "the test's README changed; `freeze.py --check` and the frozen history show whether "
                             "the scored content did)")
@@ -734,6 +787,9 @@ def overall(rows: list[dict]) -> dict | None:
 
 def print_comparison(comparison: dict, details: bool) -> None:
     print("\n## Observed comparison")
+    setups = comparison.get("setups") or {}
+    if setups.get("baseline") != setups.get("candidate"):
+        print(f"Setup: baseline {', '.join(setups['baseline'])}; candidate {', '.join(setups['candidate'])}")
     if details:
         print("| Test | Baseline | Candidate | Delta | Spread reference (1 s.e.) | Scored attempts | Observed change "
               "| Solved (baseline) | Solved (candidate) |")
@@ -803,7 +859,7 @@ def main() -> int:
         output["warnings"]["baseline"] = frozen_warnings(relai_dir, base) + evidence_warnings(base)
         print_warnings(output["warnings"]["baseline"], "Baseline integrity warnings", args.details)
         comparison = compare(base, cand)
-        output["warnings"]["comparison"] = comparison_warnings(base, cand)
+        output["warnings"]["comparison"] = comparison_warnings(base, cand, frozen_state(relai_dir).get("tests", {}))
         print_warnings(output["warnings"]["comparison"], "Comparison warnings", args.details)
         output["baseline"], output["comparison"] = base, comparison
         print_comparison(comparison, args.details)

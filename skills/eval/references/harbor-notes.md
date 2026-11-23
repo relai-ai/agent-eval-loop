@@ -100,6 +100,11 @@ and update this file.
 - **Instruction files loaded at startup can be missing from the trajectory.** Observed in 0.26.0
   with Claude Code: the `AGENTS.md` it loaded appeared in the agent's own session log, not in
   Harbor's trajectory. Read the agent's log before concluding that a file was not loaded.
+- **Skills are passed per run, and only to agents that take them.** Read in 0.26.0's source, not
+  yet run: `--skill <dir>` (repeatable) uploads each skill directory into the container and
+  registers it with the installed agent as a user-level skill, outside the workspace. A run
+  with `--skill` fails at once for an agent whose capabilities do not list skills. Confirm from a
+  pilot trial that the agent loaded the skill.
 - **ATIF**: Harbor validates `ATIF-v1.0` to `v1.8`
   (`python -m harbor.utils.trajectory_validator <file>`); `check_trajectory.py` runs it.
 - **Task MCP servers reach an agent only through its integration.** Observed in 0.26.0 (Harbor's
