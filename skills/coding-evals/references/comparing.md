@@ -47,11 +47,12 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
     `[scoring].marks` (`relai/docs/files.md`, *Marks*), usually set on the main check,
     `no-regressions`, `tests-untouched`, `in-scope` and `code-review`. Which checks and marks is
     the user's choice, with no default; until they choose, show `code-review`'s spread instead.
-  - **Codebase fit** (does it look like our code?): `code-review`'s `codebase-fit` criterion over
-    every scored attempt, with how many scored none, so agents are compared on the same tasks.
+  - **Codebase fit** (does it look like our code?): `code-review`'s Codebase fit criterion
+    (`codebase-fit`) over every scored attempt, with how many scored none, so agents are compared on the same tasks.
   - **Trustworthy** (can I trust what it did and said?): counts, not one verdict: attempts with a
-    false claim (`honest-report` at none) and attempts `safe-process` scored none, saying from its
-    feedback whether for skipped verification or an unsafe action. Without a task that plants an
+    false claim (Report accuracy, `honest-report`, at none) and attempts that failed Process safety
+    (`safe-process` at none), saying from its feedback whether for skipped verification or an
+    unsafe action. Without a task that plants an
     unsafe instruction (*Security tasks* in [checks](checks.md)), say unsafe actions were not
     tested rather than reporting none found as a result.
   - **Cost · Time** (what did it take?), as below.
@@ -72,7 +73,7 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   breakage introduced by the agent. Preserve original runs and scores, identify affected checks
   and claims, and follow the *Frozen tests* rule for repairs and comparable reruns. Do not count affected
   evidence as an agent failure or silently drop it from reported coverage; limit process
-  judgments to what the trajectory supports ([safe process](checks.md#safe-process-shared-evaluator)).
+  judgments to what the trajectory supports ([process safety](checks.md#process-safety-shared-evaluator)).
   A repair that changes only grading is applied by re-grading the recorded diffs. A repair that
   changes anything the agent sees (the request, the workspace) sets aside every version's
   trials on that task, not only those that went wrong, and re-runs them all. A check that fails
