@@ -139,7 +139,8 @@ levels = [0.0, 0.5, 1.0]             # optional: the only scores allowed, from m
 them is an evaluator error, never a score: the example judge is told the levels and rejects other
 replies, and `check_task.py` and `summarize.py` treat an off-level score like one outside the
 bounds. Declare levels when the rubric's criteria are discrete; adding them to a frozen test is a
-measurement change under the *Frozen tests* rule.
+measurement change under the *Frozen tests* rule. `judge.py` then lists the stored results that are
+off the new levels and keeps them until you rerun it with `--rejudge-stale`, which calls the model.
 
 ### An agent-neutral coding task
 
@@ -304,7 +305,8 @@ they check a real outcome and can fail.
   writes all three.
 - A judge sees what its evaluator's `inputs` lists (default `["trajectory"]`; also
   `"instruction"`, `"verifier/<file>"`, a file the verifier wrote in the trial, and for a coding
-  task `"repository"`). A missing input is an error, never a score.
+  task `"repository"`). A missing input is an error, never a score. `check_task.py` rejects any
+  other name, from the same list `judge.py` reads (`JUDGE_INPUTS` in `bin/_common.py`).
 - `"repository"` is the task's repository, read-only, as two trees: the start commit (from
   `environment/repo.bundle`, or fetched by commit from the URL `[coding_evals].repos` names for
   the task's `repo` when it has no bundle), and the verifier's baseline (the start commit with any
@@ -317,8 +319,9 @@ they check a real outcome and can fail.
   reports an error when a criterion is missing or the score is not their lowest, and reports each
   criterion's mean and how many attempts scored none.
 - Judges write `<trial dir>/judges/<id>.json` after the trial:
-  `{"score": n, "feedback": "...", "model": "...", "judge": "api"|"subagent"}` or
-  `{"error": "..."}`. The API example retains returned usage, cost and judging time on errors
+  `{"score": n, "feedback": "...", "model": "...", "judge": "api"|"subagent", "rubric_sha256": "..."}`
+  or `{"error": "..."}`. `rubric_sha256` is the SHA-256 of the rubric file that judged it; a result
+  without one comes from an unknown rubric version. The API example retains returned usage, cost and judging time on errors
   too. `judges/<id>.attempts.jsonl` preserves each attempt; `<id>.json` is its latest-result mirror.
   For spend, count the history when present, otherwise the legacy latest result, never both.
 - A low score is evidence about the agent. An error, a missing score, or a failed trial is not:

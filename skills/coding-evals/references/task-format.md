@@ -127,8 +127,10 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   the evidence limits in [safe process](checks.md#safe-process-shared-evaluator).
 - **Shortcuts.** Before review, try the cheap ways an agent could pass a check without the fix
   or leave it unable to see: fix the bug outside the repository (in an installed dependency the
-  request names), change the git configuration or environment variables the commands read, and
-  follow every documented setup command with the task's network setting. Fix what gets through,
+  request names), change the git configuration or environment variables the commands read, add
+  a configuration in a subfolder that turns off a format or lint check
+  ([checks](checks.md#what-the-verifier-guards-against)), and follow every documented setup
+  command with the task's network setting. Fix what gets through,
   or record why a check cannot see it.
 - **Health controls.** Run Harbor's `oracle` and `nop` agents on the final task, then
   `summarize.py`: the reference fix must score every outcome check at full marks and untouched

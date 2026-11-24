@@ -26,7 +26,9 @@ says what full marks need.
   directory instead of rerunning the agent, keeping the originals intact (Harbor:
   `harbor trial regrade` with `-o`, see [harbor-notes](harbor-notes.md); it cannot see unexported
   state). `relai/bin/judge.py <run>` retries judge errors. After a rubric change, establish a
-  comparable baseline.
+  comparable baseline: `judge.py` lists the stored results judged with another rubric and keeps
+  them, and `--force` on a copy of the run judges every result with the current rubric, so
+  versions do not mix.
 - Score missing deliverables and pure prohibitions as [test-design](test-design.md#rules) says
   (*Missing deliverables and prohibitions*). A check must measure its stated outcome rather than
   activity alone.
