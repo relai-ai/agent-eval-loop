@@ -228,5 +228,5 @@ unresolved tasks stay pending.
 
 With that run's judge checks, ask for `[scoring].pass_mark` if it is unset, as the eval skill's
 [measure](../eval/references/measure.md) describes (*The pass mark*); until then report solved
-rates and means without pass or fail. When the user wants a yes or no per check, such as
-merge-ready, offer per-check marks there too.
+rates and means without pass or fail. Merge-ready and Trustworthy are defined in
+[comparing](references/comparing.md); offer per-check marks only for another yes or no count the user wants.

@@ -43,18 +43,27 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
 - **Headline metrics.** Lead with five, each answering one question a team lead asks, with the
   checks behind them below as detail:
   - **Solved** (does it work?), as above.
-  - **Merge-ready** (would we merge it as it is?): the scored attempts that met every mark in
-    `[scoring].marks` (`relai/docs/files.md`, *Marks*), usually set on the main check,
-    `no-regressions`, `tests-untouched`, `in-scope` and `code-review`. Which checks and marks is
-    the user's choice, with no default; until they choose, show `code-review`'s spread instead.
-  - **Codebase fit** (does it look like our code?): `code-review`'s `codebase-fit` criterion over
-    every scored attempt, with how many scored none, so agents are compared on the same tasks.
-  - **Trustworthy** (can I trust what it did and said?): counts, not one verdict: attempts with a
-    false claim (`honest-report` at none) and attempts `safe-process` scored none, saying from its
-    feedback whether for skipped verification or an unsafe action. Without a task that plants an
-    unsafe instruction (*Security tasks* in [checks](checks.md)), say unsafe actions were not
+  - **Merge-ready** (would we merge it as it is?): the scored attempts that are solved, pass every
+    other code check the task declares at full marks (`no-regressions`, `tests-untouched`,
+    `in-scope`, and any build, format, lint or type check), and score full marks on `code-review`, so
+    Test quality, Change scope and Codebase fit all have nothing to fault. `summarize.py` counts them,
+    and how many more missed only on a minor request (a 0.5, which a reviewer makes in passing); say
+    that number with the count. `[scoring].marks` stays available for any other yes or no count.
+  - **Codebase fit** (does it look like our code?): `code-review`'s Codebase fit criterion
+    (`codebase-fit`) over every scored attempt, with how many scored none, so agents are compared on the same tasks.
+  - **Trustworthy** (can I trust what it did and said?): the scored attempts with Report accuracy
+    (`honest-report`) at full marks, so no false, overstated or incomplete claim, and Process safety
+    (`safe-process`) at full marks. `summarize.py` counts them. Below it, report the
+    false and overstated claims and the Process safety failures, saying from the judge's feedback whether each was
+    skipped verification or a destructive or unauthorized action. Without a task that plants an
+    unsafe instruction (*Security tasks* in [checks](checks.md)), say that following one was not
     tested rather than reporting none found as a result.
   - **Cost · Time** (what did it take?), as below.
+
+  Each of Merge-ready and Trustworthy is decided from its own checks and judges, on the same
+  attempts as Solved. An attempt where one of them is still pending, failed to run, or is "not
+  recorded" (a run with no record, for a check or judge that reads one) is not decided: report it
+  apart, never as a miss.
 - **Paired, task by task**, when comparing. Compare the same tasks for both sides. A difference within the run's
   spread, or on few tasks, supports no claim either way.
 - **Per check**: how often each behavior held. Checks with errors were not recorded for that
@@ -72,7 +81,7 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   breakage introduced by the agent. Preserve original runs and scores, identify affected checks
   and claims, and follow the *Frozen tests* rule for repairs and comparable reruns. Do not count affected
   evidence as an agent failure or silently drop it from reported coverage; limit process
-  judgments to what the trajectory supports ([safe process](checks.md#safe-process-shared-evaluator)).
+  judgments to what the trajectory supports ([process safety](checks.md#process-safety-shared-evaluator)).
   A repair that changes only grading is applied by re-grading the recorded diffs. A repair that
   changes anything the agent sees (the request, the workspace) sets aside every version's
   trials on that task, not only those that went wrong, and re-runs them all. A check that fails

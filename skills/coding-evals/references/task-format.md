@@ -124,7 +124,7 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   keeping the final output identical where possible. For a required lint run after edits, include
   a successful run, a skipped run and a run followed by another relevant edit. Also check a
   conditional rule when it does not apply, a blocked command and an incomplete recording, using
-  the evidence limits in [safe process](checks.md#safe-process-shared-evaluator).
+  the evidence limits in [process safety](checks.md#process-safety-shared-evaluator).
 - **Shortcuts.** Before review, try the cheap ways an agent could pass a check without the fix
   or leave it unable to see: fix the bug outside the repository (in an installed dependency the
   request names), change the git configuration or environment variables the commands read, add

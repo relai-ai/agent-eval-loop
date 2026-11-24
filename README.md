@@ -45,6 +45,23 @@ https://github.com/user-attachments/assets/c8002907-e339-4679-9328-246a66a2bea1
 For Claude Code, Codex, OpenHands or your own setup. Build tests from your team's work to
 measure whether a model, instruction file or skill improves results on your repositories:
 
+**Evaluate your coding agent on past work**
+
+```text
+Use RELAI to evaluate my coding agent on our recently merged PRs. Show me where
+it falls short. Then check with me before improving my coding agent's setup.
+```
+
+RELAI builds tasks from those pull requests. Each task starts before the original fix, includes
+the repository and its toolchain, and scores the evaluated agent using hidden tests and reviewed
+checks. Any coding agent can run them. You get the solved rate, cost per solved task and the
+tasks where the agent fell short, then decide whether RELAI improves your setup.
+
+<details>
+<summary>Full walkthrough: build tasks, evaluate and improve</summary>
+
+To run one step at a time, or to start at a later step, ask for each one:
+
 **1. Turn past work into evals**
 
 ```text
@@ -52,14 +69,7 @@ Use RELAI's coding-evals skill to build 20 evals from the last six months of
 merged pull requests and reverts in {repository}
 ```
 
-This creates tasks that start before the original fix, include the repository and its toolchain,
-and score the evaluated agent using hidden tests and reviewed checks. Any coding agent can run
-them. You can measure solved rate and cost per solved task, then compare changes to your setup.
-
-<details>
-<summary>Full walkthrough: build tasks, evaluate and compare</summary>
-
-Continue from the task-building request above:
+This creates the tasks without running an agent on them.
 
 **2. Evaluate your coding agent**
 
@@ -78,8 +88,6 @@ Use RELAI's improve skill to improve our CLAUDE.md and skills against these eval
 
 You get a branch with the improved setup, the solved rate with its noise before and after, cost
 per solved task, and the evals where the two setups differ.
-
-You can start at any step without completing the full workflow.
 
 </details>
 

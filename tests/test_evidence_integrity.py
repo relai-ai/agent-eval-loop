@@ -209,5 +209,79 @@ class ScoreEvidenceTest(unittest.TestCase):
         self.assertIn("Marks: not applied", result.stdout)
         self.assertIn("must be a number from 0 to 1", result.stdout)
 
+HEADLINE_TOML = """[metadata.relai]
+id = "{id}"
+behavior = "Fixes the reported bug."
+covers = []
+split = "development"
+agent_neutral = true
+
+[metadata.relai.coding]
+primary = "fixes-the-bug"
+""" + "".join(f"""
+[[metadata.relai.evaluators]]
+id = "{ev}"
+type = "{kind}"
+method = "{method}"
+criterion = "{ev}."
+min_score = 0.0
+max_score = 1.0
+""" + (f'rubric = "tests/judge.md"\ninputs = {inputs}\n' if kind == "judge" else "")
+    for ev, kind, method, inputs in [
+        ("fixes-the-bug", "code", "exact", None), ("in-scope", "code", "exact", None),
+        ("code-review", "judge", "semantic", '["instruction", "verifier/diff.patch"]'),
+        ("honest-report", "judge", "semantic", '["trajectory"]'),
+        ("safe-process", "judge", "semantic", '["trajectory"]')])
+
+
+class HeadlineMetricsTest(unittest.TestCase):
+    def setUp(self):
+        self.repo = Repo()
+        self.task = self.repo.task("fix", toml=HEADLINE_TOML)
+        self.job = harbor_job(self.repo.relai / "work/runs", "headline", 4)
+
+    def tearDown(self):
+        self.repo.close()
+
+    def attempt(self, name, fixed, scoped, review, honest, safe, with_trajectory=True):
+        rewards = {"fixes-the-bug": fixed, "in-scope": scoped}
+        judges = {"honest-report": {"score": honest, "feedback": "h"}, "safe-process": {"score": safe, "feedback": "s"}}
+        if review is not None:
+            judges["code-review"] = {"score": review, "feedback": "r"}
+        trial = harbor_trial(self.job, name, self.task, rewards, feedback={k: "f" for k in rewards},
+                             judges=judges, with_trajectory=with_trajectory)
+        (trial / "verifier" / "diff.patch").write_text("diff\n")
+
+    def test_merge_ready_and_trustworthy_follow_their_definitions(self):
+        self.attempt("minor", 1.0, 1.0, 0.5, 0.5, 1.0)
+        self.attempt("rework", 1.0, 1.0, 0.0, 0.0, 1.0)
+        self.attempt("stray", 1.0, 0.0, 1.0, 1.0, 0.0)
+        self.attempt("unsolved", 0.0, 1.0, 1.0, 1.0, 1.0)
+        self.attempt("unrecorded", 1.0, 1.0, 1.0, 1.0, 1.0, with_trajectory=False)
+        self.attempt("pending", 1.0, 1.0, None, 1.0, 1.0)
+        path = self.repo.root / "s.json"
+        result = self.repo.run("summarize.py", str(self.job), "--json", str(path), "--baseline", str(self.job))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        data = json.loads(path.read_text())
+        run = data["run"]
+        self.assertEqual(run["merge_ready"], {"met": 1, "minor": 1, "checked": 5, "not_recorded": 0, "pending": 1})
+        self.assertEqual(run["trustworthy"], {"met": 2, "minor": 0, "checked": 5, "not_recorded": 1, "pending": 0})
+        self.assertEqual(run["tests"]["tests/fix"]["merge_ready"]["met"], 1)
+        self.assertEqual(data["comparison"]["rows"][0]["candidate_merge_ready"], {"met": 1, "checked": 5})
+        self.assertIn("Merge-ready (coding-evals comparing.md): 1 of 5 decided attempts; 1 more missed only on a minor "
+                      "code-review request; not decided: 1 with a judge pending or in error", result.stdout)
+        self.assertIn("Trustworthy (coding-evals comparing.md): 2 of 5 decided attempts; not decided: 1 not recorded",
+                      result.stdout)
+
+    def test_tasks_that_are_not_coding_tasks_get_no_headline_counts(self):
+        toml = self.task / "task.toml"
+        toml.write_text(toml.read_text().replace("[metadata.relai.coding]", "[metadata.relai.services]"))
+        self.attempt("minor", 1.0, 1.0, 0.5, 0.5, 1.0)
+        path = self.repo.root / "s.json"
+        self.assertEqual(self.repo.run("summarize.py", str(self.job), "--json", str(path)).returncode, 0)
+        run = json.loads(path.read_text())["run"]
+        self.assertIsNone(run["merge_ready"])
+        self.assertIsNone(run["trustworthy"])
+
 if __name__ == "__main__":
     unittest.main()

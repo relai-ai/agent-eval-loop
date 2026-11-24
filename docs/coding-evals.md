@@ -3,7 +3,7 @@
 [Back to README](../README.md)
 
 Start with the [README walkthrough](../README.md#coding-agents-your-team-uses), expanding the
-full walkthrough beneath the task-building request. This guide covers task design and setup.
+full walkthrough beneath the starter request. This guide covers task design and setup.
 
 ## Task sources and grading
 
@@ -18,7 +18,7 @@ Use RELAI's coding-evals skill to check whether our new CLAUDE.md helps on our t
 - **Any agent can run it.** Harbor installs the agent under test; the task brings the repository and its toolchain.
 - **Your standards.** Draft "good" from CLAUDE.md, AGENTS.md, contributing guides, lint configuration and past review comments; when building a set, RELAI can also check the judges against how your maintainers reviewed recent pull requests. You confirm it.
 - **Checks beyond task success.** Use hidden tests, existing tests as regression checks, and checks for edited tests, out-of-scope changes, unsafe work and claims that do not match what happened. A required review judge reads your repository to check that each fix sits where the behavior is owned and builds on what the codebase already has.
-- **Comparable results.** Lead with five headline metrics (Solved, Merge-ready, Codebase fit, Trustworthy, Cost · Time) with their noise, and the tasks that separate the agents or setups being compared. You choose the marks behind Merge-ready; there are no defaults.
+- **Comparable results.** Lead with five headline metrics (Solved, Merge-ready, Codebase fit, Trustworthy, Cost · Time) with their noise, and the tasks that separate the agents or setups being compared. Merge-ready and Trustworthy have fixed definitions ([comparing](../skills/coding-evals/references/comparing.md)); you can add your own yes-or-no marks per check.
 
 Coding-agent evals live in an *eval project*: a repository whose `relai/` holds the tasks. Task source can come from the current or other scoped repositories; each evaluated workspace contains only its starting history.
 
