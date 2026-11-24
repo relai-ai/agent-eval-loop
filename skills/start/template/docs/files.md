@@ -41,6 +41,7 @@ isolation = "container"      # or authorized, reviewed "host" containment for na
 
 [scoring]
 pass_mark = 0.8              # example only: the user's choice after the first scored run, no default
+marks = { "review-ready" = 1.0 }   # optional, example only: the user's per-evaluator marks, no default
 
 [harbor]                     # Harbor only (docs/harbor.md)
 version = "X.Y.Z"            # exact Harbor release; the latest stable when recorded
@@ -131,7 +132,14 @@ criterion = "Explains the refund timeline in a way the policy supports."
 rubric = "tests/judges/explains-refund.md"   # relative to the test directory
 min_score = 0.0
 max_score = 1.0
+levels = [0.0, 0.5, 1.0]             # optional: the only scores allowed, from min_score to max_score
 ```
+
+`levels` lists the scores a rubric names (full marks, partial credit, none). A score between
+them is an evaluator error, never a score: the example judge is told the levels and rejects other
+replies, and `check_task.py` and `summarize.py` treat an off-level score like one outside the
+bounds. Declare levels when the rubric's criteria are discrete; adding them to a frozen test is a
+measurement change under the *Frozen tests* rule.
 
 ### An agent-neutral coding task
 
@@ -312,7 +320,8 @@ available results using current task definitions and reports that limitation thr
 
 **The pass rule.** An attempt (one trial) is scored when it has a trajectory (an agent-neutral
 task's attempt needs none), the runner did not
-end it before grading completed, and every recorded evaluator has a score within its bounds.
+end it before grading completed, and every recorded evaluator has a score within its bounds
+(and on its `levels`, when declared).
 For agent-neutral tasks, evaluators needing an absent trajectory are "not recorded" and excluded
 from the mean; an absent primary result leaves the attempt unscored even if other checks scored.
 Errors and pending judges remain explicit. The attempt's score is the mean, over those evaluators, of
@@ -321,9 +330,16 @@ attempts' scores is at or above `pass_mark`. A test with no scored attempt has n
 it apart, as unscored, a runtime failure, evaluator error or pending judge. `summarize.py` computes exactly
 this as each test's `mean`.
 
+**Marks.** `[scoring].marks` maps evaluator ids to marks on each evaluator's 0 to 1 scale. They
+are optional, the user's choice, and have no default. A scored attempt *meets the marks* when every
+evaluator with a mark that its test declares scores at or above it; evaluators a test does not
+declare are left out. An attempt where such an evaluator is "not recorded" is counted apart, as
+marks not recorded. `summarize.py` reports, per test and per run, how many scored attempts met
+them, beside the solved count. Marks do not change the pass rule or `mean`.
+
 **Subagent judges.** With `[judge] mode = "subagent"`, judges are fresh subagents that have not
 seen the run being judged or the conversation around it; one subagent may judge several trials.
-Give each the rubric file, the criterion, the score bounds, the paths of the inputs its evaluator
+Give each the rubric file, the criterion, the score bounds and any `levels`, the paths of the inputs its evaluator
 lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.json`, plus the rules the example judge gives its model:
 
 - Judge only what the declared inputs show; do not assume actions that were not recorded.

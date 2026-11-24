@@ -40,6 +40,10 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   edits tests or skips verification). Show scored/attempted counts and missing-result reasons;
   unknown scores are not failures. Rerun missing evidence when useful and authorized, or limit
   the conclusion to what was recorded.
+- **Met every mark**, when the user set `[scoring].marks`: how many scored attempts met them, beside
+  the solved count (`relai/docs/files.md`, *Marks*). Marks the user chooses on the main check,
+  `no-regressions`, `tests-untouched`, `in-scope` and `review-ready` give a merge-ready count, for
+  example; which checks to mark is the user's choice.
 - **Paired, task by task**, when comparing. Compare the same tasks for both sides. A difference within the run's
   spread, or on few tasks, supports no claim either way.
 - **Per check**: how often each behavior held. Checks with errors were not recorded for that

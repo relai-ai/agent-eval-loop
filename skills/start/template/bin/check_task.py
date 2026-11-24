@@ -61,6 +61,7 @@ from _common import (
     ENV_EXAMPLE_NAMES, HARBOR_PYTHON, JUNK_DIRS, Report, declared_evaluators, dir_digest,
     evals_config, relai_root, expand_globs, file_sha256, frozen_state, load_toml, normalized, repo_root,
     scan_secrets, secret_values, test_key, walk_files, runner_settings, pass_mark, harbor_version,
+    on_level, score_levels, scoring_marks,
 )
 
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -135,6 +136,10 @@ def check_evaluators(task: Path, config: dict, report: Report) -> list[dict]:
         low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
         if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in (low, high)) or low >= high:
             report.error(f"{where}: min_score and max_score must be finite numbers with min < max")
+        try:
+            score_levels(ev)
+        except ValueError as exc:
+            report.error(f"{where}: {exc}")
         method = ev.get("method")
         if method not in ("exact", "semantic"):
             report.error(f"{where}: method must be 'exact' (code can decide it) or 'semantic' (open-ended meaning)")
@@ -677,6 +682,7 @@ def check_harbor(relai_dir: Path, report: Report, judged: bool = False, cloud: b
                     'runner needs mode = "api"')
     if neutral_only:
         try:
+            scoring_marks(config)
             if pass_mark(config) is None:
                 report.warn("[scoring].pass_mark is not set yet; there is no default. Choose it with the user "
                             "after the first scored run, before reporting any test as passed or failed")
@@ -719,6 +725,7 @@ def check_harbor(relai_dir: Path, report: Report, judged: bool = False, cloud: b
                 report.error(f"[harbor].agent_env {name} reads a host variable (${{...}}); Harbor would copy a "
                              "host value into the container")
     try:
+        scoring_marks(config)
         if pass_mark(config) is None:
             report.warn("[scoring].pass_mark is not set yet; there is no default. Choose it with the user "
                         "after the first scored run, before reporting any test as passed or failed")
@@ -1134,6 +1141,8 @@ def validate_verifier_outputs(verifier: Path, config: dict, case: str, report: R
             continue
         if not low <= value <= high:
             report.error(f"{case}: evaluator {ev_id} scored {value}, outside [{low}, {high}]")
+        elif not on_level(value, score_levels(ev)):
+            report.error(f"{case}: evaluator {ev_id} scored {value}, not one of its levels {score_levels(ev)}")
         message = feedback.get(ev_id)
         if not isinstance(message, str) or not message.strip():
             report.error(f"{case}: feedback.json has no feedback for evaluator {ev_id}")
@@ -1223,6 +1232,7 @@ def main() -> int:
         kind, isolation = runner_settings(relai_dir)
         config = evals_config(relai_dir)
         mark = pass_mark(config)
+        scoring_marks(config)
         if mark is None and kind == "native" and (relai_dir / "relai.toml").is_file():
             suite.warn("[scoring].pass_mark is not set yet; there is no default. Choose it with the user "
                        "after the first scored run, before reporting any test as passed or failed")

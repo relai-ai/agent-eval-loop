@@ -40,7 +40,8 @@ invoked) is the choice of whoever builds the tests.
    project or benchmark runner meeting the shared trial contract (`docs/native.md`). Record the
    choice and reason.
 2. **Recorded trials.** Each trial records the causal sequence of real model messages, tool calls and results, and
-   each declared evaluator yields a score within its bounds plus feedback, or an explicit error.
+   each declared evaluator yields a score within its bounds (and on its declared `levels`) plus feedback,
+   or an explicit error.
    Project-native records may preserve this evidence in their own format. ATIF and the bundled
    trial layout are required when using integrations or checkers that consume them (`docs/native.md`). An
    agent-neutral task can be scored from workspace, service state, journals or declared output

@@ -145,3 +145,7 @@ value from those scores and what the results will decide, saying which tests it 
 fail today. There is no default, so never present a number as one. Write the answer to
 `relai.toml` and `decisions.md`. Changing it later changes every pass and fail on the board, so
 ask again only when the user raises it.
+
+In the same sitting, offer `[scoring].marks` when the user wants a yes or no per check rather than
+a mean (`relai/docs/files.md`, *Marks*): show how many attempts would meet a few candidate marks
+and let the user choose, or leave them unset. Like the pass mark, they have no default.

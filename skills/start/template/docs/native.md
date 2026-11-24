@@ -17,7 +17,8 @@ For that interoperability, a native runner writes what a Harbor job writes, as f
   "verifier_result": {"rewards": {...}} or null, "exception_info": {"exception_type"} or null,
   "agent_result": {"n_input_tokens", "n_output_tokens", "cost_usd"}, "git_head", "git_dirty"}`.
 - The example captures original `evaluator_definitions` before executing a trial:
-  `[{"id", "type", "min_score", "max_score"}, ...]`, with bounds materialized. This optional
+  `[{"id", "type", "min_score", "max_score", "levels"}, ...]`, with bounds materialized and `levels`
+  only when declared. This optional
   result field lets summaries interpret old scores without substituting today's definitions.
   Legacy results remain usable with an explicit current-definition interpretation notice.
 - In each trial directory: `agent/trajectory.json`, `verifier/reward.json`, `verifier/feedback.json`,

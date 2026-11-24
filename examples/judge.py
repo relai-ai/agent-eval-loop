@@ -57,7 +57,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (
     declared_evaluators, evals_config, relai_root, load_json, load_toml, redact, redaction_values,
-    resolve_task_dir, secret_values,
+    on_level, resolve_task_dir, score_levels, secret_values,
 )
 
 SYSTEM = """You grade one recorded run of an AI agent against a rubric. You get the inputs the rubric needs,
@@ -290,10 +290,12 @@ def judge_one(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: d
     low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
     rubric = (task / ev["rubric"]).read_text(encoding="utf-8")
     try:
+        levels = score_levels(ev)
         inputs = judge_inputs(ev, task, trial_dir, trajectory, secrets, synthetic)
     except (OSError, ValueError) as exc:
         return {"error": redact(str(exc), secrets)}
-    prompt = (f"Criterion: {ev.get('criterion', '')}\nScore bounds: {low} (worst) to {high} (best).\n\n"
+    allowed = f"\nAllowed scores: {', '.join(str(v) for v in levels)}. Give exactly one of them." if levels else ""
+    prompt = (f"Criterion: {ev.get('criterion', '')}\nScore bounds: {low} (worst) to {high} (best).{allowed}\n\n"
               f"Rubric:\n{rubric}\n\n{inputs}")
     prompt = redact(prompt, secrets)
     metadata = {"judge": "api", "judged_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
@@ -303,6 +305,9 @@ def judge_one(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: d
         score, feedback = verdict.get("score"), str(verdict.get("feedback", "")).strip()
         if not isinstance(score, (int, float)) or not math.isfinite(score) or not low <= score <= high:
             return {**metadata, "error": redact(f"judge returned score {score!r}, outside [{low}, {high}]", secrets)}
+        if not on_level(score, levels):
+            return {**metadata, "error": f"judge returned score {score!r}, not one of its levels {levels}",
+                    "feedback": redact(feedback, secrets)}
         if not feedback:
             return {**metadata, "error": "judge returned no feedback"}
         return {**metadata, "score": score, "feedback": feedback}
@@ -407,9 +412,10 @@ def main() -> int:
             out = trial_dir / "judges" / f"{ev['id']}.json"
             if out.exists() and not args.force:
                 try:
-                    if "error" not in load_json(out):
+                    stored = load_json(out)
+                    if "error" not in stored and on_level(stored.get("score"), score_levels(ev)):
                         continue
-                except (OSError, json.JSONDecodeError):
+                except (OSError, ValueError, TypeError):
                     pass
             result = judge_one(config, relai_dir, task, ev, trajectory, secrets, trial_dir)
             write_result(out, result)

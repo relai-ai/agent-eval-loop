@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -212,6 +213,38 @@ def pass_mark(config: dict):
                               or not 0 <= value <= 1):
         raise ValueError("[scoring].pass_mark must be a number from 0 to 1")
     return value
+
+
+def scoring_marks(config: dict) -> dict:
+    """Per-evaluator marks from [scoring].marks, on the 0 to 1 scale; the user's choice, with no default."""
+    scoring = config.get("scoring", {})
+    if not isinstance(scoring, dict):
+        raise ValueError("[scoring] must be a table")
+    marks = scoring.get("marks", {})
+    if not isinstance(marks, dict):
+        raise ValueError("[scoring].marks must be a table of evaluator id = mark")
+    for ev_id, value in marks.items():
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) \
+                or not 0 <= value <= 1:
+            raise ValueError(f"[scoring].marks.{ev_id} must be a number from 0 to 1")
+    return dict(marks)
+
+
+def score_levels(ev: dict) -> list | None:
+    """An evaluator's declared scores, from min_score to max_score in increasing order, or None."""
+    levels = ev.get("levels")
+    if levels is None:
+        return None
+    low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
+    numbers = isinstance(levels, list) and len(levels) >= 2 and all(
+        not isinstance(v, bool) and isinstance(v, (int, float)) and math.isfinite(v) for v in levels)
+    if not numbers or any(a >= b for a, b in zip(levels, levels[1:])) or levels[0] != low or levels[-1] != high:
+        raise ValueError("levels must list at least two increasing scores, from min_score to max_score")
+    return levels
+
+
+def on_level(score: float, levels: list | None) -> bool:
+    return levels is None or any(math.isclose(score, level, abs_tol=1e-9) for level in levels)
 
 
 def secret_values(relai_dir: Path) -> dict[str, str]:

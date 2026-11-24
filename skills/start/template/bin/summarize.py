@@ -38,7 +38,8 @@ attempts were not scored. Output describes observations, not acceptance or confi
 not-comparable; numeric noise/se fields are reference estimates only.
 For an agent-neutral task, each test also reports its solved rate: attempts whose main
 check ([metadata.relai.coding].primary, usually the hidden tests, or [metadata.relai.services].primary) scored full marks, apart from the mean over every recorded
-check. From Harbor's trial timings it reports time per phase (environment setup, which includes any
+check. When relai.toml sets [scoring].marks (the user's per-evaluator marks; no default), it also
+reports how many scored attempts met every mark that applies to them. From Harbor's trial timings it reports time per phase (environment setup, which includes any
 image build, agent setup, the agent's work and the verifier), and the agent's cost per solved task.
 Safe on a run still in progress: a job whose trials are not all finished gets a line with trials
 finished of the total the runner recorded, trials started but not finished, and trials not started.
@@ -58,7 +59,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (
     declared_evaluators, dir_digest, evals_config, relai_root, frozen_state, load_json, load_toml, normalized,
-    pass_mark, resolve_task_dir, setup_run, test_key,
+    on_level, pass_mark, resolve_task_dir, score_levels, scoring_marks, setup_run, test_key,
 )
 
 DEFINITIONS_UNAVAILABLE = "original evaluator definitions are unavailable"
@@ -223,6 +224,10 @@ def recorded_evaluators(value) -> bool:
         low, high = ev.get("min_score"), ev.get("max_score")
         if ev.get("type") not in ("code", "judge") or not valid_number(low) or not valid_number(high) or low >= high:
             return False
+        try:
+            score_levels(ev)
+        except ValueError:
+            return False
         ids.add(ev["id"])
     return True
 
@@ -283,6 +288,12 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
     for ev in evaluators:
         ev_id, low, high = ev.get("id"), ev.get("min_score", 0.0), ev.get("max_score", 1.0)
         outcome = {"type": ev.get("type"), "min": low, "max": high}
+        try:
+            levels = score_levels(ev)
+        except ValueError as exc:
+            outcome.update(state="error", message=str(exc))
+            outcomes[ev_id] = outcome
+            continue
         needs_trajectory = bool(ev.get("trajectory")) if ev.get("type") == "code" else \
             "trajectory" in (ev.get("inputs") or ["trajectory"])
         if neutral and not has_trajectory and needs_trajectory:
@@ -302,6 +313,8 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
                 outcome["state"] = "pending"
             elif "error" in data:
                 outcome.update(state="error", message=str(data["error"]))
+            elif valid_number(data.get("score")) and low <= data["score"] <= high and not on_level(data["score"], levels):
+                outcome.update(state="error", message=f"judge score {data['score']!r} is not one of its levels {levels}")
             elif valid_number(data.get("score")) and low <= data["score"] <= high:
                 outcome.update(state="scored", score=data["score"], feedback=data.get("feedback", ""))
             else:
@@ -310,6 +323,8 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
             value = rewards.get(ev_id)
             if ev_id in errors:
                 outcome.update(state="error", message=str(errors[ev_id]))
+            elif valid_number(value) and low <= value <= high and not on_level(value, levels):
+                outcome.update(state="error", message=f"score {value!r} is not one of its levels {levels}")
             elif valid_number(value) and low <= value <= high:
                 outcome.update(state="scored", score=value, feedback=feedback.get(ev_id, ""))
                 if not str(feedback.get(ev_id, "")).strip():
@@ -369,7 +384,23 @@ def judge_spend(trial_dir: Path) -> tuple[int, int, float]:
     return calls, reported, cost
 
 
+def attempt_marks(rec: dict, marks: dict) -> str | None:
+    """"met", "missed" or "not recorded" for a scored attempt whose test declares a marked evaluator, else None."""
+    if rec["status"] != "scored":
+        return None
+    applied = [(rec["evaluators"][ev_id], mark) for ev_id, mark in marks.items() if ev_id in rec["evaluators"]]
+    if not applied:
+        return None
+    if any(o["state"] != "scored" for o, _ in applied):
+        return "not recorded"
+    return "met" if all(normalized(o["score"], o["min"], o["max"]) >= mark - 1e-9 for o, mark in applied) else "missed"
+
+
 def summarize(paths: list[Path], relai_dir: Path) -> dict:
+    try:
+        marks, marks_error = scoring_marks(evals_config(relai_dir)), None
+    except (ValueError, OSError) as exc:
+        marks, marks_error = {}, str(exc)
     trials, jobs = find_results(paths)
     records = [trial_record(d, r, relai_dir) for d, r in trials] + wrapped_records(paths)
     tests: dict[str, dict] = {}
@@ -425,6 +456,7 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
                     agg["errors"] += 1
                 else:
                     agg["pending"] += 1
+        marked = [m for m in (attempt_marks(r, marks) for r in recs) if m is not None] if marks else []
         primary = next((r["primary"] for r in recs if r.get("primary")), None)
         solved = None
         if primary:
@@ -442,6 +474,8 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
         summary["tests"][name] = {
             "attempts": len(recs),
             "solved": solved,
+            "marks": {"met": marked.count("met"), "checked": marked.count("met") + marked.count("missed"),
+                      "not_recorded": marked.count("not recorded")} if marks else None,
             "timing": timing,
             "trials": recs,
             "status_counts": {s: sum(r["status"] == s for r in recs) for s in STATUSES},
@@ -481,6 +515,12 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
         "mean_rate": statistics.fmean(s["rate"] for s in solved_tests),
         "cost_per_solved_task": cost / attempts_solved if attempts_solved and cost_reported == coding_attempts else None,
         "cost_reported": cost_reported, "coding_attempts": coding_attempts}
+    recorded_ids = {ev_id for rec in records for ev_id in rec["evaluators"]}
+    summary["marks"] = {"error": marks_error} if marks_error else None if not marks else {
+        "marks": marks, "met": sum(t["marks"]["met"] for t in summary["tests"].values()),
+        "checked": sum(t["marks"]["checked"] for t in summary["tests"].values()),
+        "not_recorded": sum(t["marks"]["not_recorded"] for t in summary["tests"].values()),
+        "unknown": sorted(set(marks) - recorded_ids)}
     summary["timing"] = {}
     for phase in PHASES + ("total",):
         values = [r["timing"][phase] for r in records if valid_number((r.get("timing") or {}).get(phase))]
@@ -587,6 +627,16 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
         else:
             print(f"Agent cost per solved task: not computed (cost reported for {solved['cost_reported']} of "
                   f"{solved['coding_attempts']} attempts on agent-neutral tests, or none solved)")
+    marked = summary.get("marks")
+    if marked and marked.get("error"):
+        print(f"Marks: not applied ({marked['error']})")
+    elif marked:
+        listed = ", ".join(f"{ev_id} {mark:.2f}" for ev_id, mark in marked["marks"].items())
+        apart = f"; {marked['not_recorded']} more with a marked check not recorded" if marked["not_recorded"] else ""
+        print(f"Met every mark ({listed}): {marked['met']} of {marked['checked']} scored attempts it applies to{apart}. "
+              "Marks are the user's choice in [scoring].marks, on each evaluator's 0 to 1 scale.")
+        if marked["unknown"]:
+            print("Marks naming no recorded evaluator: " + ", ".join(marked["unknown"]))
     timing = summary.get("timing") or {}
     shown = [(label, timing.get(phase) or {}) for phase, label in TIMING_LABELS]
     if any(t.get("n") for _, t in shown):
@@ -598,6 +648,7 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
               "Pass mark: not set yet, so no PASS or FAIL (choose it with the user; see the eval skill's measure guide)")
         rows = [f"  {verdict(t, mark):<10} {name}  mean {fmt(t['mean'])} ({t['scored']}/{t['attempts']} scored)"
                 + (f", solved {t['solved']['solved']}/{t['solved']['scored']}" if (t.get("solved") or {}).get("scored") else "")
+                + (f", met marks {t['marks']['met']}/{t['marks']['checked']}" if (t.get("marks") or {}).get("checked") else "")
                 for name, t in summary["tests"].items()]
         for line in rows if len(rows) <= 30 else rows[:30] + [f"  ... and {len(rows) - 30} more (--details)"]:
             print(line)
@@ -609,13 +660,14 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
         print("Full test/evaluator evidence: --details; complete machine-readable evidence: --json <path>.")
         return
     print()
-    print("| Test | Attempts | Scored | Mean | Observed stdev | Full marks | Solved | Agent time (mean) |")
-    print("| --- | --- | --- | --- | --- | --- | --- | --- |")
+    print("| Test | Attempts | Scored | Mean | Observed stdev | Full marks | Solved | Met marks | Agent time (mean) |")
+    print("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
     for name, t in summary["tests"].items():
         solved_cell = f"{t['solved']['solved']}/{t['solved']['scored']}" if (t.get("solved") or {}).get("scored") else "-"
+        marks_cell = f"{t['marks']['met']}/{t['marks']['checked']}" if (t.get("marks") or {}).get("checked") else "-"
         agent = (t.get("timing") or {}).get("agent_execution") or {}
         print(f"| {name} | {t['attempts']} | {t['scored']} | {fmt(t['mean'])} | {fmt(t['stdev'])} | {t['full_marks']} "
-              f"| {solved_cell} | {duration(agent.get('mean'))} |")
+              f"| {solved_cell} | {marks_cell} | {duration(agent.get('mean'))} |")
     print()
     if any(r["group"].startswith("benchmarks/") or r["split"] != "development" for r in summary["splits"]):
         print("| Group | Split | Tests | Scored | Mean |")

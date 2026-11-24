@@ -177,6 +177,28 @@ class JudgeTest(unittest.TestCase):
         self.fake({"stop_reason": "refusal", "content": []})
         self.assertIn("declined", self.judge.judge_one({"model": "synthetic"}, self.repo.relai, self.task, self.ev, trajectory([]), {})["error"])
 
+    def test_declared_levels_are_offered_and_enforced(self):
+        ev = {**self.ev, "levels": [0.0, 0.5, 1.0]}
+        calls = self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 0.85, "feedback": "x"}'}]})
+        result = self.judge.judge_one({"model": "synthetic"}, self.repo.relai, self.task, ev, trajectory([]), {})
+        self.assertIn("not one of its levels", result["error"])
+        self.assertIn("Allowed scores: 0.0, 0.5, 1.0", calls[0][2]["messages"][0]["content"])
+        self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 0.5, "feedback": "x"}'}]})
+        self.assertEqual(self.judge.judge_one({"model": "synthetic"}, self.repo.relai, self.task, ev, trajectory([]), {})["score"], 0.5)
+
+    def test_a_stored_off_level_score_is_judged_again(self):
+        toml = self.task / "task.toml"
+        toml.write_text(toml.read_text().replace('rubric = "tests/judge.md"\n', 'rubric = "tests/judge.md"\nlevels = [0.0, 0.5, 1.0]\n'))
+        run = self.repo.relai / "work/runs/synthetic"
+        trial = harbor_trial(run, "t1", self.task, {"looks-up-order": 1}, judges={"explains": {"score": 0.85, "feedback": "old"}})
+        calls = self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 0.5, "feedback": "new"}'}]})
+        argv = ["judge.py", str(run), "--relai-dir", str(self.repo.relai)]
+        with patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(self.judge.main(), 0)
+            self.assertEqual(self.judge.main(), 0)
+        self.assertEqual(len(calls), 1, "re-judged once, then kept")
+        self.assertEqual(json.loads((trial / "judges/explains.json").read_text())["score"], 0.5)
+
     def test_invalid_verdicts_retain_usage_and_retry_history(self):
         run = self.repo.relai / "work/runs/synthetic"
         trial = harbor_trial(run, "t1", self.task, {"looks-up-order": 1})
