@@ -92,13 +92,29 @@ that would contradict it. Recurrence in a selected batch is not a population pre
 Choose a coherent intervention or staged alternatives; synthesis does not mean applying every
 suggestion together.
 
-Decide whether further batch analysis, synthesis, targeted evaluation or broader confirmation could
-most usefully change the next decision for its cost. Early synthesis may reveal a gap requiring
-more analysis; a failed candidate may justify fresh exploratory batches rather than elaborating
-its original explanation. Explain consequential choices within existing authority without handing
-routine experiment selection back to the user. No fixed batch count, sequence, subagent requirement
-or analysis quota applies. Preserve the source references and distinctions needed for the next
-synthesis in existing work records.
+Optimization is a repeatable decision loop. For example:
+
+Focused small-batch trace analysis → synthesize findings → test a candidate → reassess evidence →
+choose the next useful action.
+
+After successful, mixed or unsuccessful experiments, choose among fresh exploratory or follow-up
+small-batch trace analysis, further synthesis, targeted behavioral comparisons, broader confirmation,
+candidate revision or stopping. Choose what could most usefully change the next decision for its
+cost within the remaining resources. Adapt the example's sequence; analysis need not precede every
+candidate.
+
+When you lack a promising hypothesis or keep returning to the same explanations, consider fresh
+exploratory small-batch trace analysis. Select underexplored cases, changed outcomes, contrasting
+successes and failures, or evidence that challenges earlier diagnoses. Use the neutral analyst
+briefing above; exploration can uncover mechanisms without a preferred proposal. An unsuccessful
+intervention informs its specific hypothesis; it does not establish that the failure category is
+exhausted. Treat apparent performance ceilings as hypotheses to check against permitted evidence.
+Lacking a current proposal can justify bounded exploration; stop when its expected learning or
+remaining resources do not warrant it.
+
+Explain consequential choices within existing authority without handing routine experiment selection
+back to the user. No fixed batch count, sequence, subagent requirement or analysis quota applies.
+Preserve the source references and distinctions needed for the next synthesis in existing work records.
 
 The context rationale is informed by [Lost in the Middle](https://arxiv.org/abs/2307.03172),
 [Anthropic's parallel research architecture](https://www.anthropic.com/research/multi-agent-research-system)
@@ -214,7 +230,9 @@ precedence over old notes; a vivid single case does not establish a general rule
 
 When progress stalls, reconsider the bottleneck before editing again. Distinguish capability or
 coverage gaps, unreachable content or other structural problems, measurement defects, infrastructure,
-and inadequate evidence, and investigate the relevant cause. Never weaken a test because the agent fails.
+and inadequate evidence, and investigate the relevant cause. Revisit the
+[focused-batch options](#analyze-focused-batches-and-synthesize-as-useful) when choosing the next
+investigation. Never weaken a test because the agent fails.
 
 Continue while a credible experiment or useful measurement remains within the agreement. Stop on
 the agreed objective or limits, user request, or lack of a worthwhile next step. Reserve resources
