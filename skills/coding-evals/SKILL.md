@@ -75,9 +75,11 @@ README is part of the runner's task checksum, so later comparisons would report 
 - **Scope** (as much as the request needs): `relai.toml` records `[coding_evals]`
   (`relai/docs/files.md`; its agent's model, version and authentication are completed before
   the first paid run) and `[harbor].version`; the shared `safe-process`, `honest-report`
-  and `review-ready` evaluators exist under `relai/evaluators/`, with approved repository
+  and `code-review` evaluators exist under `relai/evaluators/`, with approved repository
   requirements routed by evidence: process requirements in trajectory judges, output requirements
-  in code checks or `review-ready` ([checks](references/checks.md#repository-requirements));
+  in code checks or `code-review` ([checks](references/checks.md#repository-requirements));
+  when [calibration](references/calibration.md) applies, the diff judges' agreement with
+  maintainers' verdicts is recorded, or that the user declined it or the history was too thin;
   the answers are in `decisions.md`.
 - **Build:**
   - **Task list approved:** the user, or an independent reviewer when the approval is delegated
@@ -132,11 +134,14 @@ README is part of the runner's task checksum, so later comparisons would report 
   allows.
 - **The baseline is the setup the team runs.** Measure the agent with the files the repository
   holds, read the way that agent reads them. Adding a file so it reads guidance it otherwise
-  ignores (a `CLAUDE.md` that imports `AGENTS.md`) makes a setup variant to compare, not the
-  baseline; report guidance the agent does not read as an observation.
+  ignores (a `CLAUDE.md` that imports `AGENTS.md`) makes a setup to compare, not the
+  baseline; report guidance the agent does not read as an observation. User-level skills are
+  also a setup to compare, unless the team confirms it uses them in daily work on this
+  repository; then that setup is the baseline, recorded in `decisions.md`.
 - **Comparable.** Every agent runs at a recorded version, model and authentication, on the same frozen tasks and
-  attempts. Setup variants keep the request and grading logic identical; only declared setup
-  baseline inputs differ ([comparing](references/comparing.md), *Setups*). Different agents are
+  attempts. A setup is installed on run copies of the frozen tasks, so the request and grading
+  stay identical and each run records which setup it used
+  ([comparing](references/comparing.md), *Setups*). Different agents are
   compared under the shared comparison rules: recommend bare or matched setups for controlled
   comparisons, and disclose intentional native setup differences for as-deployed comparisons
   ([comparing](references/comparing.md), *Comparing agents*). Report differences as observations
@@ -211,11 +216,11 @@ they do. Resolve each finding (fix it, or record why not). Every change after th
 only blocking fixes, is confirmed by the reviewer or a fresh review scoped to that change, which
 also says which checks to rerun. Record the reviewed revision in the task record and freeze only
 that revision, so the user approves a reviewed task once. Then preview every judge's
-rubric summary, the review's verdict and what changed after it, and any unexpected control
-score; summarize expected scores per task. Following the shared
-[decision-effort rule](../start/template/README.md#working-with-the-user), ask about scoring and
-coverage choices still needing approval, in manageable subsets. If sign-off changes a task,
-review the change before freezing. Freeze only the approved, validated subset. A delegated
+rubric summary and its calibration agreement when recorded, the review's verdict and what changed
+after it, and any unexpected control score; summarize expected scores per task. Following the
+shared [decision-effort rule](../start/template/README.md#working-with-the-user), ask about
+scoring and coverage choices still needing approval, in manageable subsets. If sign-off changes
+a task, review the change before freezing. Freeze only the approved, validated subset. A delegated
 reviewer can cover preview approval and independent review in one pass when both are delegated;
 unresolved tasks stay pending.
 
@@ -223,4 +228,5 @@ unresolved tasks stay pending.
 
 With that run's judge checks, ask for `[scoring].pass_mark` if it is unset, as the eval skill's
 [measure](../eval/references/measure.md) describes (*The pass mark*); until then report solved
-rates and means without pass or fail.
+rates and means without pass or fail. When the user wants a yes or no per check, such as
+merge-ready, offer per-check marks there too.

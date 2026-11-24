@@ -41,6 +41,7 @@ isolation = "container"      # or authorized, reviewed "host" containment for na
 
 [scoring]
 pass_mark = 0.8              # example only: the user's choice after the first scored run, no default
+marks = { "code-review" = 1.0 }   # optional, example only: the user's per-evaluator marks, no default
 
 [harbor]                     # Harbor only (docs/harbor.md)
 version = "X.Y.Z"            # exact Harbor release; the latest stable when recorded
@@ -82,7 +83,8 @@ baseline = true                # the version other runs are compared against
 
 [[coding_evals.setups]]      # optional: a team's setup to compare or improve
 id = "team"
-path = "setups/team"         # relative to relai/
+path = "setups/team"         # optional: files installed into the workspace, relative to relai/
+skills = ["skills/<name>"]   # optional: user-level skill directories the agent gets, relative to relai/ and outside path
 agent = "<agent id>"         # optional: the agent whose files it is written in; matched setups share the same guidance
 
 [[agents]]                   # optional: agents run on shared service tasks (the eval skill); this example uses Harbor
@@ -130,7 +132,15 @@ criterion = "Explains the refund timeline in a way the policy supports."
 rubric = "tests/judges/explains-refund.md"   # relative to the test directory
 min_score = 0.0
 max_score = 1.0
+levels = [0.0, 0.5, 1.0]             # optional: the only scores allowed, from min_score to max_score
 ```
+
+`levels` lists the scores a rubric names (full marks, partial credit, none). A score between
+them is an evaluator error, never a score: the example judge is told the levels and rejects other
+replies, and `check_task.py` and `summarize.py` treat an off-level score like one outside the
+bounds. Declare levels when the rubric's criteria are discrete; adding them to a frozen test is a
+measurement change under the *Frozen tests* rule. `judge.py` then lists the stored results that are
+off the new levels and keeps them until you rerun it with `--rejudge-stale`, which calls the model.
 
 ### An agent-neutral coding task
 
@@ -162,9 +172,11 @@ primary = "fixes-the-bug"            # the code evaluator that says the task was
 synthetic = false                    # an injected bug: reported apart
 
 [[metadata.relai.evaluators]]
-id = "review-ready"
+id = "code-review"
 type = "judge"
-inputs = ["instruction", "verifier/diff.patch"]   # what the judge sees; default ["trajectory"]
+inputs = ["instruction", "verifier/diff.patch", "repository"]   # what the judge sees; default ["trajectory"]
+criteria = ["tests-and-ci", "scope", "codebase-fit"]   # scored one by one; the score is the lowest
+levels = [0.0, 0.5, 1.0]
 # ...
 
 [[metadata.relai.evaluators]]
@@ -292,11 +304,24 @@ they check a real outcome and can fail.
   when a check could not run. The plugin's example `evaluate.py`, copied into a task's `tests/`,
   writes all three.
 - A judge sees what its evaluator's `inputs` lists (default `["trajectory"]`; also
-  `"instruction"` and `"verifier/<file>"`, a file the verifier wrote in the trial). A missing
-  input is an error, never a score.
+  `"instruction"`, `"verifier/<file>"`, a file the verifier wrote in the trial, and for a coding
+  task `"repository"`). A missing input is an error, never a score. `check_task.py` rejects any
+  other name, from the same list `judge.py` reads (`JUDGE_INPUTS` in `bin/_common.py`).
+- `"repository"` is the task's repository, read-only, as two trees: the start commit (from
+  `environment/repo.bundle`, or fetched by commit from the URL `[coding_evals].repos` names for
+  the task's `repo` when it has no bundle), and the verifier's baseline (the start commit with any
+  trusted setup files) with the trial's `verifier/diff.patch` applied. The judge explores them (lists directories, reads files,
+  searches) and sees nothing later than the start commit; it never runs code. The example judge
+  keeps a bare copy under `work/judge-repos/` and does this through git objects only.
+- An evaluator that declares `criteria` is scored on each one, on its bounds and `levels`. Its
+  result adds `"criteria": {"<name>": {"score": n, "feedback": "..."}}`, and its score is the
+  lowest criterion score, so one criterion at none scores the whole at none. `summarize.py`
+  reports an error when a criterion is missing or the score is not their lowest, and reports each
+  criterion's mean and how many attempts scored none.
 - Judges write `<trial dir>/judges/<id>.json` after the trial:
-  `{"score": n, "feedback": "...", "model": "...", "judge": "api"|"subagent"}` or
-  `{"error": "..."}`. The API example retains returned usage, cost and judging time on errors
+  `{"score": n, "feedback": "...", "model": "...", "judge": "api"|"subagent", "rubric_sha256": "..."}`
+  or `{"error": "..."}`. `rubric_sha256` is the SHA-256 of the rubric file that judged it; a result
+  without one comes from an unknown rubric version. The API example retains returned usage, cost and judging time on errors
   too. `judges/<id>.attempts.jsonl` preserves each attempt; `<id>.json` is its latest-result mirror.
   For spend, count the history when present, otherwise the legacy latest result, never both.
 - A low score is evidence about the agent. An error, a missing score, or a failed trial is not:
@@ -311,7 +336,8 @@ available results using current task definitions and reports that limitation thr
 
 **The pass rule.** An attempt (one trial) is scored when it has a trajectory (an agent-neutral
 task's attempt needs none), the runner did not
-end it before grading completed, and every recorded evaluator has a score within its bounds.
+end it before grading completed, and every recorded evaluator has a score within its bounds
+(and on its `levels`, when declared).
 For agent-neutral tasks, evaluators needing an absent trajectory are "not recorded" and excluded
 from the mean; an absent primary result leaves the attempt unscored even if other checks scored.
 Errors and pending judges remain explicit. The attempt's score is the mean, over those evaluators, of
@@ -320,10 +346,20 @@ attempts' scores is at or above `pass_mark`. A test with no scored attempt has n
 it apart, as unscored, a runtime failure, evaluator error or pending judge. `summarize.py` computes exactly
 this as each test's `mean`.
 
+**Marks.** `[scoring].marks` maps evaluator ids to marks on each evaluator's 0 to 1 scale. They
+are optional, the user's choice, and have no default. A scored attempt *meets the marks* when every
+evaluator with a mark that its test declares scores at or above it; evaluators a test does not
+declare are left out. An attempt where such an evaluator is "not recorded" is counted apart, as
+marks not recorded. `summarize.py` reports, per test and per run, how many scored attempts met
+them, beside the solved count. Marks do not change the pass rule or `mean`.
+
 **Subagent judges.** With `[judge] mode = "subagent"`, judges are fresh subagents that have not
 seen the run being judged or the conversation around it; one subagent may judge several trials.
-Give each the rubric file, the criterion, the score bounds, the paths of the inputs its evaluator
-lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.json`, plus the rules the example judge gives its model:
+Give each the rubric file, the criterion, the score bounds and any `levels` and `criteria`, the paths of the inputs its evaluator
+lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.json`, plus the rules the example judge gives its model.
+For `"repository"`, give read-only checkouts of the start commit and of the start commit with the
+diff applied, made from the task's bundle, and tell the subagent not to run or change anything in them.
+The example judge's rules:
 
 - Judge only what the declared inputs show; do not assume actions that were not recorded.
 - Score the whole relevant turn: all agent steps after a user step and before the next one.

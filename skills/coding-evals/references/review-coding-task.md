@@ -58,7 +58,7 @@ preferences for the user, and verify that the planned measures support the inten
    judgments about what the agent did are judges. The lesson from the source (what went wrong in the session, what the
    revert fixed) has a check, and nothing is checked that the source does not support. Each
    applicable repository requirement maps to an evaluator with the needed inputs: process
-   requirements reach a trajectory judge, not only `review-ready`.
+   requirements reach a trajectory judge, not only `code-review`.
 8. **Fair judges.** Each rubric states its standards and what full and zero marks need; the
    repository requirements cite their sources and applicability. Inspect process-judge previews
    showing compliance and violations with the same output, where possible, plus inapplicable

@@ -20,6 +20,11 @@ application-agent harness: Harbor installs supported coding agents. A custom cod
 a suitable installer/adapter that executes the real agent and preserves the task/result contract;
 inspect existing support before proposing new integration work. A team's setups (instruction
 files, skills, hooks, MCP configuration) live under `relai/setups/<id>/`, laid out as in a repository root.
+Skills the team keeps at user level, outside any repository, are copied under `relai/` and listed
+one by one in the setup's `skills`. Propose only the skills that apply to this repository's
+work and let the user confirm the list; never copy a whole user-level skill folder. Ask
+whether the team uses them in daily work on this repository, which decides whether they belong
+to the baseline (the *baseline* rule in the skill).
 
 ## Size it to the request
 
@@ -28,10 +33,11 @@ one pull request or session needs the source repository, where the eval project 
 live, and standards
 drafted from the instruction files and contributing docs at hand, shown with the task list rather
 than in a round of their own. Mining review comments, other repositories and kinds of work suits
-a request to mine a repository or build a set. The agent's model, version and authentication are
-not needed for building; ask them with the run plan (*Ask the run plan*). Adding
-standards to a shared evaluator later changes frozen tasks that carry it, under the *Frozen tests*
-rule; new tasks pick it up.
+a request to mine a repository or build a set; [calibration](calibration.md) says how to mine
+review history and check the diff judges against it.
+The agent's model, version and authentication are not needed for building; ask them with the
+run plan (*Ask the run plan*). Adding standards to a shared evaluator later changes frozen tasks
+that carry it, under the *Frozen tests* rule; new tasks pick it up.
 
 ## Find out first
 
@@ -51,8 +57,9 @@ rule; new tasks pick it up.
   run, and whether tasks could ever be shared. Ask only when it cannot be told.
 - **Draft standards and never-do's** from the team's instruction files (CLAUDE.md, AGENTS.md),
   CONTRIBUTING, README, pull request templates, lint and CI configuration, and recent review
-  comments, including applicable nested files and linked guidance. Cite each source and separate
-  output requirements from process requirements using [checks](checks.md#repository-requirements).
+  history ([calibration](calibration.md)), including applicable nested files and linked
+  guidance. Cite each source and separate output requirements from process requirements using
+  [checks](checks.md#repository-requirements).
   Show each with the evaluator that will read it, so a required gate with no check (a lint
   command the instruction file requires) shows at the scope checkpoint, not in review.
 - **How each repository's developers add tests**, from recent fixes and its guidance: in new
@@ -76,6 +83,9 @@ the drafted standards), then ask only what remains open, following
    repository*), unless already settled.
 4. **Where task code may live** (`task_code`), only when it could leave the eval project's
    repository: `"private"`, kept there (default), or `"shareable"`. Never assume shareable.
+5. **Calibrating the diff judges**, when [calibration](calibration.md) applies: whether to do it,
+   and if so the judge mode and model the runs will use, with the calibration run's estimated
+   cost and where it sends code.
 
 When some fix can be found online (a public source, a published release), state the network default with the findings: tasks whose fix can be
 found online run without network ([task-format](task-format.md), *The network and web tools*).
@@ -143,12 +153,12 @@ Keep installed versions in the setup summary unless they affect the choice.
 - `[coding_evals]` in `relai.toml` (`relai/docs/files.md`), and every answer in `decisions.md`.
 - The approved requirements, with their sources, applicability and evaluator mapping
   ([checks](checks.md#repository-requirements)): process requirements in `safe-process` or another
-  trajectory judge, output requirements in code checks or `review-ready`;
+  trajectory judge, output requirements in code checks or `code-review`;
   also as requirement pages under the [discover skill](../../discover/SKILL.md)'s rules when the
   project keeps a wiki or the task set will grow.
 - **The shared evaluators** under `relai/evaluators/` (the eval skill's
   [shared evaluators](../../eval/references/shared-evaluators.md)): `safe-process`,
-  `honest-report`, and `review-ready`, with the requirements routed as above, plus any check the team
+  `honest-report`, and `code-review`, with the requirements routed as above, plus any check the team
   wants on every task. Each task copies them; changing one is a change to every frozen task that
   carries it, under the *Frozen tests* rule.
 

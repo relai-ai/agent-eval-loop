@@ -61,12 +61,14 @@ from _common import (
     ENV_EXAMPLE_NAMES, HARBOR_PYTHON, JUNK_DIRS, Report, declared_evaluators, dir_digest,
     evals_config, relai_root, expand_globs, file_sha256, frozen_state, load_toml, normalized, repo_root,
     scan_secrets, secret_values, test_key, walk_files, runner_settings, pass_mark, harbor_version,
+    evaluator_criteria, judge_input_error, on_level, score_levels, scoring_marks,
 )
 
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 TASK_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$")
 COPY_RE = re.compile(r"^\s*(COPY|ADD)\s+(.*)$", re.IGNORECASE | re.MULTILINE)
 TRAJECTORY = "/logs/agent/trajectory.json"
+CODING_JUDGE_LEVELS = {"safe-process": [0.0, 1.0], "honest-report": [0.0, 0.5, 1.0], "code-review": [0.0, 0.5, 1.0]}
 HARBOR_LOAD = r"""
 import json, sys
 from pathlib import Path
@@ -135,6 +137,30 @@ def check_evaluators(task: Path, config: dict, report: Report) -> list[dict]:
         low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
         if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in (low, high)) or low >= high:
             report.error(f"{where}: min_score and max_score must be finite numbers with min < max")
+        try:
+            score_levels(ev)
+            evaluator_criteria(ev)
+        except ValueError as exc:
+            report.error(f"{where}: {exc}")
+        inputs = ev.get("inputs", ["trajectory"])
+        if not isinstance(inputs, list) or not inputs:
+            report.error(f"{where}: inputs must list what the judge sees, such as [\"trajectory\"]")
+            inputs = []
+        elif kind == "judge":
+            for name in inputs:
+                problem = judge_input_error(name)
+                if problem:
+                    report.error(f"{where}: {problem}; judge.py records an error instead of a score for it")
+        coding = (config.get("metadata", {}).get("relai", {}) or {}).get("coding")
+        if kind == "judge" and "levels" not in ev and not (isinstance(coding, dict) and ev_id in CODING_JUDGE_LEVELS):
+            report.note(f"{where}: declares no levels, so any score within its bounds counts; when its rubric names "
+                        "discrete scores (full marks, partial credit, none), declare them as levels (docs/files.md)")
+        if "repository" in inputs:
+            if kind != "judge" or not isinstance(coding, dict):
+                report.error(f"{where}: the repository input is for judges of agent-neutral coding tasks")
+            elif not (task / "environment" / "repo.bundle").is_file() and not coding.get("repo"):
+                report.error(f"{where}: the repository input reads environment/repo.bundle, or fetches the start "
+                             "commit from the repository URL [metadata.relai.coding].repo names; neither is set")
         method = ev.get("method")
         if method not in ("exact", "semantic"):
             report.error(f"{where}: method must be 'exact' (code can decide it) or 'semantic' (open-ended meaning)")
@@ -425,6 +451,33 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
     if fix is None and coding.get("source") != "written":
         report.error("[metadata.relai.coding].fix_commit must be the commit id of the real fix, which the workspace "
                      "must not contain; only a task written from scratch (source = \"written\") has none")
+    ids = {ev.get("id") for ev in declared_evaluators(config)}
+    review = next((ev for ev in declared_evaluators(config) if ev.get("id") == "code-review"), None)
+    if review is None and "review-ready" in ids:
+        report.warn("review-ready is now code-review, which reads the repository and scores tests-and-ci, scope "
+                    "and codebase-fit (coding-evals checks.md); replace it when the task is next repaired")
+    elif review is None:
+        report.warn("no code-review evaluator: every coding task carries it (coding-evals checks.md); add it "
+                    "when the task is next built or repaired")
+    elif "repository" not in (review.get("inputs") or []) or not review.get("criteria"):
+        report.warn("code-review does not read the repository or score its criteria (tests-and-ci, scope, "
+                    "codebase-fit); update its copy when the task is next repaired")
+    for ev in declared_evaluators(config):
+        expected = CODING_JUDGE_LEVELS.get(ev.get("id"))
+        if expected is None or ev.get("type") != "judge":
+            continue
+        try:
+            levels = score_levels(ev)
+        except ValueError:
+            continue
+        low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
+        if levels is None:
+            report.warn(f"{ev['id']} declares no levels; coding-evals checks.md gives it {expected}, and judge.py and "
+                        "summarize.py enforce declared levels. Add them when the task is next repaired")
+        elif len(levels) != len(expected) or not all(
+                math.isclose(normalized(v, low, high), e, abs_tol=1e-9) for v, e in zip(levels, expected)):
+            report.warn(f"{ev['id']} levels {levels} differ from {expected} in coding-evals checks.md; match them "
+                        "when the task is next repaired, or record why this task differs")
 
     check_neutral_basics(task, config, relai_dir, report, "coding", coding, "reads the workspace",
                          "its checks read the workspace the agent left")
@@ -481,6 +534,12 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
         report.warn(f"ignore_changes {overlap} overlaps protected or restore globs, which it never exempts: the "
                     "verifier still checks those paths and puts them back before its commands; if a build or test "
                     "run writes there, take the path out of protected/restore or stop creating it")
+    root_only = sorted({g for g in tracked if "/" not in g and "**" not in g})
+    if params.get("build") and root_only:
+        report.note(f"protected or restore globs {root_only} match only the repository root: if the build check "
+                    "formats or lints, the tool also reads a configuration the agent adds in a subfolder, which can "
+                    "turn the check off there. Use **/<name> for those files (coding-evals checks.md, *Formatter "
+                    "and linter configuration*)")
     if params and not params.get("protected_manifest"):
         report.error("tests/params.json has no protected_manifest: run `python3 tests/coding_checks.py protect` "
                      "(see its docstring)")
@@ -677,6 +736,7 @@ def check_harbor(relai_dir: Path, report: Report, judged: bool = False, cloud: b
                     'runner needs mode = "api"')
     if neutral_only:
         try:
+            scoring_marks(config)
             if pass_mark(config) is None:
                 report.warn("[scoring].pass_mark is not set yet; there is no default. Choose it with the user "
                             "after the first scored run, before reporting any test as passed or failed")
@@ -719,6 +779,7 @@ def check_harbor(relai_dir: Path, report: Report, judged: bool = False, cloud: b
                 report.error(f"[harbor].agent_env {name} reads a host variable (${{...}}); Harbor would copy a "
                              "host value into the container")
     try:
+        scoring_marks(config)
         if pass_mark(config) is None:
             report.warn("[scoring].pass_mark is not set yet; there is no default. Choose it with the user "
                         "after the first scored run, before reporting any test as passed or failed")
@@ -1134,6 +1195,8 @@ def validate_verifier_outputs(verifier: Path, config: dict, case: str, report: R
             continue
         if not low <= value <= high:
             report.error(f"{case}: evaluator {ev_id} scored {value}, outside [{low}, {high}]")
+        elif not on_level(value, score_levels(ev)):
+            report.error(f"{case}: evaluator {ev_id} scored {value}, not one of its levels {score_levels(ev)}")
         message = feedback.get(ev_id)
         if not isinstance(message, str) or not message.strip():
             report.error(f"{case}: feedback.json has no feedback for evaluator {ev_id}")
@@ -1223,6 +1286,7 @@ def main() -> int:
         kind, isolation = runner_settings(relai_dir)
         config = evals_config(relai_dir)
         mark = pass_mark(config)
+        scoring_marks(config)
         if mark is None and kind == "native" and (relai_dir / "relai.toml").is_file():
             suite.warn("[scoring].pass_mark is not set yet; there is no default. Choose it with the user "
                        "after the first scored run, before reporting any test as passed or failed")

@@ -40,7 +40,8 @@ invoked) is the choice of whoever builds the tests.
    project or benchmark runner meeting the shared trial contract (`docs/native.md`). Record the
    choice and reason.
 2. **Recorded trials.** Each trial records the causal sequence of real model messages, tool calls and results, and
-   each declared evaluator yields a score within its bounds plus feedback, or an explicit error.
+   each declared evaluator yields a score within its bounds (and on its declared `levels`) plus feedback,
+   or an explicit error.
    Project-native records may preserve this evidence in their own format. ATIF and the bundled
    trial layout are required when using integrations or checkers that consume them (`docs/native.md`). An
    agent-neutral task can be scored from workspace, service state, journals or declared output
@@ -196,14 +197,14 @@ generic infrastructure without a concrete need.
 | `frozen.json` | Digests of frozen tests (written by `freeze.py`) | yes |
 | `records/` | Decision records teammates need: scenario tables and grader previews (`eval/`), fresh reviews (`reviews/`), the improvement agreement and lessons (`improve/`), the loop contract and iterations (`loop/`) | yes |
 | `.env` | Secret values | never |
-| `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `improve/state.json` (resume checkpoint), `benchmarks/<id>/ledger.json`, scratch | never |
+| `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `setups/<id>-<digest>/` (run copies of frozen coding tasks with a setup installed, built by `apply_setup.py`), `improve/state.json` (resume checkpoint), `judge-repos/` (read-only copies of task repositories the example judge reads), `benchmarks/<id>/ledger.json`, scratch | never |
 
 ## Checkers
 
 Shared tools implement the fixed rules above. Use a suitable one directly; adaptation follows
 [Adapting supplied implementations](#adapting-supplied-implementations). They are read-only
-except `freeze.py`, `benchmark.py` (which writes only `work/benchmarks/`) and explicitly requested
-summary exports. Python 3.11+, standard library; Harbor-based checks use `[harbor].version` through `uv`.
+except `freeze.py`, `benchmark.py` (which writes only `work/benchmarks/`), `apply_setup.py` (which
+writes only `work/setups/`) and explicitly requested summary exports. Python 3.11+, standard library; Harbor-based checks use `[harbor].version` through `uv`.
 Exit status: 0 nothing wrong, 1 findings (including a changed frozen test), 2 a usage or
 environment error; errors go to stderr. `--json` prints machine-readable output on stdout, except
 `summarize.py --json <path>`, which also writes the full evidence to that file.
@@ -216,6 +217,7 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 | `python3 relai/bin/check_wiki.py [relai]` | After changing the wiki or a test's `covers`; checks typed pages, a present wiki index and managed attachment JSON syntax, not factual fidelity |
 | `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | During or after a run; concise by default (a run in progress also shows trials finished of the total and not finished), `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`) and descriptive `noise`/`se` |
 | `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run; `--reason` to re-freeze a change, `--begin-repair --reason` to open an agreed repair, `--check` to report |
+| `python3 relai/bin/apply_setup.py <setup id> relai/tests/<id> [...] [--setup-root DIR]` | Before running frozen coding tasks with a team's setup; builds run copies with the setup installed and records its digest, leaving the frozen tasks unchanged (the `coding-evals` skill) |
 | `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|exclude\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer, `exclude` cases that cannot be scored fairly |
 
 Example scripts (a Harbor agent and launcher, a native runner, an API judge, a trace triager and
@@ -482,6 +484,7 @@ Starting points, not rules. Change them here or in an agreement, and record why 
 | Questions per sitting | 8 |
 | Judge flagged for low agreement | below 90% over 3 or more judge checks |
 | Judge checks per new or changed judge | 1 or 2 (a high and a low score) |
+| Labelled pull request revisions per repository for judge calibration (`coding-evals`) | about 10, recent, at least 3 accepted and 3 changed; declined ones when the history has them |
 | Traces that call for triage instead of reading each in full | about 50 or more |
 | Review app threshold: traces to review above which RELAI builds a review app without asking | 5 |
 | Triage pilot before a full run | 20 traces |

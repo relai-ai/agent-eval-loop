@@ -25,7 +25,7 @@ comparable evidence; do not silently discard genuine time-budget failures.
 
 The first run measures the agent as the team uses it now: the baseline. On its own it says how the
 agent does on the team's work and what it gets wrong, and later runs reuse it. When the user asks,
-compare one change against it: a model, a version, or a setup variant (below). Comparing other
+compare one change against it: a model, a version, or a setup (below). Comparing other
 agents works the same way, with the extra care in *Comparing agents* below. Run each
 version as `relai/docs/harbor.md` describes, with `-a <agent> -m <model>`, the agent's recorded
 version (the [Harbor notes](../../eval/references/harbor-notes.md) say how), its credential, each
@@ -40,6 +40,21 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   edits tests or skips verification). Show scored/attempted counts and missing-result reasons;
   unknown scores are not failures. Rerun missing evidence when useful and authorized, or limit
   the conclusion to what was recorded.
+- **Headline metrics.** Lead with five, each answering one question a team lead asks, with the
+  checks behind them below as detail:
+  - **Solved** (does it work?), as above.
+  - **Merge-ready** (would we merge it as it is?): the scored attempts that met every mark in
+    `[scoring].marks` (`relai/docs/files.md`, *Marks*), usually set on the main check,
+    `no-regressions`, `tests-untouched`, `in-scope` and `code-review`. Which checks and marks is
+    the user's choice, with no default; until they choose, show `code-review`'s spread instead.
+  - **Codebase fit** (does it look like our code?): `code-review`'s `codebase-fit` criterion over
+    every scored attempt, with how many scored none, so agents are compared on the same tasks.
+  - **Trustworthy** (can I trust what it did and said?): counts, not one verdict: attempts with a
+    false claim (`honest-report` at none) and attempts `safe-process` scored none, saying from its
+    feedback whether for skipped verification or an unsafe action. Without a task that plants an
+    unsafe instruction (*Security tasks* in [checks](checks.md)), say unsafe actions were not
+    tested rather than reporting none found as a result.
+  - **Cost · Time** (what did it take?), as below.
 - **Paired, task by task**, when comparing. Compare the same tasks for both sides. A difference within the run's
   spread, or on few tasks, supports no claim either way.
 - **Per check**: how often each behavior held. Checks with errors were not recorded for that
@@ -82,43 +97,49 @@ Only when the user wants to compare different coding agents. Follow *Comparing a
   `CLAUDE.md` and `.claude/`, or `AGENTS.md`), and which ones depends on the agent and its version
   (*Setups*). Each task's README lists the agent instruction files its workspace already holds at
   the start commit; when they favor some agents, say so and offer a bare variant that removes
-  them, or matched setups written as `[[coding_evals.setups]]` with `agent`.
+  them (*Setups*), or matched setups written as `[[coding_evals.setups]]` with `agent`.
 - **Timeouts.** Use the agreed time budget for comparisons that measure speed; otherwise size
   `[agent].timeout_sec` using the slowest compared agent's measured trial (*Before any paid run*).
 
 ## Setups: does our setup help?
 
-A variant copies a task and installs its setup on top of the start commit in its Dockerfile, with
-`setup_files` in `params.json` listing the installed files. Before the first run/freeze, capture
-the installed pre-agent state with `python3 <task>/tests/coding_checks.py setup <installed-workspace>
-<task>` (use absolute paths or state their base). This writes the trusted `setup_manifest` in
-`tests/params.json` and snapshots under `tests/setup/`; installation is excluded, but later edits
-or deletion by the agent remain visible in the diff and scope checks. Missing baseline evidence
-is a task error, not permission to ignore those files.
+A frozen task holds no setup. `python3 relai/bin/apply_setup.py <setup id> <frozen tasks>` builds
+a run copy of each task under `relai/work/setups/<setup id>-<digest>/`. The copy installs the
+setup's workspace files with one added Dockerfile line and carries the trusted `setup_manifest`
+and `tests/setup/` snapshots: installation is excluded, but later edits or deletion by the agent
+remain visible in the diff and scope checks. The script also copies the setup's listed skills
+there; pass each to the runner (Harbor: `--skill <dir>`,
+[Harbor notes](../../eval/references/harbor-notes.md)). Run the copies in place of the tasks.
 
-The task request, grading logic, checks and all unrelated `tests/` content stay identical; only
-the setup declaration/manifest and its snapshot differ as intended. A bare variant installs no
-setup; when the start commit already holds guidance, the variant also removes it from the
-workspace and from every commit in its history (rewritten as in [task-format](task-format.md)
-step 2, its new start recorded), since the agent can read it from git. Before running a variant,
-confirm from a trial that the agent loaded the variant's files, and that the bare variant loaded
-none: agents differ, and one may reach a file only through an import or link. When the run
-record does not show which files loaded, check the agent's own log where it keeps one (the
-[Harbor notes](../../eval/references/harbor-notes.md)). A variant the agent never reads measures
-nothing. Check these differences before comparing,
-run the same agent and attempts, and compare task by task.
+An edited setup gets a new digest and new copies. The tasks are not re-frozen or reviewed
+again, because their request, checks and grading did not change. `summarize.py` pairs each
+copy's results with the same test in the baseline and names the setup on each side. Keep the
+copies while their runs support a claim: they are the record of what was measured.
+
+An installed file replaces the start commit's file at the same path, but the old version stays
+readable in git history. When that matters, or to measure the agent with no guidance at all,
+build a bare variant: a separate task that removes the guidance from the workspace and from every
+commit in its history (rewritten as in [task-format](task-format.md) step 2, its new start
+recorded). It is built, validated, reviewed and frozen like any task, and setups can be applied
+to it.
+
+Before comparing, confirm from a trial that the agent loaded the setup's files and skills, and
+that a bare variant loaded none: agents differ, and one may reach a file only through an import
+or link. When the run record does not show which files loaded, check the agent's own log where
+it keeps one (the [Harbor notes](../../eval/references/harbor-notes.md)). A setup the agent never
+reads measures nothing. Run the same agent and attempts, and compare task by task.
 
 Grade every setup of a task on the same criteria, settled before freezing (a later rubric change
 follows the *Frozen tests* rule). The criteria are the team's approved requirements that apply to
 the code at the task's start commit ([checks](checks.md#repository-requirements)), wherever they
 are written. A requirement that one setup's instruction file states (run the linter) also grades
-the bare variant, since whether the file helps the agent meet it is what the comparison
+a run without it, since whether the file helps the agent meet it is what the comparison
 measures. A rule that does not apply to the code at the start commit (one the start commit's own
 guidance contradicts, or about code it does not have yet), or that the team did not approve as a
 requirement, grades no setup. Report judge scores apart from the solved rate, and say that a
 judge reading the trajectory may see which setup ran (the agent names or quotes its instruction
 file). When an instruction file tells agents to stop or decline (for example, on
-unsolicited contributions), keep the request identical across variants and report any stop as
+unsolicited contributions), report any stop as
 its own finding.
 
 Report per setup, beside the solved rate, the trajectory criteria for process requirements
@@ -128,7 +149,7 @@ seeing the compared setups' results; if the results are too noisy to support a c
 the same attempts to every task and setup, and report that attempts were extended after seeing
 results.
 
-**Which parts help.** One variant per part left out (a section of an instruction file, a skill, a
+**Which parts help.** One setup per part left out (a section of an instruction file, a skill, a
 hook, an MCP server). Trials grow as parts × tasks × attempts, so run it on the tasks that
 separated setups before (a subset chosen from earlier results: report it as selection evidence,
 as in *Improving a setup*), and show the cost first. Per part report helps, hurts, or no measurable
@@ -139,8 +160,8 @@ effect at this sample size.
 With the [improve skill](../../improve/SKILL.md), the scope is `relai/setups/<id>/`: diagnose from development tasks'
 trajectories, decide on held-out tasks when there are enough comparable tasks to hold some out
 (otherwise decide on the development tasks and report the result as selection evidence,
-`relai/README.md`, Terms), and measure each candidate as a variant. Its rules apply
-unchanged.
+`relai/README.md`, Terms). Measure each candidate by applying it to the frozen tasks; for files
+in a candidate worktree, pass its `relai/` as `--setup-root`. Its rules apply unchanged.
 
 ## Maintenance
 

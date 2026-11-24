@@ -59,6 +59,7 @@ controls and evidence using [validity across runs](test-design.md#validity-acros
   not need execution meanwhile. Never fall back to an uncontained run on your own.
 - With `[judge] mode = "api"`, copy the example `judge.py` to `relai/bin/judge.py` (or write an
   equivalent meeting the judge contract in `relai/docs/files.md`) before the first judged trial.
+  It imports helpers from `relai/bin/_common.py`, so copy both from the same plugin version.
   Example providers are not a closed supported set: reuse a suitable project provider and adapt
   or replace the example for its API and credential mechanism. Preserve data authorization,
   credential redaction, score/error outputs and honest usage reporting; do not claim the shipped

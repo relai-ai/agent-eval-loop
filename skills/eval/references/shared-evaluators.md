@@ -7,7 +7,8 @@ says what full marks need.
 
 - `relai/evaluators/<id>/` holds the evaluator (code, or a judge rubric) and a `README.md` stating
   the criterion and its requirement source, its method, concrete scoring criteria (what earns full
-  marks, partial credit and zero), and which tests it applies to and why, or that it applies to none.
+  marks, partial credit and zero, declared as `levels` when discrete, and as `criteria` when one
+  judge scores several on their own), and which tests it applies to and why, or that it applies to none.
 - Each test it applies to declares it and carries it under its own `tests/` (a separate verifier
   sees only `tests/`).
 - `check_task.py` passes, plus `--verifier` for Harbor or synthetic grading checks for native tests, and with API judges `relai/bin/judge.py --self-test`
@@ -25,7 +26,9 @@ says what full marks need.
   directory instead of rerunning the agent, keeping the originals intact (Harbor:
   `harbor trial regrade` with `-o`, see [harbor-notes](harbor-notes.md); it cannot see unexported
   state). `relai/bin/judge.py <run>` retries judge errors. After a rubric change, establish a
-  comparable baseline.
+  comparable baseline: `judge.py` lists the stored results judged with another rubric and keeps
+  them, and `--force` on a copy of the run judges every result with the current rubric, so
+  versions do not mix.
 - Score missing deliverables and pure prohibitions as [test-design](test-design.md#rules) says
   (*Missing deliverables and prohibitions*). A check must measure its stated outcome rather than
   activity alone.

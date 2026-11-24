@@ -133,7 +133,8 @@ def run_trial(task_dir: Path, attempt: int, out: Path, command: list[str], cwd: 
         config = load_toml(task_dir / "task.toml")
         meta_relai = ((config.get("metadata") or {}).get("relai") or {})
         evaluator_definitions = [{"id": ev.get("id"), "type": ev.get("type"),
-                                  "min_score": ev.get("min_score", 0.0), "max_score": ev.get("max_score", 1.0)}
+                                  "min_score": ev.get("min_score", 0.0), "max_score": ev.get("max_score", 1.0),
+                                  **({"levels": ev["levels"]} if "levels" in ev else {})}
                                  for ev in declared_evaluators(config)]
         values = {"task_dir": str(task_dir), "trial_dir": str(trial), "attempt": str(attempt),
                   "test_id": str(meta_relai.get("id", task_dir.name))}

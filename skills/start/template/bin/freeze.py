@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import dir_digest, relai_root, frozen_state, test_key
+from _common import dir_digest, relai_root, frozen_state, setup_run, test_key
 
 
 def all_tests(relai_dir: Path) -> list[Path]:
@@ -58,6 +58,11 @@ def main() -> int:
     for task in tasks:
         if not (task / "task.toml").is_file():
             print(f"error: {task} has no task.toml", file=sys.stderr)
+            status = 2
+            continue
+        if setup_run(task):
+            print(f"error: {task} is a run copy built by apply_setup.py; freeze the test it was built from",
+                  file=sys.stderr)
             status = 2
             continue
         key = test_key(task, relai_dir)

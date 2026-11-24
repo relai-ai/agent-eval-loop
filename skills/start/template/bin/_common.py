@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -12,6 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 HARBOR_PYTHON = "3.12"
+
+SETUP_RECORD = "relai-setup.json"
 
 JUNK_DIRS = {
     "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", ".tox", ".nox",
@@ -94,13 +97,35 @@ def relai_root(explicit: str | None = None) -> Path:
 def test_key(task_dir: Path, relai_dir: Path) -> str:
     """A test's identity: its path relative to the nearest enclosing relai/ (tests/<id>,
     benchmarks/<id>/...), else its name. The nearest one, so that a checkout's copy of relai/,
-    such as a candidate worktree under relai/work/candidates/<name>/, gives the same identity."""
+    such as a candidate worktree under relai/work/candidates/<name>/, gives the same identity. A run
+    copy built by apply_setup.py keeps the identity of the frozen test it was built from."""
     task_dir = task_dir.resolve()
     relai_dir = relai_dir.resolve()
     for ancestor in task_dir.parents:
-        if ancestor == relai_dir or ancestor.name == relai_dir.name:
+        if ancestor == relai_dir or ancestor.name == relai_dir.name or (ancestor / SETUP_RECORD).is_file():
             return task_dir.relative_to(ancestor).as_posix()
     return task_dir.name
+
+
+def setup_run(task_dir: Path) -> dict | None:
+    """What apply_setup.py recorded for a run copy: the setup, its digest and this test's digests.
+    None for a task that is not a run copy."""
+    task_dir = task_dir.resolve()
+    for ancestor in task_dir.parents:
+        path = ancestor / SETUP_RECORD
+        if not path.is_file():
+            continue
+        try:
+            record = load_json(path)
+        except (OSError, json.JSONDecodeError):
+            record = None
+        if not isinstance(record, dict):
+            return {"setup": "?", "digest": None, "error": f"{path} could not be read"}
+        tests = record.get("tests") if isinstance(record.get("tests"), dict) else {}
+        entry = tests.get(task_dir.relative_to(ancestor).as_posix())
+        return {"setup": str(record.get("setup") or "?"), "digest": record.get("digest"),
+                **(entry if isinstance(entry, dict) else {"error": f"{path} does not list this test"})}
+    return None
 
 
 def resolve_task_dir(raw: str, relai_dir: Path, job_dir: Path | None = None) -> Path | None:
@@ -188,6 +213,72 @@ def pass_mark(config: dict):
                               or not 0 <= value <= 1):
         raise ValueError("[scoring].pass_mark must be a number from 0 to 1")
     return value
+
+
+def scoring_marks(config: dict) -> dict:
+    """Per-evaluator marks from [scoring].marks, on the 0 to 1 scale; the user's choice, with no default."""
+    scoring = config.get("scoring", {})
+    if not isinstance(scoring, dict):
+        raise ValueError("[scoring] must be a table")
+    marks = scoring.get("marks", {})
+    if not isinstance(marks, dict):
+        raise ValueError("[scoring].marks must be a table of evaluator id = mark")
+    for ev_id, value in marks.items():
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) \
+                or not 0 <= value <= 1:
+            raise ValueError(f"[scoring].marks.{ev_id} must be a number from 0 to 1")
+    return dict(marks)
+
+
+def score_levels(ev: dict) -> list | None:
+    """An evaluator's declared scores, from min_score to max_score in increasing order, or None."""
+    levels = ev.get("levels")
+    if levels is None:
+        return None
+    low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
+    numbers = isinstance(levels, list) and len(levels) >= 2 and all(
+        not isinstance(v, bool) and isinstance(v, (int, float)) and math.isfinite(v) for v in levels)
+    if not numbers or any(a >= b for a, b in zip(levels, levels[1:])) or levels[0] != low or levels[-1] != high:
+        raise ValueError("levels must list at least two increasing scores, from min_score to max_score")
+    return levels
+
+
+CRITERION_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def evaluator_criteria(ev: dict) -> list | None:
+    """A judge evaluator's declared criteria, each scored on its own, or None when it declares none."""
+    criteria = ev.get("criteria")
+    if criteria is None:
+        return None
+    if ev.get("type") != "judge":
+        raise ValueError("criteria apply only to judge evaluators")
+    if not isinstance(criteria, list) or not criteria or any(
+            not isinstance(name, str) or not CRITERION_RE.match(name) for name in criteria) \
+            or len(set(criteria)) != len(criteria):
+        raise ValueError("criteria must list distinct lowercase slugs")
+    return criteria
+
+
+def criteria_score(scores: dict, criteria: list) -> float:
+    """An evaluator's score from its criteria: the lowest, so any criterion at none scores the whole at none."""
+    return min(scores[name] for name in criteria)
+
+
+def on_level(score: float, levels: list | None) -> bool:
+    return levels is None or any(math.isclose(score, level, abs_tol=1e-9) for level in levels)
+
+
+JUDGE_INPUTS = ("trajectory", "instruction", "repository")
+
+
+def judge_input_error(name) -> str | None:
+    """Why judge.py cannot read this judge input, or None when it can."""
+    if name in JUDGE_INPUTS:
+        return None
+    if isinstance(name, str) and name.startswith("verifier/") and name != "verifier/" and ".." not in name:
+        return None
+    return f"unknown judge input {name!r}: use {', '.join(JUDGE_INPUTS[:-1])}, {JUDGE_INPUTS[-1]} or verifier/<file>"
 
 
 def secret_values(relai_dir: Path) -> dict[str, str]:
