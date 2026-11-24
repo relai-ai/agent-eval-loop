@@ -273,9 +273,9 @@ undetected error.
 
 Run tasks that do not depend on each other concurrently, through scripts or subagents,
 when doing so saves meaningful time. Prefer scripts for mechanical, repeatable fan-out and
-subagents for work that needs judgment. Keep parallel work within the shared budget, avoid
-conflicting side effects and concurrency effects on measurement, and combine results into
-one inspectable record.
+subagents for work that needs judgment. Keep parallel work within the shared budget and the
+confirmed maximum concurrency, avoid conflicting side effects and concurrency effects on
+measurement, and combine results into one inspectable record.
 
 ## Keep guidance lean
 

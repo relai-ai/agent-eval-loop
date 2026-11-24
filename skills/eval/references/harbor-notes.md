@@ -81,6 +81,12 @@ and update this file.
   ignored, so check the trial count. Observed in 0.26.0: `-i` matches task directory names, not
   `[task].name`, and a filter that matches nothing runs zero trials; the same command with
   `--dry-run` prints the trial count (tasks × attempts) and fails when no task matches.
+- **Parallel trials load the local machine.** Observed in 0.26.0: each `harbor run` is a local
+  process, and `-n` runs a job's trials in that one process, so prefer one job with `-n` over a
+  process per trial. With a local environment the task containers also run on the machine, each
+  up to its `[environment]` memory and CPUs; with a cloud environment they run remotely.
+  Stopping Harbor does not stop cloud sandboxes; they keep running, and billing, until their
+  timeout, so stop them through the provider and confirm that none remain.
 - **Local engines differ.** `-e docker` drives whatever engine the `docker` CLI points at
   (Docker Desktop, OrbStack, Colima, Rancher Desktop). `-e podman` never gates startup on
   healthchecks, so a task compose file with `depends_on: condition: service_healthy` hangs.

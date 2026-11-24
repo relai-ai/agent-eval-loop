@@ -24,8 +24,9 @@ deterministic fix needs no unrelated evaluation questionnaire.
   [terms](../start/template/README.md#terms) when absent. Use the [start skill](../start/SKILL.md)
   only when you need RELAI's managed records or checkers, and the [eval skill](../eval/SKILL.md)
   only for missing measurement capabilities or coverage. Reuse working project infrastructure.
-  Follow [improve-loop](references/improve-loop.md), and [cost-latency](references/cost-latency.md) for a cost or latency
-  objective.
+  Follow [improve-loop](references/improve-loop.md) for focused analysis batches, repeated synthesis and
+  staged behavioral experiments; choose their size, concurrency and timing within the agreement.
+  Use [cost-latency](references/cost-latency.md) for a cost or latency objective.
 - **Check a change:** use the relevant available checks and state uncovered behavior. For an
   existing agent suite, follow [regression](references/regression.md); do not build unrelated infrastructure.
 
@@ -37,23 +38,24 @@ merely to complete the flow. Across all paths, maintain useful knowledge under t
 ## Establish the improvement agreement
 
 Reuse existing instructions or a loop contract that cover the agreement (`relai/README.md`,
-Terms). Apply the shared purpose guidance; ask only for missing consequential choices,
-conflicts, or work outside it. For a new
-measured-improvement agreement, settle before editing:
+Terms). Apply the shared purpose guidance and
+[resource policy](../start/template/README.md#resources-and-expectations) to distinguish user
+authorization from your experimental plan. Build and revise the plan yourself within the agreement;
+ask only about uncovered intent, authorization, conflicts or changes to its boundaries. Establish
+these from the request and project evidence before dependent work:
 
-- **Objective and guardrails:** behavioral success, lower cost, or lower latency; the targeted
-  tests and measures; the required improvement and the guardrails' bounds. Unrelated
-  issue-specific tests are guardrails, not targets. Do not invent a weighted objective for
-  conflicting goals.
-- **Scope:** allowed agent files, model and settings changes, any supporting process improvements,
-  and off-limits surfaces.
-- **Budget and evidence:** the decision to support, the relevant task distribution, measurement
-  effort and estimated spend ([eval: measure](../eval/references/measure.md)). No universal repetition
-  count applies. Resolve consequential outcome and resource expectations under the
-  [shared policy](../start/template/README.md#resources-and-expectations), including a delivery
-  commitment versus an exploration checkpoint when not already clear.
-- **Check-ins and delivery:** rounds or stopping rule; a branch or worktree for review by
-  default, or the user's working tree if already authorized.
+- **Objective and guardrails:** the intended outcome, decision metric and applicable bounds.
+  Unrelated issue-specific tests are guardrails, not targets. Clarify conflicting priorities
+  rather than inventing a weighted objective or an improvement threshold the user did not request.
+- **Scope:** the allowed agent files, model/settings changes, supporting work and off-limits surfaces.
+- **Resources:** applicable allowances, limits and their coverage. Ask for a missing limit when
+  paid execution or the integration requires it, including a maximum concurrency before parallel
+  runs ([resource policy](../start/template/README.md#resources-and-expectations)); do not require
+  every kind of cap for every task.
+- **Evidence and delivery:** record your provisional measurement and verification approach
+  ([eval: measure](../eval/references/measure.md)) under the shared policy. Reuse covered expectations
+  and check-ins. Use a branch or worktree for review by default, or the user's working tree if
+  already authorized. Preserve explicit user limits and requirements while adapting the approach.
 
 For managed measured work, record the agreement in `relai/records/improve/plan.json` (`relai/docs/files.md`),
 or use the covering loop contract. Existing project records may serve the same purpose when they

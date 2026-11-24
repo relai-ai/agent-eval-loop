@@ -31,9 +31,9 @@ Before another revision, use observed execution costs and durations to consider 
 available resources can cover its investigation and final verification. Check consequential
 boundaries that could rule it out early. If the next change would leave inadequate verification,
 consider checking the incumbent, a cheaper diagnostic or stopping with an explicitly limited
-result. Follow the agreement's delivery or exploration expectation and the
-[shared resource policy](../../start/template/README.md#resources-and-expectations); no fixed
-reserve percentage or candidate count applies.
+result. Follow the [shared resource policy](../../start/template/README.md#resources-and-expectations)
+for allocation authority and questions, preserving the agreement's delivery or exploration expectation;
+no fixed reserve percentage or candidate count applies.
 
 Distinguish three selections, which may overlap and need not be small or equal in size:
 
@@ -55,13 +55,72 @@ For several alternatives, follow [candidate-selection](candidate-selection.md). 
 a reversible diff and an account of attribution limits: a bundle's success does not prove each
 component helped. Use isolation or ablation when attribution matters.
 
-Delegate analysis when independent investigation or context management warrants it, not because
-of a trajectory count. Give an analyzer only permitted development evidence and scope.
-Independent review of the delivered measured improvement remains required.
+Independent review of the delivered measured improvement remains required. Analysis delegation and
+that review serve different purposes; exploratory analysts do not approve their own candidate.
 
 When what to investigate next is unclear, [prioritization](prioritization.md) offers optional suggestions; they
 never set selection, batch size, evidence, budget or acceptance. On a benchmark, record the exact
 development selection with `benchmark.py batch <id> --case-ids ...`.
+
+## Analyze focused batches and synthesize as useful
+
+For substantial diagnosis, organize permitted development evidence into focused batches. Independent
+batches can run concurrently through subagents when supported and useful; serial analysis also works.
+Choose the cases, concurrency and timing within the resource agreement. With one context, keep batch
+findings distinct and delay settling on a preferred explanation while meaningfully different cases
+remain unexplored; this does not provide the independence of fresh contexts.
+
+Size a batch for close comparison of decisions, actions and outcomes, including relevant successful
+or opposite-correct cases. As starting heuristics, try 3–5 short or moderate cases, or one long or
+complex case with its related trials. Around 20–40k tokens of working evidence can be a useful point
+to reconsider scope, within the actual context capacity and with room for instructions, reasoning
+and tools. These are adjustable engineering heuristics, not validated cutoffs or minimum coverage.
+Use complexity and observed analysis quality to adapt; split or refocus when evidence references
+blur, independent mechanisms get flattened together, or analysis becomes superficial. Preserve
+coherent episodes and source access rather than blindly truncating traces to meet a number.
+
+For independent exploratory analysis, supply the objective, constraints, necessary code/context and
+selected evidence without steering analysts toward the coordinator's preferred diagnosis or other
+analysts' conclusions. Directed follow-up is appropriate when testing a stated hypothesis. Ask for
+source-linked observations, possible mechanisms and interventions, contradictory evidence and
+uncertainty. A batch need not produce a proposal.
+
+Synthesize available findings when they can inform a useful decision; all batches need not finish
+first. Reconcile duplicates and disagreements, check important claims against source, and preserve
+competing explanations. Consider the cases a proposal should help, those it could harm and evidence
+that would contradict it. Recurrence in a selected batch is not a population prevalence estimate.
+Choose a coherent intervention or staged alternatives; synthesis does not mean applying every
+suggestion together.
+
+Optimization is a repeatable decision loop. For example:
+
+Focused small-batch trace analysis → synthesize findings → test a candidate → reassess evidence →
+choose the next useful action.
+
+After successful, mixed or unsuccessful experiments, choose among fresh exploratory or follow-up
+small-batch trace analysis, further synthesis, targeted behavioral comparisons, broader confirmation,
+candidate revision or stopping. Choose what could most usefully change the next decision for its
+cost within the remaining resources. Adapt the example's sequence; analysis need not precede every
+candidate.
+
+When you lack a promising hypothesis or keep returning to the same explanations, consider fresh
+exploratory small-batch trace analysis. Select underexplored cases, changed outcomes, contrasting
+successes and failures, or evidence that challenges earlier diagnoses. Use the neutral analyst
+briefing above; exploration can uncover mechanisms without a preferred proposal. An unsuccessful
+intervention informs its specific hypothesis; it does not establish that the failure category is
+exhausted. Treat apparent performance ceilings as hypotheses to check against permitted evidence.
+Lacking a current proposal can justify bounded exploration; stop when its expected learning or
+remaining resources do not warrant it.
+
+Explain consequential choices within existing authority without handing routine experiment selection
+back to the user. No fixed batch count, sequence, subagent requirement or analysis quota applies.
+Preserve the source references and distinctions needed for the next synthesis in existing work records.
+
+The context rationale is informed by [Lost in the Middle](https://arxiv.org/abs/2307.03172),
+[Anthropic's parallel research architecture](https://www.anthropic.com/research/multi-agent-research-system)
+and [context-engineering guidance](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents).
+They support attention to context and independent exploration, not the numeric heuristics above.
+Pilot useful batch sizes on representative material when that could improve analysis within budget.
 
 ## Establish comparable evidence
 
@@ -73,7 +132,12 @@ the summarizer only describes observations.
 Use relevant existing wiring and grader checks; investigate an implausible gain or disconnected
 mechanism before spending on more candidates. For configuration changes or expensive passes,
 a cheap premise probe can establish that the setting is accepted and the resolved scope matches
-what was authorized. Reuse adequate prior checks.
+what was authorized. Such a probe establishes wiring, not behavioral benefit. Before a broad run,
+consider a targeted behavioral comparison on cases the proposal should help and relevant regression
+cases. Choose repetitions and progression for the uncertainty and decision: inconclusive or mixed
+results may justify more investigation, a revision or a broader measurement with a stated rationale.
+Reuse adequate prior checks. Diagnostic runs consume the agreed budget, and their selected scores
+do not estimate overall gains or replace required complete-set selection or final evaluation.
 
 ## Diagnosing and proposing changes
 
@@ -166,7 +230,9 @@ precedence over old notes; a vivid single case does not establish a general rule
 
 When progress stalls, reconsider the bottleneck before editing again. Distinguish capability or
 coverage gaps, unreachable content or other structural problems, measurement defects, infrastructure,
-and inadequate evidence, and investigate the relevant cause. Never weaken a test because the agent fails.
+and inadequate evidence, and investigate the relevant cause. Revisit the
+[focused-batch options](#analyze-focused-batches-and-synthesize-as-useful) when choosing the next
+investigation. Never weaken a test because the agent fails.
 
 Continue while a credible experiment or useful measurement remains within the agreement. Stop on
 the agreed objective or limits, user request, or lack of a worthwhile next step. Reserve resources
