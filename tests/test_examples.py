@@ -199,6 +199,162 @@ class JudgeTest(unittest.TestCase):
         self.assertEqual(len(calls), 1, "re-judged once, then kept")
         self.assertEqual(json.loads((trial / "judges/explains.json").read_text())["score"], 0.5)
 
+    def responses(self, replies: list):
+        calls = []
+        queue = iter(replies)
+
+        def post(url, headers, body):
+            calls.append(body)
+            return {"stop_reason": "end_turn", "model": "synthetic", "usage": {"input_tokens": 10, "output_tokens": 2},
+                    "content": [{"type": "text", "text": json.dumps(next(queue))}]}
+        self.judge.post = post
+        return calls
+
+    def test_criteria_are_scored_one_by_one_and_the_score_is_their_lowest(self):
+        ev = {**self.ev, "levels": [0.0, 0.5, 1.0], "criteria": ["tests-and-ci", "scope", "codebase-fit"]}
+        calls = self.responses([{"feedback": "overall", "criteria": {
+            "tests-and-ci": {"score": 1.0, "feedback": "covered"}, "scope": {"score": 1.0, "feedback": "tight"},
+            "codebase-fit": {"score": 0.5, "feedback": "hand-rolled helper"}}}])
+        result = self.judge.judge_one({"model": "synthetic"}, self.repo.relai, self.task, ev, trajectory([]), {})
+        self.assertEqual(result["score"], 0.5)
+        self.assertEqual(result["criteria"]["codebase-fit"]["feedback"], "hand-rolled helper")
+        self.assertIn("**codebase-fit** (0.5)", result["feedback"])
+        schema = calls[0]["output_config"]["format"]["schema"]
+        self.assertEqual(schema["properties"]["criteria"]["required"], ["tests-and-ci", "scope", "codebase-fit"])
+
+    def coding_trial(self, diff: str | None, secret_line: str = "") -> Path:
+        src = self.repo.root / "src"
+        src.mkdir()
+
+        def git(*args):
+            return subprocess.run(["git", "-C", str(src), *args], check=True, capture_output=True, text=True).stdout
+        git("init", "-q", "-b", "main")
+        (src / "util.py").write_text("def to_user_tz(t):\n    return t\n")
+        (src / "settings.py").write_text(secret_line)
+        (src / "-odd.txt").write_text("-x appears here\n")
+        git("add", ".")
+        git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "start")
+        start = git("rev-parse", "HEAD").strip()
+        (src / "later.py").write_text("SECRET_LATER = 1\n")
+        git("add", ".")
+        git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "later")
+        git("branch", "start-only", start)
+        (self.task / "environment").mkdir(exist_ok=True)
+        git("bundle", "create", str(self.task / "environment/repo.bundle"), "start-only")
+        toml = self.task / "task.toml"
+        toml.write_text(toml.read_text() + f'\n[metadata.relai.coding]\nstart_commit = "{start}"\n')
+        trial = harbor_trial(self.repo.relai / "work/runs/r", "t1", self.task, {"looks-up-order": 1})
+        (trial / "verifier").mkdir(exist_ok=True)
+        if diff is not None:
+            (trial / "verifier/diff.patch").write_text(diff)
+        return trial
+
+    PATCH = ("diff --git a/util.py b/util.py\n--- a/util.py\n+++ b/util.py\n@@ -1,2 +1,2 @@\n"
+             " def to_user_tz(t):\n-    return t\n+    return t + 5\n")
+    REPO_EV = {"inputs": ["instruction", "verifier/diff.patch", "repository"]}
+
+    @staticmethod
+    def step(action: str, tree: str = "start", path: str = "", pattern: str = "", first_line: int = 0) -> dict:
+        return {"action": action, "tree": tree, "path": path, "pattern": pattern, "first_line": first_line}
+
+    @staticmethod
+    def text(turn: dict) -> str:
+        content = turn["content"]
+        return content if isinstance(content, str) else "".join(block["text"] for block in content)
+
+    def explore_results(self, trial: Path, steps: list, ev: dict | None = None, secrets: dict | None = None):
+        calls = self.responses(steps + [{"score": 0.0, "feedback": "judged"}])
+        result = self.judge.judge_one({"model": "synthetic"}, self.repo.relai, self.task,
+                                      {**self.ev, **(ev or self.REPO_EV)}, None, secrets or {}, trial)
+        turns = calls[-1]["messages"] if calls else []
+        return result, [self.text(turn) for turn in turns if turn["role"] == "user"][1:], calls
+
+    def test_the_repository_input_is_explored_read_only_at_the_start_commit_and_patched(self):
+        trial = self.coding_trial(self.PATCH)
+        result, results, calls = self.explore_results(trial, [
+            self.step("search", pattern="to_user_tz"), self.step("read_file", "patched", "util.py", first_line=1),
+            self.step("list_dir"), self.step("search", pattern="-x"), self.step("done")])
+        self.assertEqual(result["score"], 0.0, result)
+        self.assertEqual(result["calls"], 6)
+        self.assertEqual(result["usage"]["input_tokens"], 60)
+        self.assertIsNone(result["cost_usd"], "Anthropic reports no cost, so none is claimed")
+        self.assertIn("util.py:1:def to_user_tz(t):", results[0])
+        self.assertIn("return t + 5", results[1])
+        self.assertNotIn("later.py", results[2], "nothing later than the start commit")
+        self.assertIn("-odd.txt:1:-x appears here", results[3], "a pattern starting with - is a pattern")
+        self.assertEqual(results[-1], "Give your verdict now.")
+        self.assertIn("cache_control", json.dumps(calls[-1]["messages"][-1]))
+        self.assertTrue((self.repo.relai / "work/judge-repos" / f"{self.task.name}.git").is_dir())
+
+    def test_paths_outside_the_trees_are_refused_and_secrets_are_removed(self):
+        trial = self.coding_trial(self.PATCH, secret_line="TOKEN = 'sk-ant-test-0123456789abcdefghij'\n")
+        result, results, _ = self.explore_results(trial, [
+            self.step("read_file", path="../outside"), self.step("list_dir", path=".git"),
+            self.step("search", pattern="TOKEN"), self.step("done")],
+            secrets={"ANTHROPIC_API_KEY": "sk-ant-test-0123456789abcdefghij"})
+        self.assertIn("score", result, result)
+        self.assertIn("not allowed", results[0])
+        self.assertIn("not allowed", results[1])
+        self.assertIn("TOKEN", results[2])
+        self.assertNotIn("sk-ant-test-0123456789abcdefghij", results[2])
+
+    def test_unchanged_diffs_unknown_diffs_and_bad_diffs(self):
+        trial = self.coding_trial("(no changes)\n")
+        result, results, _ = self.explore_results(trial, [self.step("read_file", "patched", "util.py"), self.step("done")])
+        self.assertEqual(result["score"], 0.0, result)
+        self.assertIn("return t\n", results[0] + "\n")
+        for content, message in (("(could not compute: damaged history)\n", "could not compute"),
+                                 ("diff --git a/nope.py b/nope.py\n--- a/nope.py\n+++ b/nope.py\n@@ -1 +1 @@\n-a\n+b\n",
+                                  "does not apply")):
+            with self.subTest(message=message):
+                (trial / "verifier/diff.patch").write_text(content)
+                result, _, calls = self.explore_results(trial, [])
+                self.assertIn(message, result["error"])
+                self.assertEqual(calls, [])
+        (trial / "verifier/diff.patch").unlink()
+        result, _, _ = self.explore_results(trial, [])
+        self.assertIn("diff.patch is missing", result["error"])
+
+    def test_exploring_stops_at_the_step_limit(self):
+        trial = self.coding_trial(self.PATCH)
+        limit = self.judge.EXPLORE_STEPS
+        result, results, calls = self.explore_results(trial, [self.step("list_dir")] * limit)
+        self.assertEqual(result["score"], 0.0, result)
+        self.assertEqual(len(calls), limit + 1)
+        self.assertTrue(results[-1].endswith("No steps left: give your verdict now."))
+
+    def test_openai_format_steps_and_json_object_replies(self):
+        trial = self.coding_trial(self.PATCH)
+        self.repo.write("relai/.env", "OPENAI_API_KEY=sk-test-openai-0123456789\n")
+        replies = iter([self.step("list_dir"), self.step("done"), {"score": 1.0, "feedback": "fine"}])
+        bodies = []
+
+        def post(url, headers, body):
+            bodies.append(body)
+            return {"model": "m", "usage": {"prompt_tokens": 3},
+                    "choices": [{"message": {"content": json.dumps(next(replies))}}]}
+        self.judge.post = post
+        config = {"provider": "openai", "model": "m", "response_format": "json_object"}
+        result = self.judge.judge_one(config, self.repo.relai, self.task, {**self.ev, **self.REPO_EV}, None, {}, trial)
+        self.assertEqual(result["score"], 1.0, result)
+        roles = [m["role"] for m in bodies[-1]["messages"]]
+        self.assertEqual(roles, ["system", "user", "assistant", "user", "assistant", "user"])
+        self.assertIn('"action"', bodies[0]["messages"][1]["content"], "json_object providers see the step shape")
+
+    def test_a_stored_result_without_its_criteria_is_judged_again(self):
+        toml = self.task / "task.toml"
+        toml.write_text(toml.read_text().replace(
+            'rubric = "tests/judge.md"\n', 'rubric = "tests/judge.md"\ncriteria = ["scope"]\n'))
+        run = self.repo.relai / "work/runs/criteria"
+        trial = harbor_trial(run, "t1", self.task, {"looks-up-order": 1}, judges={"explains": {"score": 1, "feedback": "old"}})
+        calls = self.responses([{"feedback": "new", "criteria": {"scope": {"score": 1.0, "feedback": "tight"}}}])
+        with patch.object(sys, "argv", ["judge.py", str(run), "--relai-dir", str(self.repo.relai)]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(self.judge.main(), 0)
+            self.assertEqual(self.judge.main(), 0)
+        self.assertEqual(len(calls), 1)
+        self.assertIn("criteria", json.loads((trial / "judges/explains.json").read_text()))
+
     def test_invalid_verdicts_retain_usage_and_retry_history(self):
         run = self.repo.relai / "work/runs/synthetic"
         trial = harbor_trial(run, "t1", self.task, {"looks-up-order": 1})

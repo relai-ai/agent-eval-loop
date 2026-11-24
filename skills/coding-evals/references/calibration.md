@@ -55,11 +55,15 @@ A **calibration run** scores each diff judge on the labelled revisions, with the
 model the runs will use. Give each revision a trial-shaped directory: `instruction.md` written
 from the pull request as [sources](sources.md) writes a request (the linked issue, or a symptom
 from the description's *what*), and `verifier/diff.patch` holding the revision's diff against the
-pull request's merge base, without merges from the base branch. The run calls the judge and, in
+pull request's merge base, without merges from the base branch. For a judge that reads the
+repository, give the directory a task whose start commit is that merge base, with a bundle that
+holds it; never the merged result, which would show the judge what the maintainers changed. The
+run calls the judge and, in
 API mode, sends the repositories' code to its provider, so it needs the authorization asked at
 the scope checkpoint, and reruns stay within it.
 
-Report, per label, how the scores fell, before changing any rubric. A judge agrees with the
+Report, per label, how the scores fell, before changing any rubric, and for a judge with
+`criteria`, how each criterion fell. A judge agrees with the
 maintainers when an accepted revision gets full marks and a changed or declined one does not.
 Read each disagreement:
 

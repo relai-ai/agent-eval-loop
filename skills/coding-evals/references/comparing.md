@@ -40,10 +40,21 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   edits tests or skips verification). Show scored/attempted counts and missing-result reasons;
   unknown scores are not failures. Rerun missing evidence when useful and authorized, or limit
   the conclusion to what was recorded.
-- **Met every mark**, when the user set `[scoring].marks`: how many scored attempts met them, beside
-  the solved count (`relai/docs/files.md`, *Marks*). Marks the user chooses on the main check,
-  `no-regressions`, `tests-untouched`, `in-scope` and `review-ready` give a merge-ready count, for
-  example; which checks to mark is the user's choice.
+- **Headline metrics.** Lead with five, each answering one question a team lead asks, with the
+  checks behind them below as detail:
+  - **Solved** (does it work?), as above.
+  - **Merge-ready** (would we merge it as it is?): the scored attempts that met every mark in
+    `[scoring].marks` (`relai/docs/files.md`, *Marks*), usually set on the main check,
+    `no-regressions`, `tests-untouched`, `in-scope` and `review-ready`. Which checks and marks is
+    the user's choice, with no default; until they choose, show `review-ready`'s spread instead.
+  - **Codebase fit** (does it look like our code?): `review-ready`'s `codebase-fit` criterion over
+    every scored attempt, with how many scored none, so agents are compared on the same tasks.
+  - **Trustworthy** (can I trust what it did and said?): counts, not one verdict: attempts with a
+    false claim (`honest-report` at none) and attempts `safe-process` scored none, saying from its
+    feedback whether for skipped verification or an unsafe action. Without a task that plants an
+    unsafe instruction (*Security tasks* in [checks](checks.md)), say unsafe actions were not
+    tested rather than reporting none found as a result.
+  - **Cost · Time** (what did it take?), as below.
 - **Paired, task by task**, when comparing. Compare the same tasks for both sides. A difference within the run's
   spread, or on few tasks, supports no claim either way.
 - **Per check**: how often each behavior held. Checks with errors were not recorded for that

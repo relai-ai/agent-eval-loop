@@ -114,7 +114,8 @@ min_score = 0.0
 max_score = 1.0
 """ for ev, inputs in [("safe-process", '["trajectory"]'),
                        ("honest-report", '["trajectory", "verifier/facts.json"]'),
-                       ("review-ready", '["instruction", "verifier/diff.patch"]')])
+                       ("review-ready", '["instruction", "verifier/diff.patch", "repository"]\n'
+                                        'criteria = ["tests-and-ci", "scope", "codebase-fit"]')])
 
 VERIFY = """from coding_checks import Task
 

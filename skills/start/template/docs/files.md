@@ -173,7 +173,9 @@ synthetic = false                    # an injected bug: reported apart
 [[metadata.relai.evaluators]]
 id = "review-ready"
 type = "judge"
-inputs = ["instruction", "verifier/diff.patch"]   # what the judge sees; default ["trajectory"]
+inputs = ["instruction", "verifier/diff.patch", "repository"]   # what the judge sees; default ["trajectory"]
+criteria = ["tests-and-ci", "scope", "codebase-fit"]   # scored one by one; the score is the lowest
+levels = [0.0, 0.5, 1.0]
 # ...
 
 [[metadata.relai.evaluators]]
@@ -301,8 +303,19 @@ they check a real outcome and can fail.
   when a check could not run. The plugin's example `evaluate.py`, copied into a task's `tests/`,
   writes all three.
 - A judge sees what its evaluator's `inputs` lists (default `["trajectory"]`; also
-  `"instruction"` and `"verifier/<file>"`, a file the verifier wrote in the trial). A missing
-  input is an error, never a score.
+  `"instruction"`, `"verifier/<file>"`, a file the verifier wrote in the trial, and for a coding
+  task `"repository"`). A missing input is an error, never a score.
+- `"repository"` is the task's repository, read-only, as two trees: the start commit (from
+  `environment/repo.bundle`, or fetched by commit from the URL `[coding_evals].repos` names for
+  the task's `repo` when it has no bundle), and the verifier's baseline (the start commit with any
+  trusted setup files) with the trial's `verifier/diff.patch` applied. The judge explores them (lists directories, reads files,
+  searches) and sees nothing later than the start commit; it never runs code. The example judge
+  keeps a bare copy under `work/judge-repos/` and does this through git objects only.
+- An evaluator that declares `criteria` is scored on each one, on its bounds and `levels`. Its
+  result adds `"criteria": {"<name>": {"score": n, "feedback": "..."}}`, and its score is the
+  lowest criterion score, so one criterion at none scores the whole at none. `summarize.py`
+  reports an error when a criterion is missing or the score is not their lowest, and reports each
+  criterion's mean and how many attempts scored none.
 - Judges write `<trial dir>/judges/<id>.json` after the trial:
   `{"score": n, "feedback": "...", "model": "...", "judge": "api"|"subagent"}` or
   `{"error": "..."}`. The API example retains returned usage, cost and judging time on errors
@@ -339,8 +352,11 @@ them, beside the solved count. Marks do not change the pass rule or `mean`.
 
 **Subagent judges.** With `[judge] mode = "subagent"`, judges are fresh subagents that have not
 seen the run being judged or the conversation around it; one subagent may judge several trials.
-Give each the rubric file, the criterion, the score bounds and any `levels`, the paths of the inputs its evaluator
-lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.json`, plus the rules the example judge gives its model:
+Give each the rubric file, the criterion, the score bounds and any `levels` and `criteria`, the paths of the inputs its evaluator
+lists (the trajectory by default) and the output path `<trial dir>/judges/<id>.json`, plus the rules the example judge gives its model.
+For `"repository"`, give read-only checkouts of the start commit and of the start commit with the
+diff applied, made from the task's bundle, and tell the subagent not to run or change anything in them.
+The example judge's rules:
 
 - Judge only what the declared inputs show; do not assume actions that were not recorded.
 - Score the whole relevant turn: all agent steps after a user step and before the next one.

@@ -7,7 +7,8 @@ says what full marks need.
 
 - `relai/evaluators/<id>/` holds the evaluator (code, or a judge rubric) and a `README.md` stating
   the criterion and its requirement source, its method, concrete scoring criteria (what earns full
-  marks, partial credit and zero, declared as `levels` when discrete), and which tests it applies to and why, or that it applies to none.
+  marks, partial credit and zero, declared as `levels` when discrete, and as `criteria` when one
+  judge scores several on their own), and which tests it applies to and why, or that it applies to none.
 - Each test it applies to declares it and carries it under its own `tests/` (a separate verifier
   sees only `tests/`).
 - `check_task.py` passes, plus `--verifier` for Harbor or synthetic grading checks for native tests, and with API judges `relai/bin/judge.py --self-test`

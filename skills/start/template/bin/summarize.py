@@ -59,7 +59,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (
     declared_evaluators, dir_digest, evals_config, relai_root, frozen_state, load_json, load_toml, normalized,
-    on_level, pass_mark, resolve_task_dir, score_levels, scoring_marks, setup_run, test_key,
+    criteria_score, evaluator_criteria, on_level, pass_mark, resolve_task_dir, score_levels, scoring_marks,
+    setup_run, test_key,
 )
 
 DEFINITIONS_UNAVAILABLE = "original evaluator definitions are unavailable"
@@ -226,10 +227,28 @@ def recorded_evaluators(value) -> bool:
             return False
         try:
             score_levels(ev)
+            evaluator_criteria(ev)
         except ValueError:
             return False
         ids.add(ev["id"])
     return True
+
+
+def criteria_problem(data: dict, criteria: list, low: float, high: float, levels: list | None) -> str | None:
+    """Why a judge result's criteria cannot stand behind its score, or None when they do."""
+    given = data.get("criteria")
+    if not isinstance(given, dict):
+        return f"judge result has no criteria; this evaluator declares {criteria}"
+    scores = {}
+    for name in criteria:
+        entry = given.get(name)
+        value = entry.get("score") if isinstance(entry, dict) else None
+        if not valid_number(value) or not low <= value <= high or not on_level(value, levels):
+            return f"criterion {name} has no valid score ({value!r})"
+        scores[name] = value
+    if abs(criteria_score(scores, criteria) - data["score"]) > 1e-9:
+        return f"judge score {data['score']!r} is not the lowest of its criteria {scores}"
+    return None
 
 
 def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
@@ -290,6 +309,7 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
         outcome = {"type": ev.get("type"), "min": low, "max": high}
         try:
             levels = score_levels(ev)
+            criteria = evaluator_criteria(ev)
         except ValueError as exc:
             outcome.update(state="error", message=str(exc))
             outcomes[ev_id] = outcome
@@ -315,8 +335,13 @@ def trial_record(trial_dir: Path, result: dict, relai_dir: Path) -> dict:
                 outcome.update(state="error", message=str(data["error"]))
             elif valid_number(data.get("score")) and low <= data["score"] <= high and not on_level(data["score"], levels):
                 outcome.update(state="error", message=f"judge score {data['score']!r} is not one of its levels {levels}")
+            elif valid_number(data.get("score")) and low <= data["score"] <= high and criteria \
+                    and (problem := criteria_problem(data, criteria, low, high, levels)):
+                outcome.update(state="error", message=problem)
             elif valid_number(data.get("score")) and low <= data["score"] <= high:
                 outcome.update(state="scored", score=data["score"], feedback=data.get("feedback", ""))
+                if criteria:
+                    outcome["criteria"] = {name: data["criteria"][name]["score"] for name in criteria}
             else:
                 outcome.update(state="error", message=data.get("error") or f"invalid judge score {data.get('score')!r}")
         else:
@@ -377,11 +402,18 @@ def judge_spend(trial_dir: Path) -> tuple[int, int, float]:
         for attempt in attempts:
             if not isinstance(attempt, dict):
                 continue
-            calls += 1
+            made = attempt.get("calls") if isinstance(attempt.get("calls"), int) and attempt["calls"] > 0 else 1
+            calls += made
             if valid_number(attempt.get("cost_usd")):
-                reported += 1
+                reported += made
                 cost += attempt["cost_usd"]
     return calls, reported, cost
+
+
+def criteria_stats(values: dict) -> dict:
+    """Per criterion: scored attempts, mean on the 0 to 1 scale, and how many scored none."""
+    return {name: {"n": len(scores), "mean": statistics.fmean(scores), "none": sum(s <= 1e-9 for s in scores)}
+            for name, scores in values.items()}
 
 
 def attempt_marks(rec: dict, marks: dict) -> str | None:
@@ -449,9 +481,13 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
         per_eval: dict[str, dict] = {}
         for rec in recs:
             for ev_id, outcome in rec["evaluators"].items():
-                agg = per_eval.setdefault(ev_id, {"type": outcome["type"], "scores": [], "errors": 0, "pending": 0})
+                agg = per_eval.setdefault(ev_id, {"type": outcome["type"], "scores": [], "errors": 0, "pending": 0,
+                                                  "criteria": {}})
                 if outcome["state"] == "scored":
                     agg["scores"].append(normalized(outcome["score"], outcome["min"], outcome["max"]))
+                    for criterion, value in (outcome.get("criteria") or {}).items():
+                        agg["criteria"].setdefault(criterion, []).append(
+                            normalized(value, outcome["min"], outcome["max"]))
                 elif outcome["state"] == "error":
                     agg["errors"] += 1
                 else:
@@ -493,7 +529,8 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
                 ev_id: {"type": agg["type"], "n": len(agg["scores"]), "errors": agg["errors"], "pending": agg["pending"],
                         "mean": statistics.fmean(agg["scores"]) if agg["scores"] else None,
                         "min": min(agg["scores"]) if agg["scores"] else None,
-                        "max": max(agg["scores"]) if agg["scores"] else None}
+                        "max": max(agg["scores"]) if agg["scores"] else None,
+                        **({"criteria": criteria_stats(agg["criteria"])} if agg["criteria"] else {})}
                 for ev_id, agg in sorted(per_eval.items())},
             "problems": [problem(r) for r in recs if r["status"] != "scored"],
             "notes": [f"{r['trial']}: scored, but the runner recorded {r['exception']} (for example the agent timed out "
@@ -515,6 +552,14 @@ def summarize(paths: list[Path], relai_dir: Path) -> dict:
         "mean_rate": statistics.fmean(s["rate"] for s in solved_tests),
         "cost_per_solved_task": cost / attempts_solved if attempts_solved and cost_reported == coding_attempts else None,
         "cost_reported": cost_reported, "coding_attempts": coding_attempts}
+    run_criteria: dict[str, dict] = {}
+    for rec in records:
+        for ev_id, outcome in rec["evaluators"].items():
+            if outcome["state"] == "scored":
+                for criterion, value in (outcome.get("criteria") or {}).items():
+                    run_criteria.setdefault(ev_id, {}).setdefault(criterion, []).append(
+                        normalized(value, outcome["min"], outcome["max"]))
+    summary["criteria"] = {ev_id: criteria_stats(values) for ev_id, values in sorted(run_criteria.items())}
     recorded_ids = {ev_id for rec in records for ev_id in rec["evaluators"]}
     summary["marks"] = {"error": marks_error} if marks_error else None if not marks else {
         "marks": marks, "met": sum(t["marks"]["met"] for t in summary["tests"].values()),
@@ -637,6 +682,9 @@ def print_summary(summary: dict, label: str, details: bool = False, mark=None) -
               "Marks are the user's choice in [scoring].marks, on each evaluator's 0 to 1 scale.")
         if marked["unknown"]:
             print("Marks naming no recorded evaluator: " + ", ".join(marked["unknown"]))
+    for ev_id, stats in (summary.get("criteria") or {}).items():
+        print(f"Criteria of {ev_id}, mean over scored attempts (attempts scored none): "
+              + ", ".join(f"{name} {s['mean']:.2f} ({s['none']} of {s['n']})" for name, s in stats.items()))
     timing = summary.get("timing") or {}
     shown = [(label, timing.get(phase) or {}) for phase, label in TIMING_LABELS]
     if any(t.get("n") for _, t in shown):

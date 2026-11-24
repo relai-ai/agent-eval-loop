@@ -243,6 +243,28 @@ def score_levels(ev: dict) -> list | None:
     return levels
 
 
+CRITERION_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def evaluator_criteria(ev: dict) -> list | None:
+    """A judge evaluator's declared criteria, each scored on its own, or None when it declares none."""
+    criteria = ev.get("criteria")
+    if criteria is None:
+        return None
+    if ev.get("type") != "judge":
+        raise ValueError("criteria apply only to judge evaluators")
+    if not isinstance(criteria, list) or not criteria or any(
+            not isinstance(name, str) or not CRITERION_RE.match(name) for name in criteria) \
+            or len(set(criteria)) != len(criteria):
+        raise ValueError("criteria must list distinct lowercase slugs")
+    return criteria
+
+
+def criteria_score(scores: dict, criteria: list) -> float:
+    """An evaluator's score from its criteria: the lowest, so any criterion at none scores the whole at none."""
+    return min(scores[name] for name in criteria)
+
+
 def on_level(score: float, levels: list | None) -> bool:
     return levels is None or any(math.isclose(score, level, abs_tol=1e-9) for level in levels)
 

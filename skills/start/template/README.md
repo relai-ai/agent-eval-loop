@@ -197,7 +197,7 @@ generic infrastructure without a concrete need.
 | `frozen.json` | Digests of frozen tests (written by `freeze.py`) | yes |
 | `records/` | Decision records teammates need: scenario tables and grader previews (`eval/`), fresh reviews (`reviews/`), the improvement agreement and lessons (`improve/`), the loop contract and iterations (`loop/`) | yes |
 | `.env` | Secret values | never |
-| `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `setups/<id>-<digest>/` (run copies of frozen coding tasks with a setup installed, built by `apply_setup.py`), `improve/state.json` (resume checkpoint), `benchmarks/<id>/ledger.json`, scratch | never |
+| `work/` | `runs/` (measurements of this checkout), `candidates/<name>/` (worktrees and runs of proposed changes, never mixed into `runs/`), `setups/<id>-<digest>/` (run copies of frozen coding tasks with a setup installed, built by `apply_setup.py`), `improve/state.json` (resume checkpoint), `judge-repos/` (read-only copies of task repositories the example judge reads), `benchmarks/<id>/ledger.json`, scratch | never |
 
 ## Checkers
 

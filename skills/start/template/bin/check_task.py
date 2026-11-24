@@ -61,7 +61,7 @@ from _common import (
     ENV_EXAMPLE_NAMES, HARBOR_PYTHON, JUNK_DIRS, Report, declared_evaluators, dir_digest,
     evals_config, relai_root, expand_globs, file_sha256, frozen_state, load_toml, normalized, repo_root,
     scan_secrets, secret_values, test_key, walk_files, runner_settings, pass_mark, harbor_version,
-    on_level, score_levels, scoring_marks,
+    evaluator_criteria, on_level, score_levels, scoring_marks,
 )
 
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -138,8 +138,16 @@ def check_evaluators(task: Path, config: dict, report: Report) -> list[dict]:
             report.error(f"{where}: min_score and max_score must be finite numbers with min < max")
         try:
             score_levels(ev)
+            evaluator_criteria(ev)
         except ValueError as exc:
             report.error(f"{where}: {exc}")
+        if "repository" in (ev.get("inputs") or []):
+            coding = (config.get("metadata", {}).get("relai", {}) or {}).get("coding")
+            if kind != "judge" or not isinstance(coding, dict):
+                report.error(f"{where}: the repository input is for judges of agent-neutral coding tasks")
+            elif not (task / "environment" / "repo.bundle").is_file() and not coding.get("repo"):
+                report.error(f"{where}: the repository input reads environment/repo.bundle, or fetches the start "
+                             "commit from the repository URL [metadata.relai.coding].repo names; neither is set")
         method = ev.get("method")
         if method not in ("exact", "semantic"):
             report.error(f"{where}: method must be 'exact' (code can decide it) or 'semantic' (open-ended meaning)")
@@ -430,6 +438,13 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
     if fix is None and coding.get("source") != "written":
         report.error("[metadata.relai.coding].fix_commit must be the commit id of the real fix, which the workspace "
                      "must not contain; only a task written from scratch (source = \"written\") has none")
+    review = next((ev for ev in declared_evaluators(config) if ev.get("id") == "review-ready"), None)
+    if review is None:
+        report.warn("no review-ready evaluator: every coding task carries it (coding-evals checks.md); add it "
+                    "when the task is next built or repaired")
+    elif "repository" not in (review.get("inputs") or []) or not review.get("criteria"):
+        report.warn("review-ready does not read the repository or score its criteria (tests-and-ci, scope, "
+                    "codebase-fit); update its copy when the task is next repaired")
 
     check_neutral_basics(task, config, relai_dir, report, "coding", coding, "reads the workspace",
                          "its checks read the workspace the agent left")

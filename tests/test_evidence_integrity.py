@@ -158,6 +158,48 @@ class ScoreEvidenceTest(unittest.TestCase):
         _, data = self.summary()
         self.assertEqual(data["run"]["marks"]["met"], 0)
 
+    def declare_criteria(self):
+        self.declare_levels('[0.0, 0.5, 1.0]\ncriteria = ["tests-and-ci", "scope", "codebase-fit"]')
+
+    def judge_criteria(self, score: float, **scores: float):
+        criteria = {name.replace("_", "-"): {"score": value, "feedback": "f"} for name, value in scores.items()}
+        (self.trial / "judges/explains.json").write_text(json.dumps(
+            {"score": score, "feedback": "judged", "criteria": criteria}))
+
+    def test_criteria_are_reported_and_the_score_is_their_lowest(self):
+        self.declare_criteria()
+        self.judge_criteria(0.5, tests_and_ci=1.0, scope=1.0, codebase_fit=0.5)
+        record, data = self.summary()
+        self.assertEqual(record["status"], "scored")
+        self.assertEqual(record["evaluators"]["explains"]["criteria"],
+                         {"tests-and-ci": 1.0, "scope": 1.0, "codebase-fit": 0.5})
+        stats = data["run"]["criteria"]["explains"]
+        self.assertEqual(stats["codebase-fit"], {"n": 1, "mean": 0.5, "none": 0})
+        self.assertEqual(data["run"]["tests"]["tests/orders"]["evaluators"]["explains"]["criteria"]["scope"]["mean"], 1.0)
+        result = self.repo.run("summarize.py", str(self.job))
+        self.assertIn("Criteria of explains", result.stdout)
+
+    def test_criteria_that_do_not_back_the_score_are_errors(self):
+        self.declare_criteria()
+        for score, scores, message in (
+                (1.0, {"tests_and_ci": 1.0, "scope": 1.0, "codebase_fit": 0.5}, "not the lowest"),
+                (1.0, {"tests_and_ci": 1.0, "scope": 1.0}, "criterion codebase-fit has no valid score"),
+                (0.5, {"tests_and_ci": 0.7, "scope": 1.0, "codebase_fit": 0.5}, "criterion tests-and-ci")):
+            with self.subTest(message=message):
+                self.judge_criteria(score, **scores)
+                record, _ = self.summary()
+                self.assertEqual(record["status"], "evaluator error")
+                self.assertIn(message, record["evaluators"]["explains"]["message"])
+
+    def test_check_task_rejects_bad_criteria_and_a_repository_without_a_bundle(self):
+        config = self.task / "task.toml"
+        text = config.read_text()
+        config.write_text(text.replace('method = "exact"', 'method = "exact"\ncriteria = ["a"]', 1)
+                          .replace('rubric = "tests/judge.md"\n', 'rubric = "tests/judge.md"\ninputs = ["repository"]\n'))
+        ran = self.repo.run("check_task.py", str(self.task), "--no-harbor")
+        self.assertIn("criteria apply only to judge evaluators", ran.stdout)
+        self.assertIn("the repository input is for judges of agent-neutral coding tasks", ran.stdout)
+
     def test_without_marks_nothing_is_reported_and_invalid_marks_are_explained(self):
         _, data = self.summary()
         self.assertIsNone(data["run"]["marks"])
