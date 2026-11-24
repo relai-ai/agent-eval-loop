@@ -269,6 +269,18 @@ def on_level(score: float, levels: list | None) -> bool:
     return levels is None or any(math.isclose(score, level, abs_tol=1e-9) for level in levels)
 
 
+JUDGE_INPUTS = ("trajectory", "instruction", "repository")
+
+
+def judge_input_error(name) -> str | None:
+    """Why judge.py cannot read this judge input, or None when it can."""
+    if name in JUDGE_INPUTS:
+        return None
+    if isinstance(name, str) and name.startswith("verifier/") and name != "verifier/" and ".." not in name:
+        return None
+    return f"unknown judge input {name!r}: use {', '.join(JUDGE_INPUTS[:-1])}, {JUDGE_INPUTS[-1]} or verifier/<file>"
+
+
 def secret_values(relai_dir: Path) -> dict[str, str]:
     """Values from relai/.env, used only to detect and redact them. Never print these."""
     path = relai_dir / ".env"

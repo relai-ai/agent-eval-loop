@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import contextlib
+import hashlib
 import io
 import json
 import os
@@ -186,18 +187,45 @@ class JudgeTest(unittest.TestCase):
         self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 0.5, "feedback": "x"}'}]})
         self.assertEqual(self.judge.judge_one({"model": "synthetic"}, self.repo.relai, self.task, ev, trajectory([]), {})["score"], 0.5)
 
-    def test_a_stored_off_level_score_is_judged_again(self):
+    def run_judge(self, *extra: str) -> tuple[int, str]:
+        output = io.StringIO()
+        argv = ["judge.py", str(self.repo.relai / "work/runs/synthetic"), "--relai-dir", str(self.repo.relai), *extra]
+        with patch.object(sys, "argv", argv), contextlib.redirect_stdout(output):
+            status = self.judge.main()
+        return status, output.getvalue()
+
+    def test_a_stored_off_level_score_is_listed_and_judged_again_only_on_request(self):
         toml = self.task / "task.toml"
         toml.write_text(toml.read_text().replace('rubric = "tests/judge.md"\n', 'rubric = "tests/judge.md"\nlevels = [0.0, 0.5, 1.0]\n'))
-        run = self.repo.relai / "work/runs/synthetic"
-        trial = harbor_trial(run, "t1", self.task, {"looks-up-order": 1}, judges={"explains": {"score": 0.85, "feedback": "old"}})
+        trial = harbor_trial(self.repo.relai / "work/runs/synthetic", "t1", self.task, {"looks-up-order": 1},
+                             judges={"explains": {"score": 0.85, "feedback": "old"}})
         calls = self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 0.5, "feedback": "new"}'}]})
-        argv = ["judge.py", str(run), "--relai-dir", str(self.repo.relai)]
-        with patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(self.judge.main(), 0)
-            self.assertEqual(self.judge.main(), 0)
-        self.assertEqual(len(calls), 1, "re-judged once, then kept")
-        self.assertEqual(json.loads((trial / "judges/explains.json").read_text())["score"], 0.5)
+        status, out = self.run_judge()
+        self.assertEqual((status, len(calls)), (1, 0), out)
+        self.assertIn("t1 explains: its score 0.85 is not one of the levels [0.0, 0.5, 1.0]", out)
+        self.assertIn("--rejudge-stale", out)
+        self.assertEqual(json.loads((trial / "judges/explains.json").read_text())["score"], 0.85)
+        self.assertEqual(self.run_judge("--rejudge-stale")[0], 0)
+        self.assertEqual(self.run_judge()[0], 0)
+        self.assertEqual(len(calls), 1, "re-judged once on request, then kept")
+        stored = json.loads((trial / "judges/explains.json").read_text())
+        self.assertEqual(stored["score"], 0.5)
+        self.assertEqual(stored["rubric_sha256"], hashlib.sha256((self.task / "tests/judge.md").read_bytes()).hexdigest())
+
+    def test_a_rubric_change_is_listed_and_unversioned_results_are_flagged_as_possibly_mixed(self):
+        old = hashlib.sha256(b"an older rubric").hexdigest()
+        run = self.repo.relai / "work/runs/synthetic"
+        harbor_trial(run, "t1", self.task, {"looks-up-order": 1},
+                     judges={"explains": {"score": 1.0, "feedback": "old", "rubric_sha256": old}})
+        harbor_trial(run, "t2", self.task, {"looks-up-order": 1}, judges={"explains": {"score": 1.0, "feedback": "old"}})
+        calls = self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 0.0, "feedback": "new"}'}]})
+        status, out = self.run_judge()
+        self.assertEqual((status, len(calls)), (1, 0), out)
+        self.assertIn("t1 explains: the rubric changed after it was judged", out)
+        self.assertNotIn("t2 explains:", out)
+        status, out = self.run_judge("--rejudge-stale")
+        self.assertEqual((status, len(calls)), (0, 1), out)
+        self.assertIn("explains: 1 kept result(s) record no rubric version", out)
 
     def responses(self, replies: list):
         calls = []
@@ -341,17 +369,18 @@ class JudgeTest(unittest.TestCase):
         self.assertEqual(roles, ["system", "user", "assistant", "user", "assistant", "user"])
         self.assertIn('"action"', bodies[0]["messages"][1]["content"], "json_object providers see the step shape")
 
-    def test_a_stored_result_without_its_criteria_is_judged_again(self):
+    def test_a_stored_result_without_its_criteria_is_judged_again_on_request(self):
         toml = self.task / "task.toml"
         toml.write_text(toml.read_text().replace(
             'rubric = "tests/judge.md"\n', 'rubric = "tests/judge.md"\ncriteria = ["scope"]\n'))
-        run = self.repo.relai / "work/runs/criteria"
-        trial = harbor_trial(run, "t1", self.task, {"looks-up-order": 1}, judges={"explains": {"score": 1, "feedback": "old"}})
+        trial = harbor_trial(self.repo.relai / "work/runs/synthetic", "t1", self.task, {"looks-up-order": 1},
+                             judges={"explains": {"score": 1, "feedback": "old"}})
         calls = self.responses([{"feedback": "new", "criteria": {"scope": {"score": 1.0, "feedback": "tight"}}}])
-        with patch.object(sys, "argv", ["judge.py", str(run), "--relai-dir", str(self.repo.relai)]), \
-                contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(self.judge.main(), 0)
-            self.assertEqual(self.judge.main(), 0)
+        status, out = self.run_judge()
+        self.assertEqual((status, len(calls)), (1, 0), out)
+        self.assertIn("t1 explains: it has no score for the criteria scope", out)
+        self.assertEqual(self.run_judge("--rejudge-stale")[0], 0)
+        self.assertEqual(self.run_judge()[0], 0)
         self.assertEqual(len(calls), 1)
         self.assertIn("criteria", json.loads((trial / "judges/explains.json").read_text()))
 

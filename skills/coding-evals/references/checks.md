@@ -104,7 +104,7 @@ allows, run the agent as a non-root user (`[agent].user`), and then set `[verifi
 Harbor does not fall back to root, and a non-root verifier records no reward (`check_task.py`
 checks it).
 
-Two more paths reach the verifier's commands from outside the listed files:
+Three more paths reach the verifier's commands from outside the listed files:
 
 - **Toolchain configuration.** In the workspace (a project `.npmrc`, `.cargo/config.toml`,
   `go.work`), list it under `restore`. In the home folder (Go's `go env -w`, a user `.npmrc` or
@@ -112,6 +112,17 @@ Two more paths reach the verifier's commands from outside the listed files:
   hidden-test, suite and build commands set it aside, for example `GOENV=off`,
   `NPM_CONFIG_USERCONFIG=/dev/null` or `PIP_CONFIG_FILE=/dev/null`, and confirm with the
   real-fix check that they still pass.
+- **Formatter and linter configuration.** A format or lint check reads the tool's configuration,
+  and most tools use the file nearest to each source file, so a configuration the agent adds in a
+  subfolder can turn the check off there. In one task, a nested `rustfmt.toml` with
+  `disable_all_formatting = true` let unformatted code pass `cargo fmt --check`. List every file
+  the tool reads under `restore` at any depth, with its ignore files: for example
+  `**/rustfmt.toml` and `**/.rustfmt.toml`, `**/.prettierrc*` and `**/.prettierignore`,
+  `**/.eslintrc*`, `**/eslint.config.*` and `**/.eslintignore`, `**/ruff.toml`, `**/.ruff.toml`
+  and `**/pyproject.toml`. A glob without `**/` matches only the repository root. Leave
+  suppressions written in the source (`#[rustfmt::skip]`, `// eslint-disable`, `# noqa`) to
+  `code-review`, which sees them in the diff. Try the shortcut during
+  [validation](task-format.md#validation).
 - **Running as root.** The verifier runs as root, which passes every file-permission check, so a
   test about permissions or the user's identity passes whatever the code does. Run such a test
   as a non-root user (`runuser`, `setpriv` or `su`, whichever the image has; create the user in

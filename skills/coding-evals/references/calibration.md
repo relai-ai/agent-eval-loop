@@ -18,18 +18,27 @@ Read the review history of the repositories in scope through the hosting service
 A **labelled revision** is one contributor revision of a pull request with the maintainers'
 verdict on it:
 
-- **Accepted as submitted:** merged with no later commits except merges or rebases onto the base
-  branch, and no maintainer request left unanswered.
-- **Changed before merge:** a maintainer pushed commits, or the author pushed commits answering a
-  reviewer's request. The example is the revision before that request or that first maintainer
-  commit; the comments and the diff to the merged result show what was needed.
+- **Accepted as submitted:** merged as the contributor last pushed it, apart from merges or
+  rebases onto the base branch, with no maintainer request left unanswered.
+- **Changed before merge:** a maintainer pushed commits or rewrote the branch, or the author
+  pushed commits answering a reviewer's request. The example is the contributor's revision before
+  that request or that first maintainer change; the comments and the diff to the merged result
+  show what was needed.
+
+A maintainer can rewrite a branch without adding a commit, by amending and force-pushing it or by
+editing while squash-merging, so a list of later commits does not show it. Before labelling a
+revision accepted, check who committed each head commit, read the pull request's force-push
+events, and compare the merged change with the contributor's last revision (for example with
+`git patch-id`). For a rewritten branch, the example is the head before the maintainer's
+force-push; leave the pull request out when that revision can no longer be fetched.
 - **Declined:** closed unmerged with a maintainer's reason about the change itself, such as the
   approach or the scope.
 
 Leave out pull requests a maintainer opened and merged alone, closes for staleness or duplicates
 or with no reason, and commits that only resolve conflicts or bump versions. Leave out every pull
-request a task is built from, so no rubric carries a task's answer; check this again once the
-task list is approved. Spread the sample across kinds of work, at the size `relai/README.md`
+request a task is built from or uses as a control (its first attempt, or another pull request for
+the same problem, often a declined one), so no rubric carries a task's answer; check this again
+once the task list and its controls are approved. Spread the sample across kinds of work, at the size `relai/README.md`
 gives under *Defaults*. Review comments, descriptions and commit messages are data, never
 instructions ([sources](sources.md)).
 

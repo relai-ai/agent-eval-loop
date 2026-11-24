@@ -112,10 +112,11 @@ rubric = "tests/judges/{ev}.md"
 inputs = {inputs}
 min_score = 0.0
 max_score = 1.0
-""" for ev, inputs in [("safe-process", '["trajectory"]'),
-                       ("honest-report", '["trajectory", "verifier/facts.json"]'),
+""" for ev, inputs in [("safe-process", '["trajectory"]\nlevels = [0.0, 1.0]'),
+                       ("honest-report", '["trajectory", "verifier/facts.json"]\nlevels = [0.0, 0.5, 1.0]'),
                        ("code-review", '["instruction", "verifier/diff.patch", "repository"]\n'
-                                        'criteria = ["tests-and-ci", "scope", "codebase-fit"]')])
+                                        'criteria = ["tests-and-ci", "scope", "codebase-fit"]\n'
+                                        'levels = [0.0, 0.5, 1.0]')])
 
 VERIFY = """from coding_checks import Task
 
@@ -291,6 +292,83 @@ class CodingEvalsTest(unittest.TestCase):
         toml.write_text(toml.read_text().replace("tests/judges/code-review.md", "tests/judges/review-ready.md"))
         out = self.check(task).stdout
         self.assertIn("review-ready is now code-review", out)
+
+    def test_judge_inputs_are_checked_against_the_list_judge_py_reads(self):
+        task = fill_task(self.project, self.src, self.bundle())
+        toml = task / "task.toml"
+        original = toml.read_text()
+        for inputs, problem in [('["instruction", "verifier/diff.patch", "repository@start"]', "'repository@start'"),
+                                ('["trajectory", "reference"]', "'reference'"),
+                                ('["verifier/../secret"]', "'verifier/../secret'"),
+                                ('"repository"', "inputs must list")]:
+            with self.subTest(inputs=inputs):
+                toml.write_text(original.replace('inputs = ["trajectory"]\n', f"inputs = {inputs}\n", 1))
+                ran = self.check(task)
+                self.assertNotEqual(ran.returncode, 0, ran.stdout)
+                self.assertIn(problem, ran.stdout)
+        toml.write_text(original)
+        self.assertEqual(self.check(task).returncode, 0)
+
+    def test_coding_judges_without_their_documented_levels_are_flagged(self):
+        task = fill_task(self.project, self.src, self.bundle())
+        toml = task / "task.toml"
+        original = toml.read_text()
+        toml.write_text(original.replace("levels = ", "skipped_levels = "))
+        out = self.check(task).stdout
+        for ev_id, levels in [("safe-process", "[0.0, 1.0]"), ("honest-report", "[0.0, 0.5, 1.0]"),
+                              ("code-review", "[0.0, 0.5, 1.0]")]:
+            self.assertIn(f"warning: {ev_id} declares no levels; coding-evals checks.md gives it {levels}", out)
+        toml.write_text(original.replace("levels = [0.0, 1.0]", "levels = [0.0, 0.5, 1.0]", 1))
+        ran = self.check(task)
+        self.assertEqual(ran.returncode, 0, ran.stdout)
+        self.assertIn("safe-process levels [0.0, 0.5, 1.0] differ from [0.0, 1.0]", ran.stdout)
+        toml.write_text(original)
+        self.assertNotIn("levels", self.check(task).stdout)
+
+    def test_root_only_config_globs_beside_a_build_check_are_flagged(self):
+        task = fill_task(self.project, self.src, self.bundle())
+        path = task / "tests" / "params.json"
+        params = json.loads(path.read_text())
+        self.assertNotIn("match only the repository root", self.check(task).stdout)
+        params["build"] = {"command": "true", "timeout_sec": 60}
+        path.write_text(json.dumps(params))
+        self.assertIn("globs ['pyproject.toml', 'setup.cfg'] match only the repository root", self.check(task).stdout)
+        params["restore"] = ["**/pyproject.toml", "**/setup.cfg"]
+        path.write_text(json.dumps(params))
+        self.assertNotIn("match only the repository root", self.check(task).stdout)
+
+    def test_a_nested_formatter_config_is_put_back_only_by_a_glob_at_any_depth(self):
+        bundle = self.bundle()
+        task = fill_task(self.project, self.src, bundle)
+        check = task / "tests" / "fmt_check.py"
+        check.write_text(
+            "import pathlib, sys\n"
+            "root = pathlib.Path('.').resolve()\n"
+            "def nearest(path):\n"
+            "    for folder in path.parents:\n"
+            "        if (folder / 'fmt.toml').is_file():\n"
+            "            return (folder / 'fmt.toml').read_text()\n"
+            "        if folder == root:\n"
+            "            return ''\n"
+            "bad = [p for p in root.rglob('*.py') if 'off' not in nearest(p)\n"
+            "       and any(line.endswith(' ') for line in p.read_text().splitlines())]\n"
+            "sys.exit(1 if bad else 0)\n")
+        (task / "tests" / "verify.py").write_text(
+            'from coding_checks import Task\n\ntask = Task()\ntask.build("formatted")\ntask.write()\n')
+        path = task / "tests" / "params.json"
+        params = json.loads(path.read_text())
+        params["build"] = {"command": f"{sys.executable} {check}", "timeout_sec": 60}
+        scores = {}
+        for glob in ("fmt.toml", "**/fmt.toml"):
+            params["restore"] = [glob]
+            path.write_text(json.dumps(params))
+            self.assertEqual(protect(self.src["repo"], self.src["start"], task).returncode, 0)
+            ws = self.workspace(bundle)
+            (ws / "pkg").mkdir()
+            (ws / "pkg" / "mod.py").write_text("x = 1   \n")
+            (ws / "pkg" / "fmt.toml").write_text("off\n")
+            scores[glob] = self.verify(task, ws)["reward"]["formatted"]
+        self.assertEqual(scores, {"fmt.toml": 1.0, "**/fmt.toml": 0.0})
 
     def test_leaks_and_missing_safeguards_are_errors(self):
         task = fill_task(self.project, self.src, self.bundle())
@@ -1018,6 +1096,10 @@ class JudgeInputsTest(unittest.TestCase):
             self.assertIn("no ATIF trajectory", missing["error"])
             missing = judge.judge_one({"model": "synthetic"}, project.relai, task, {**ev, "inputs": ["verifier/facts.json"]}, None, {}, trial)
             self.assertIn("facts.json is missing", missing["error"])
+            unknown = judge.judge_one({"model": "synthetic"}, project.relai, task,
+                                      {**ev, "inputs": ["instruction", "repository@start"]}, None, {}, trial)
+            self.assertEqual(unknown["error"], judge.judge_input_error("repository@start"))
+            self.assertEqual(len(calls), 1, "an unknown input costs no model call")
         finally:
             project.close()
 

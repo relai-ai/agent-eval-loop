@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Reference LLM judge: scores each trial's judge evaluators on the host. Standard library only.
 
-  python3 relai/bin/judge.py <job or run dir> [...] [--force]
+  python3 relai/bin/judge.py <job or run dir> [...] [--rejudge-stale | --force]
   python3 relai/bin/judge.py --self-test relai/tests/<id>
 
 For every Harbor or native trial under the given directories, it reads the task's
@@ -15,7 +15,10 @@ coding task's repository, read-only, at its start commit and with the trial's di
 the judge explores step by step: list a directory, read a file, search). An evaluator that declares
 criteria gets one score per criterion; its score is the lowest. A judge whose
 inputs are missing from a trial records an error, never a score. summarize.py reads those files. Existing scores are kept unless --force;
-earlier errors are retried. Trials that crashed before verification are skipped.
+earlier errors are retried. Each result records "rubric_sha256", the SHA-256 of the rubric file that judged it.
+A stored score that no longer matches its evaluator (off its levels, missing a declared criterion, or
+judged with a different rubric) is kept and listed, and the run exits 1; --rejudge-stale judges those
+again, which calls the model. Trials that crashed before verification are skipped.
 Every new attempt is retained in judges/<id>.attempts.jsonl; <id>.json mirrors the latest.
 The first retry also retains a valid legacy result. Count spend from the history when present,
 otherwise from the legacy latest result, never both.
@@ -47,6 +50,7 @@ relai.toml:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -62,7 +66,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (
     declared_evaluators, evals_config, relai_root, load_json, load_toml, redact, redaction_values,
-    criteria_score, evaluator_criteria, on_level, resolve_task_dir, score_levels, secret_values,
+    criteria_score, evaluator_criteria, judge_input_error, on_level, resolve_task_dir, score_levels, secret_values,
 )
 
 SYSTEM = """You grade one recorded run of an AI agent against a rubric. You get the inputs the rubric needs,
@@ -277,6 +281,9 @@ def judge_inputs(ev: dict, task: Path, trial_dir: Path | None, trajectory: dict 
     names = ev.get("inputs") or ["trajectory"]
     parts = []
     for name in names:
+        problem = judge_input_error(name)
+        if problem:
+            raise ValueError(problem)
         if name == "trajectory":
             if trajectory is None:
                 raise ValueError("no ATIF trajectory for this trial (the agent's runs are not recorded in ATIF), so "
@@ -288,7 +295,7 @@ def judge_inputs(ev: dict, task: Path, trial_dir: Path | None, trajectory: dict 
             text, label = (task / "instruction.md").read_text(encoding="utf-8"), "Task instruction"
         elif name == "repository":
             continue
-        elif isinstance(name, str) and name.startswith("verifier/") and ".." not in name:
+        else:
             path = trial_dir / name if trial_dir is not None else None
             if synthetic:
                 text = "(empty)"
@@ -298,8 +305,6 @@ def judge_inputs(ev: dict, task: Path, trial_dir: Path | None, trajectory: dict 
                 text = path.read_text(encoding="utf-8", errors="replace")
             label = {"verifier/diff.patch": "Diff of everything the agent changed",
                      "verifier/facts.json": "Facts the verifier established"}.get(name, name)
-        else:
-            raise ValueError(f"unknown judge input {name!r}: use trajectory, instruction, repository or verifier/<file>")
         parts.append(f"{label}:\n{clip(redact(text, secrets))}")
     return "\n\n".join(parts)
 
@@ -536,11 +541,33 @@ def explore(config: dict, relai_dir: Path, repository: Repository, prompt: str, 
     return turns
 
 
+def rubric_version(task: Path, ev: dict) -> str:
+    """The SHA-256 of the evaluator's rubric file, recorded with each result to show which rubric judged it."""
+    return hashlib.sha256((task / ev["rubric"]).read_bytes()).hexdigest()
+
+
+def stale_reason(stored: dict, ev: dict, version: str) -> str | None:
+    """Why a stored result no longer matches its evaluator's current definition, or None when it does."""
+    score = stored.get("score")
+    if isinstance(score, bool) or not isinstance(score, (int, float)) or not math.isfinite(score):
+        return "it has no numeric score"
+    levels = score_levels(ev)
+    if not on_level(score, levels):
+        return f"its score {score} is not one of the levels {levels}"
+    missing = [name for name in evaluator_criteria(ev) or [] if name not in (stored.get("criteria") or {})]
+    if missing:
+        return f"it has no score for the criteria {', '.join(missing)}"
+    if stored.get("rubric_sha256") not in (None, version):
+        return "the rubric changed after it was judged"
+    return None
+
+
 def judge_one(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: dict | None, secrets: dict,
               trial_dir: Path | None = None, synthetic: bool = False) -> dict:
     secrets = {**secrets, **redaction_secrets(config, relai_dir)}
     low, high = ev.get("min_score", 0.0), ev.get("max_score", 1.0)
     rubric = (task / ev["rubric"]).read_text(encoding="utf-8")
+    version = rubric_version(task, ev)
     try:
         levels = score_levels(ev)
         criteria = evaluator_criteria(ev)
@@ -565,7 +592,8 @@ def judge_one(config: dict, relai_dir: Path, task: Path, ev: dict, trajectory: d
     prompt = (f"Criterion: {ev.get('criterion', '')}\nScore bounds: {low} (worst) to {high} (best).{allowed}{scored}\n\n"
               f"Rubric:\n{rubric}\n\n{inputs}")
     prompt = redact(prompt, secrets)
-    metadata = {"judge": "api", "judged_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    metadata = {"judge": "api", "judged_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "rubric_sha256": version}
     schema = criteria_schema(criteria) if criteria else SCHEMA
     try:
         try:
@@ -674,6 +702,9 @@ def main() -> int:
     parser.add_argument("runs", nargs="*", help="Harbor or native run directories or folders containing them")
     parser.add_argument("--self-test", metavar="TASK_DIR", help="check that a task's judges can fail")
     parser.add_argument("--force", action="store_true", help="re-judge trials that already have results")
+    parser.add_argument("--rejudge-stale", action="store_true",
+                        help="re-judge stored results that no longer match their evaluator (off its levels, missing "
+                             "a criterion, or judged with another rubric); without it they are listed and kept")
     parser.add_argument("--relai-dir")
     args = parser.parse_args()
     relai_dir = relai_root(args.relai_dir)
@@ -687,6 +718,9 @@ def main() -> int:
         parser.error("name run directories, or use --self-test")
     secrets = secret_values(relai_dir)
     written = errors = unresolved = 0
+    stale: list[str] = []
+    changed: set = set()
+    unversioned: dict = {}
     for trial_dir, result in trials([Path(p) for p in args.runs]):
         raw = str(((result.get("task_id") or {}).get("path")) or "")
         task = resolve_task_dir(raw, relai_dir, trial_dir.parent)
@@ -706,14 +740,20 @@ def main() -> int:
             if ev.get("type") != "judge":
                 continue
             out = trial_dir / "judges" / f"{ev['id']}.json"
+            key = (str(task), ev["id"])
             if out.exists() and not args.force:
                 try:
                     stored = load_json(out)
-                    declared = evaluator_criteria(ev) or []
-                    if "error" not in stored and on_level(stored.get("score"), score_levels(ev)) \
-                            and all(name in (stored.get("criteria") or {}) for name in declared):
+                    reason = None if "error" in stored else stale_reason(stored, ev, rubric_version(task, ev))
+                    if "error" not in stored and reason is None:
+                        unversioned[key] = unversioned.get(key, 0) + ("rubric_sha256" not in stored)
                         continue
-                except (OSError, ValueError, TypeError):
+                    if reason is not None:
+                        changed.add(key)
+                        if not args.rejudge_stale:
+                            stale.append(f"{trial_dir.name} {ev['id']}: {reason}")
+                            continue
+                except (OSError, ValueError, TypeError, AttributeError):
                     pass
             result = judge_one(config, relai_dir, task, ev, trajectory, secrets, trial_dir)
             write_result(out, result)
@@ -721,8 +761,20 @@ def main() -> int:
             errors += "error" in result
             print(f"{trial_dir.name} {ev['id']}: " + (f"error: {result['error']}" if "error" in result
                                                        else f"{result['score']}"))
-    print(f"judged {written} evaluator result(s), {errors} error(s), {unresolved} trial(s) whose task was not found")
-    return 1 if errors or unresolved else 0
+    if stale:
+        print(f"kept {len(stale)} stored result(s) that no longer match their evaluator, without judging them again:")
+        for line in stale:
+            print(f"  {line}")
+        print("judging them again calls the model (paid in API mode): rerun with --rejudge-stale for these, or "
+              "--force for every result")
+    for (task_path, ev_id), count in sorted(unversioned.items()):
+        if count and (task_path, ev_id) in changed:
+            print(f"{ev_id}: {count} kept result(s) record no rubric version, so they may come from an older "
+                  f"rubric than the rest; rerun with --force to judge every result of {Path(task_path).name} "
+                  "with the current one")
+    print(f"judged {written} evaluator result(s), {errors} error(s), {unresolved} trial(s) whose task was not found"
+          + (f", {len(stale)} stale result(s) kept" if stale else ""))
+    return 1 if errors or unresolved or stale else 0
 
 
 if __name__ == "__main__":
