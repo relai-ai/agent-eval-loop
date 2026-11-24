@@ -41,7 +41,7 @@ isolation = "container"      # or authorized, reviewed "host" containment for na
 
 [scoring]
 pass_mark = 0.8              # example only: the user's choice after the first scored run, no default
-marks = { "review-ready" = 1.0 }   # optional, example only: the user's per-evaluator marks, no default
+marks = { "code-review" = 1.0 }   # optional, example only: the user's per-evaluator marks, no default
 
 [harbor]                     # Harbor only (docs/harbor.md)
 version = "X.Y.Z"            # exact Harbor release; the latest stable when recorded
@@ -171,7 +171,7 @@ primary = "fixes-the-bug"            # the code evaluator that says the task was
 synthetic = false                    # an injected bug: reported apart
 
 [[metadata.relai.evaluators]]
-id = "review-ready"
+id = "code-review"
 type = "judge"
 inputs = ["instruction", "verifier/diff.patch", "repository"]   # what the judge sees; default ["trajectory"]
 criteria = ["tests-and-ci", "scope", "codebase-fit"]   # scored one by one; the score is the lowest

@@ -153,12 +153,12 @@ Keep installed versions in the setup summary unless they affect the choice.
 - `[coding_evals]` in `relai.toml` (`relai/docs/files.md`), and every answer in `decisions.md`.
 - The approved requirements, with their sources, applicability and evaluator mapping
   ([checks](checks.md#repository-requirements)): process requirements in `safe-process` or another
-  trajectory judge, output requirements in code checks or `review-ready`;
+  trajectory judge, output requirements in code checks or `code-review`;
   also as requirement pages under the [discover skill](../../discover/SKILL.md)'s rules when the
   project keeps a wiki or the task set will grow.
 - **The shared evaluators** under `relai/evaluators/` (the eval skill's
   [shared evaluators](../../eval/references/shared-evaluators.md)): `safe-process`,
-  `honest-report`, and `review-ready`, with the requirements routed as above, plus any check the team
+  `honest-report`, and `code-review`, with the requirements routed as above, plus any check the team
   wants on every task. Each task copies them; changing one is a change to every frozen task that
   carries it, under the *Frozen tests* rule.
 

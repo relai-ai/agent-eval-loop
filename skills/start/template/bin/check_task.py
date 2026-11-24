@@ -438,12 +438,16 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
     if fix is None and coding.get("source") != "written":
         report.error("[metadata.relai.coding].fix_commit must be the commit id of the real fix, which the workspace "
                      "must not contain; only a task written from scratch (source = \"written\") has none")
-    review = next((ev for ev in declared_evaluators(config) if ev.get("id") == "review-ready"), None)
-    if review is None:
-        report.warn("no review-ready evaluator: every coding task carries it (coding-evals checks.md); add it "
+    ids = {ev.get("id") for ev in declared_evaluators(config)}
+    review = next((ev for ev in declared_evaluators(config) if ev.get("id") == "code-review"), None)
+    if review is None and "review-ready" in ids:
+        report.warn("review-ready is now code-review, which reads the repository and scores tests-and-ci, scope "
+                    "and codebase-fit (coding-evals checks.md); replace it when the task is next repaired")
+    elif review is None:
+        report.warn("no code-review evaluator: every coding task carries it (coding-evals checks.md); add it "
                     "when the task is next built or repaired")
     elif "repository" not in (review.get("inputs") or []) or not review.get("criteria"):
-        report.warn("review-ready does not read the repository or score its criteria (tests-and-ci, scope, "
+        report.warn("code-review does not read the repository or score its criteria (tests-and-ci, scope, "
                     "codebase-fit); update its copy when the task is next repaired")
 
     check_neutral_basics(task, config, relai_dir, report, "coding", coding, "reads the workspace",

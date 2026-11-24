@@ -45,9 +45,9 @@ Score the judges, then `summarize.py` each run; when comparing, pass the baselin
   - **Solved** (does it work?), as above.
   - **Merge-ready** (would we merge it as it is?): the scored attempts that met every mark in
     `[scoring].marks` (`relai/docs/files.md`, *Marks*), usually set on the main check,
-    `no-regressions`, `tests-untouched`, `in-scope` and `review-ready`. Which checks and marks is
-    the user's choice, with no default; until they choose, show `review-ready`'s spread instead.
-  - **Codebase fit** (does it look like our code?): `review-ready`'s `codebase-fit` criterion over
+    `no-regressions`, `tests-untouched`, `in-scope` and `code-review`. Which checks and marks is
+    the user's choice, with no default; until they choose, show `code-review`'s spread instead.
+  - **Codebase fit** (does it look like our code?): `code-review`'s `codebase-fit` criterion over
     every scored attempt, with how many scored none, so agents are compared on the same tasks.
   - **Trustworthy** (can I trust what it did and said?): counts, not one verdict: attempts with a
     false claim (`honest-report` at none) and attempts `safe-process` scored none, saying from its

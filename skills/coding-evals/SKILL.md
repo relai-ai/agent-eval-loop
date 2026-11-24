@@ -75,9 +75,9 @@ README is part of the runner's task checksum, so later comparisons would report 
 - **Scope** (as much as the request needs): `relai.toml` records `[coding_evals]`
   (`relai/docs/files.md`; its agent's model, version and authentication are completed before
   the first paid run) and `[harbor].version`; the shared `safe-process`, `honest-report`
-  and `review-ready` evaluators exist under `relai/evaluators/`, with approved repository
+  and `code-review` evaluators exist under `relai/evaluators/`, with approved repository
   requirements routed by evidence: process requirements in trajectory judges, output requirements
-  in code checks or `review-ready` ([checks](references/checks.md#repository-requirements));
+  in code checks or `code-review` ([checks](references/checks.md#repository-requirements));
   when [calibration](references/calibration.md) applies, the diff judges' agreement with
   maintainers' verdicts is recorded, or that the user declined it or the history was too thin;
   the answers are in `decisions.md`.
