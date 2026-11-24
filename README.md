@@ -48,8 +48,8 @@ measure whether a model, instruction file or skill improves results on your repo
 **1. Turn past work into evals**
 
 ```text
-Use RELAI's coding-evals skill to build 20 evals from the last six months of
-merged pull requests and reverts in {repository}
+Use RELAI to evaluate my coding agent on our recently merged PRs. Show me where
+it falls short. Then check with me before improving my coding agent's setup.
 ```
 
 This creates tasks that start before the original fix, include the repository and its toolchain,
