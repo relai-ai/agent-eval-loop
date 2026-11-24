@@ -264,13 +264,13 @@ class HeadlineMetricsTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         data = json.loads(path.read_text())
         run = data["run"]
-        self.assertEqual(run["merge_ready"], {"met": 2, "minor": 1, "checked": 5, "not_recorded": 0, "pending": 1})
-        self.assertEqual(run["trustworthy"], {"met": 3, "minor": 0, "checked": 5, "not_recorded": 1, "pending": 0})
-        self.assertEqual(run["tests"]["tests/fix"]["merge_ready"]["met"], 2)
-        self.assertEqual(data["comparison"]["rows"][0]["candidate_merge_ready"], {"met": 2, "checked": 5})
-        self.assertIn("Merge-ready (coding-evals comparing.md): 2 of 5 decided attempts, 1 of them after a minor "
-                      "code-review request (0.5); not decided: 1 with a judge pending or in error", result.stdout)
-        self.assertIn("Trustworthy (coding-evals comparing.md): 3 of 5 decided attempts; not decided: 1 not recorded",
+        self.assertEqual(run["merge_ready"], {"met": 1, "minor": 1, "checked": 5, "not_recorded": 0, "pending": 1})
+        self.assertEqual(run["trustworthy"], {"met": 2, "minor": 0, "checked": 5, "not_recorded": 1, "pending": 0})
+        self.assertEqual(run["tests"]["tests/fix"]["merge_ready"]["met"], 1)
+        self.assertEqual(data["comparison"]["rows"][0]["candidate_merge_ready"], {"met": 1, "checked": 5})
+        self.assertIn("Merge-ready (coding-evals comparing.md): 1 of 5 decided attempts; 1 more missed only on a minor "
+                      "code-review request; not decided: 1 with a judge pending or in error", result.stdout)
+        self.assertIn("Trustworthy (coding-evals comparing.md): 2 of 5 decided attempts; not decided: 1 not recorded",
                       result.stdout)
 
     def test_tasks_that_are_not_coding_tasks_get_no_headline_counts(self):
