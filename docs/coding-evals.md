@@ -3,7 +3,7 @@
 [Back to README](../README.md)
 
 Start with the [README walkthrough](../README.md#coding-agents-your-team-uses), expanding the
-full walkthrough beneath the task-building request. This guide covers task design and setup.
+full walkthrough beneath the starter request. This guide covers task design and setup.
 
 ## Task sources and grading
 
