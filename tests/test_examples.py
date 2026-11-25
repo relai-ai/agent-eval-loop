@@ -9,6 +9,7 @@ import hashlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -227,6 +228,63 @@ class JudgeTest(unittest.TestCase):
         self.assertEqual((status, len(calls)), (0, 1), out)
         self.assertIn("explains: 1 kept result(s) record no rubric version", out)
 
+    def test_cost_comes_from_the_provider_or_the_prices_the_user_set(self):
+        prices = {"input": 4, "output": 20, "cache_write": 5, "cache_read": 0.2}
+        anthropic = {"input_tokens": 1000, "output_tokens": 100, "cache_creation_input_tokens": 2000,
+                     "cache_read_input_tokens": 10000}
+        self.assertEqual(self.judge.cost_of(anthropic, {"prices": prices}), 0.018)
+        self.assertIsNone(self.judge.cost_of(anthropic, {}), "no prices, no estimate")
+        self.assertEqual(self.judge.cost_of({**anthropic, "cost": 0.5}, {"prices": prices}), 0.5, "reported cost wins")
+        openai = {"prompt_tokens": 1000, "completion_tokens": 100, "prompt_tokens_details": {"cached_tokens": 400}}
+        self.assertEqual(self.judge.cost_of(openai, {"prices": prices}), 0.00448)
+        self.assertIsNone(self.judge.cost_of(openai, {"prices": {"input": 4, "output": 20}}),
+                          "cached tokens need a cache_read price")
+        for bad in ({"input": 4}, {"input": 4, "output": -1}, {"input": 4, "output": 20, "batch": 1}):
+            with self.subTest(prices=bad), self.assertRaises(SystemExit):
+                self.judge.judge_prices({"prices": bad})
+        self.fake({"stop_reason": "end_turn", "model": "m", "usage": anthropic,
+                   "content": [{"type": "text", "text": '{"score": 0.5, "feedback": "x"}'}]})
+        result = self.judge.judge_one({"model": "synthetic", "prices": prices}, self.repo.relai, self.task, self.ev,
+                                      trajectory([]), {})
+        self.assertEqual(result["cost_usd"], 0.018)
+
+    def test_a_moved_task_is_found_by_name(self):
+        run = self.repo.relai / "work/runs/synthetic"
+        trial = harbor_trial(run, "t1", self.task, {"looks-up-order": 1})
+        data = json.loads((trial / "result.json").read_text())
+        data["task_id"]["path"] = "/elsewhere/checkout/relai/tests/orders"
+        (trial / "result.json").write_text(json.dumps(data))
+        calls = self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 1, "feedback": "f"}'}]})
+        self.assertEqual(self.run_judge()[0], 0)
+        self.assertEqual(len(calls), 1)
+        staged = self.repo.root / "staged"
+        shutil.copytree(self.task, staged / "orders-renamed")
+        data["task_id"]["path"], data["task_name"] = "/gone/x", "orders-renamed"
+        (trial / "result.json").write_text(json.dumps(data))
+        status, out = self.run_judge("--force")
+        self.assertEqual(status, 1, out)
+        self.assertIn("--tasks-dir", out)
+        self.assertEqual(self.run_judge("--force", "--tasks-dir", str(staged))[0], 0)
+        self.assertEqual(len(calls), 2)
+
+    def test_a_forced_run_resumes_and_jobs_judge_in_parallel(self):
+        run = self.repo.relai / "work/runs/synthetic"
+        for name, when in (("t1", "2026-11-25T08:00:00+00:00"), ("t2", "2026-11-25T10:00:00+00:00")):
+            harbor_trial(run, name, self.task, {"looks-up-order": 1},
+                         judges={"explains": {"score": 1, "feedback": "old", "judged_at": when}})
+        harbor_trial(run, "t3", self.task, {"looks-up-order": 1},
+                     judges={"explains": {"error": "boom", "judged_at": "2026-11-25T11:00:00+00:00"}})
+        harbor_trial(run, "t4", self.task, {"looks-up-order": 1})
+        calls = self.fake({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"score": 0, "feedback": "new"}'}]})
+        status, out = self.run_judge("--force-before", "2026-11-25T09:00:00+00:00", "--jobs", "3")
+        self.assertEqual((status, len(calls)), (0, 3), out)
+        self.assertIn("judging 3 evaluator result(s), 3 at a time", out)
+        scores = {name: json.loads((run / name / "judges/explains.json").read_text())["score"]
+                  for name in ("t1", "t2", "t3", "t4")}
+        self.assertEqual(scores, {"t1": 0, "t2": 1, "t3": 0, "t4": 0}, "t2 was judged after the cutoff and is kept")
+        self.assertEqual(self.run_judge("--force-before", "2026-11-25T09:00:00+00:00")[0], 0)
+        self.assertEqual(len(calls), 3, "rerunning with the same cutoff judges nothing again")
+
     def responses(self, replies: list):
         calls = []
         queue = iter(replies)
@@ -313,6 +371,24 @@ class JudgeTest(unittest.TestCase):
         self.assertEqual(results[-1], "Give your verdict now.")
         self.assertIn("cache_control", json.dumps(calls[-1]["messages"][-1]))
         self.assertTrue((self.repo.relai / "work/judge-repos" / f"{self.task.name}.git").is_dir())
+
+    def test_tasks_of_one_repository_share_one_cache_and_need_no_bundle_after_the_first_fetch(self):
+        trial = self.coding_trial(self.PATCH)
+        toml = self.task / "task.toml"
+        toml.write_text(toml.read_text().replace("[metadata.relai.coding]\n", '[metadata.relai.coding]\nrepo = "util"\n'))
+        self.assertEqual(self.explore_results(trial, [self.step("done")])[0]["score"], 0.0)
+        other = self.repo.task("orders-copy")
+        (other / "task.toml").write_text(toml.read_text().replace('id = "orders"', 'id = "orders-copy"'))
+        self.assertFalse((other / "environment/repo.bundle").exists())
+        self.responses([self.step("done"), {"score": 0.0, "feedback": "judged"}])
+        result = self.judge.judge_one({"model": "synthetic"}, self.repo.relai, other, {**self.ev, **self.REPO_EV},
+                                      None, {}, trial)
+        self.assertEqual(result["score"], 0.0, result)
+        caches = sorted(p.name for p in (self.repo.relai / "work/judge-repos").glob("*.git"))
+        self.assertEqual(caches, ["util.git"])
+        refs = subprocess.run(["git", "--git-dir", str(self.repo.relai / "work/judge-repos/util.git"), "for-each-ref",
+                               "--format=%(refname)"], capture_output=True, text=True).stdout
+        self.assertIn("refs/relai/orders/start-only", refs, "each task's bundle refs keep their own namespace")
 
     def test_paths_outside_the_trees_are_refused_and_secrets_are_removed(self):
         trial = self.coding_trial(self.PATCH, secret_line="TOKEN = 'sk-ant-test-0123456789abcdefghij'\n")

@@ -131,7 +131,8 @@ def setup_run(task_dir: Path) -> dict | None:
 def resolve_task_dir(raw: str, relai_dir: Path, job_dir: Path | None = None) -> Path | None:
     """Find the task directory a Harbor trial ran. Harbor records -p exactly as typed, so a relative
     path is tried against the directory Harbor ran in (inferred from the job's jobs_dir), the current
-    directory, the repository root and relai/. Returns None when no candidate holds a task.toml."""
+    directory, the repository root and relai/. A path that no longer exists (an absolute path from another
+    machine or checkout) falls back to relai/tests/<its name>. Returns None when no candidate holds a task.toml."""
     if not raw:
         return None
     path = Path(raw).expanduser()
@@ -151,7 +152,7 @@ def resolve_task_dir(raw: str, relai_dir: Path, job_dir: Path | None = None) -> 
                     roots.append(Path(*base.parts[:len(base.parts) - len(parts)]))
         roots += [Path.cwd(), relai_dir.parent, relai_dir]
         candidates += [root / path for root in roots]
-        candidates += [relai_dir / "tests" / path.name]
+    candidates += [relai_dir / "tests" / path.name]
     for candidate in candidates:
         if (candidate / "task.toml").is_file():
             return candidate.resolve()
