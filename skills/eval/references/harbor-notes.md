@@ -75,6 +75,11 @@ and update this file.
   built on your machine fails there. Credentials go only to
   `[environment].docker_image` tasks, and Harbor then ignores their Dockerfile. `relai/docs/harbor.md`
   says how a runner supplies the harness image instead.
+- **Cloud builds reject BuildKit-only syntax.** Observed with Harbor 0.26.0 on Modal: a
+  Dockerfile with `RUN --mount=type=bind` failed with `ImageBuildError` before any trial ran.
+  Heredocs, `COPY --chmod`/`--link` and a `# syntax=` directive are BuildKit-only too. Copy the
+  file in and delete it in a later `RUN`. `check_task.py` warns about this syntax, and
+  `--cloud` makes it an error.
 - **`-p` takes one path.** Pass a directory of tasks and filter with `-i <glob>`, or list the
   tasks in a job config (`-c job.yaml`, repeatable; `harbor job schema` prints its schema). Directories
   that are not valid tasks are skipped without a message, and unknown `task.toml` keys are

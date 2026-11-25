@@ -203,7 +203,7 @@ trajectory, evaluators that need one are "not recorded" and left out of the pass
 | `workspace` | the repository in the container (`/app`) |
 | `start_commit`, `protected_manifest` | written by `protect`; the verifier diffs from the start commit |
 | `hidden_tests` | `{"files": {"hidden/x": "path/in/repo"}, "command": "...", "timeout_sec": 900}` |
-| `suite`, `build` | `{"command": "...", "timeout_sec": 1800}` |
+| `suite`, `build`, and any `<key>` that `task.command` names (`format`, `lint`, `typecheck`) | `{"command": "...", "timeout_sec": 1800}`; `"harden": false` keeps nested `.git` entries and the root `.git/info/exclude`, which the build and command checks otherwise remove first |
 | `protected` | globs (`**` for any directories) of files that must stay as they were: existing tests, CI files, test-runner configuration; hidden test paths inside |
 | `new_files_ok` | protected globs where new files are welcome (new test files) |
 | `restore` | globs of files put back before any command runs, never held against the agent (`pyproject.toml`, `package.json`) |
