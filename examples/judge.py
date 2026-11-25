@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Reference LLM judge: scores each trial's judge evaluators on the host. Standard library only.
 
-  python3 relai/bin/judge.py <job or run dir> [...] [--rejudge-stale | --force]
+  python3 relai/bin/judge.py <job or run dir> [...] [--rejudge-stale | --force | --force-before TIME]
+                             [--jobs N] [--tasks-dir DIR]
   python3 relai/bin/judge.py --self-test relai/tests/<id>
 
 For every Harbor or native trial under the given directories, it reads the task's
@@ -22,7 +23,16 @@ again, which calls the model. Trials that crashed before verification are skippe
 Every new attempt is retained in judges/<id>.attempts.jsonl; <id>.json mirrors the latest.
 The first retry also retains a valid legacy result. Count spend from the history when present,
 otherwise from the legacy latest result, never both.
-Optional relai.toml keys: [judge].effort (Anthropic effort, default "medium").
+Optional relai.toml keys: [judge].effort (Anthropic effort, default "medium"); [judge].prices, USD per million
+tokens ({input, output, cache_write, cache_read}, no defaults): each result's cost_usd is what the provider
+reports, otherwise its token counts at these prices, otherwise null.
+
+At scale: rerunning the same command resumes, since kept results are skipped. --force-before TIME re-judges only
+results judged before TIME (and errors), so a forced run that stops resumes when rerun with the same TIME.
+--jobs N judges N results at once. A trial whose recorded task path is missing (a run from another checkout or
+machine) is matched by name under relai/tests/, or under --tasks-dir. The repository input keeps one bare copy
+per repository under work/judge-repos/<repo>.git, shared by every trial and task of that repository; once a
+start commit is there, neither the bundle nor the URL is read again.
 
 --self-test runs each judge of a task on a synthetic empty-reply trajectory and fails when a
 judge gives it full marks (a judge that cannot fail is not measuring anything), unless the
@@ -54,12 +64,14 @@ import hashlib
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import tempfile
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -153,10 +165,50 @@ def call_model(config: dict, relai_dir: Path, prompt: str, system: str = SYSTEM,
     return verdict, model
 
 
-def cost_of(usage: dict | None) -> float | None:
-    """The call's cost when the provider reports it (OpenRouter does); never estimated."""
+def cost_of(usage: dict | None, config: dict | None = None) -> float | None:
+    """The call's cost: what the provider reports (OpenRouter does), otherwise computed from its token counts at
+    the USD-per-million-token prices the user set in [judge].prices, otherwise None."""
     value = (usage or {}).get("cost")
-    return float(value) if isinstance(value, (int, float)) and value >= 0 else None
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+        return float(value)
+    return priced_cost(usage or {}, judge_prices(config or {}))
+
+
+PRICE_KEYS = ("input", "output", "cache_write", "cache_read")
+
+
+def judge_prices(config: dict) -> dict | None:
+    """[judge].prices in USD per million tokens, or None when unset; exits on a malformed table."""
+    prices = config.get("prices")
+    if prices is None:
+        return None
+    if not isinstance(prices, dict) or set(prices) - set(PRICE_KEYS) or not {"input", "output"} <= set(prices) \
+            or any(isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0 for v in prices.values()):
+        sys.exit("error: [judge].prices must give input and output (and optionally cache_write, cache_read) in USD "
+                 "per million tokens")
+    return prices
+
+
+def priced_cost(usage: dict, prices: dict | None) -> float | None:
+    """Cost from Anthropic (input, output, cache creation and read) or OpenAI-format (prompt, completion, cached
+    prompt) token counts; None when a count needs a price the table lacks."""
+    if not prices or not usage:
+        return None
+    def count(value) -> int:
+        return value if isinstance(value, int) and not isinstance(value, bool) else 0
+    if "input_tokens" in usage or "output_tokens" in usage:
+        tokens = {"input": count(usage.get("input_tokens")), "output": count(usage.get("output_tokens")),
+                  "cache_write": count(usage.get("cache_creation_input_tokens")),
+                  "cache_read": count(usage.get("cache_read_input_tokens"))}
+    elif "prompt_tokens" in usage or "completion_tokens" in usage:
+        cached = count((usage.get("prompt_tokens_details") or {}).get("cached_tokens"))
+        tokens = {"input": max(count(usage.get("prompt_tokens")) - cached, 0),
+                  "output": count(usage.get("completion_tokens")), "cache_write": 0, "cache_read": cached}
+    else:
+        return None
+    if any(n and key not in prices for key, n in tokens.items()):
+        return None
+    return round(sum(n * prices.get(key, 0) for key, n in tokens.items()) / 1_000_000, 6)
 
 
 def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SYSTEM, schema: dict = SCHEMA,
@@ -184,7 +236,7 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
         data = post(url, {"authorization": f"Bearer {api_key(key_name, relai_dir)}"}, body)
         if response_metadata is not None:
             response_metadata.update(model=data.get("model", model), usage=data.get("usage") or {},
-                                     cost_usd=cost_of(data.get("usage")))
+                                     cost_usd=cost_of(data.get("usage"), config))
         message = data["choices"][0]["message"]
         if message.get("refusal"):
             raise RuntimeError(f"the judge model refused: {message['refusal']}")
@@ -202,7 +254,7 @@ def call_model_full(config: dict, relai_dir: Path, prompt: str, system: str = SY
                                    "format": {"type": "json_schema", "schema": schema}}})
     if response_metadata is not None:
         response_metadata.update(model=data.get("model", model), usage=data.get("usage") or {},
-                                 cost_usd=cost_of(data.get("usage")))
+                                 cost_usd=cost_of(data.get("usage"), config))
     if data.get("stop_reason") == "refusal":
         raise RuntimeError("the judge model declined to grade this trajectory")
     text = "".join(block.get("text", "") for block in data.get("content", []) if block.get("type") == "text")
@@ -339,8 +391,10 @@ CLEAN_GIT = {"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull, "GIT_L
 class Repository:
     """Read-only views of a coding task's start commit and the patched tree, through git objects only.
 
-    The shared bare copy under work/judge-repos/ is only filled by fetching, under a lock; the patched
-    tree's new objects go to a private directory that `close` removes.
+    One shared bare copy per repository ([metadata.relai.coding].repo, else the task's name) under
+    work/judge-repos/ is only filled by fetching, under a lock, so every trial and every task of that
+    repository reads each start commit from it after the first fetch; the patched tree's new objects go to a
+    private directory that `close` removes.
     """
 
     def __init__(self, relai_dir: Path, task: Path, diff: bytes, secrets: dict):
@@ -352,7 +406,8 @@ class Repository:
             raise ValueError("the repository input needs [metadata.relai.coding].start_commit")
         if diff.startswith(b"(could not compute"):
             raise ValueError("the verifier could not compute the trial's diff, so the patched tree is unknown")
-        self.git_dir = relai_dir / "work" / "judge-repos" / f"{task.name}.git"
+        name = re.sub(r"[^A-Za-z0-9._-]+", "-", str(coding.get("repo") or task.name)).strip("-.") or task.name
+        self.git_dir = relai_dir / "work" / "judge-repos" / f"{name}.git"
         self._objects = tempfile.TemporaryDirectory(prefix="relai-judge-objects-")
         self.env = {**os.environ, **CLEAN_GIT, "GIT_OBJECT_DIRECTORY": self._objects.name,
                     "GIT_ALTERNATE_OBJECT_DIRECTORIES": str((self.git_dir / "objects").resolve())}
@@ -362,7 +417,8 @@ class Repository:
         self.trees["patched"] = self.apply(base, diff) if diff.strip() and diff != NO_CHANGES else base
 
     def fill(self, relai_dir: Path, task: Path, coding: dict, start: str) -> None:
-        """Fetch the start commit into the shared bare copy once, from the task's bundle or the repository URL."""
+        """Fetch the start commit into the shared bare copy once, from the task's bundle or the repository URL. A
+        commit already there needs neither, so a judge running elsewhere can skip the bundles and fetch from the URL."""
         self.git_dir.parent.mkdir(parents=True, exist_ok=True)
         with (self.git_dir.parent / f"{self.git_dir.name}.lock").open("w") as lock:
             try:
@@ -379,7 +435,7 @@ class Repository:
                 return
             bundle = task / "environment" / "repo.bundle"
             if bundle.is_file():
-                source = [str(bundle.resolve()), "+refs/heads/*:refs/relai/*"]
+                source = [str(bundle.resolve()), f"+refs/heads/*:refs/relai/{task.name}/*"]
             else:
                 url = ((evals_config(relai_dir).get("coding_evals") or {}).get("repos") or {}).get(coding.get("repo"))
                 if not isinstance(url, str) or not url:
@@ -390,6 +446,8 @@ class Repository:
                                      capture_output=True, text=True, env=shared, timeout=1800)
             if fetched.returncode != 0 or subprocess.run(have, capture_output=True, env=shared).returncode != 0:
                 raise ValueError(f"could not fetch the start commit {start[:10]}: {fetched.stderr.strip()[:300]}")
+            subprocess.run(["git", f"--git-dir={self.git_dir}", "update-ref", f"refs/relai/start/{start}", start],
+                           capture_output=True, env=shared)
 
     def close(self) -> None:
         self._objects.cleanup()
@@ -705,6 +763,12 @@ def main() -> int:
     parser.add_argument("--rejudge-stale", action="store_true",
                         help="re-judge stored results that no longer match their evaluator (off its levels, missing "
                              "a criterion, or judged with another rubric); without it they are listed and kept")
+    parser.add_argument("--force-before", metavar="TIME",
+                        help="re-judge results judged before this ISO time and keep later ones, so a forced run "
+                             "resumes where it stopped when rerun with the same TIME")
+    parser.add_argument("--jobs", type=int, default=1, help="judge this many results at once (default 1)")
+    parser.add_argument("--tasks-dir", help="look for a trial's task here by name when its recorded path is "
+                                            "missing (default relai/tests)")
     parser.add_argument("--relai-dir")
     args = parser.parse_args()
     relai_dir = relai_root(args.relai_dir)
@@ -716,17 +780,32 @@ def main() -> int:
         return self_test(Path(args.self_test).resolve(), config, relai_dir)
     if not args.runs:
         parser.error("name run directories, or use --self-test")
+    if args.jobs < 1:
+        parser.error("--jobs must be at least 1")
+    cutoff = None
+    if args.force_before:
+        try:
+            cutoff = datetime.fromisoformat(args.force_before)
+        except ValueError:
+            parser.error("--force-before takes an ISO time such as 2026-11-25T09:00:00+00:00")
+        cutoff = cutoff if cutoff.tzinfo else cutoff.replace(tzinfo=timezone.utc)
+    judge_prices(config)
+    tasks_dir = Path(args.tasks_dir).resolve() if args.tasks_dir else relai_dir / "tests"
     secrets = secret_values(relai_dir)
     written = errors = unresolved = 0
     stale: list[str] = []
     changed: set = set()
     unversioned: dict = {}
+    work: list = []
     for trial_dir, result in trials([Path(p) for p in args.runs]):
         raw = str(((result.get("task_id") or {}).get("path")) or "")
         task = resolve_task_dir(raw, relai_dir, trial_dir.parent)
+        for name in (Path(raw).name, str(result.get("task_name") or "")):
+            if task is None and name and (tasks_dir / name / "task.toml").is_file():
+                task = (tasks_dir / name).resolve()
         if task is None:
-            print(f"{trial_dir.name}: task {raw!r} not found; run Harbor with absolute task paths or judge from "
-                  "the directory Harbor ran in")
+            print(f"{trial_dir.name}: task {raw!r} not found; run Harbor with absolute task paths, judge from "
+                  f"the directory Harbor ran in, or name the folder holding it with --tasks-dir")
             unresolved += 1
             continue
         trajectory_path = trial_dir / "agent" / "trajectory.json"
@@ -741,9 +820,15 @@ def main() -> int:
                 continue
             out = trial_dir / "judges" / f"{ev['id']}.json"
             key = (str(task), ev["id"])
-            if out.exists() and not args.force:
+            if out.exists() and (not args.force or cutoff is not None):
                 try:
                     stored = load_json(out)
+                    if cutoff is not None:
+                        judged = datetime.fromisoformat(str(stored.get("judged_at")))
+                        if "error" not in stored and (judged if judged.tzinfo
+                                                      else judged.replace(tzinfo=timezone.utc)) >= cutoff:
+                            continue
+                        raise ValueError("judged before --force-before")
                     reason = None if "error" in stored else stale_reason(stored, ev, rubric_version(task, ev))
                     if "error" not in stored and reason is None:
                         unversioned[key] = unversioned.get(key, 0) + ("rubric_sha256" not in stored)
@@ -755,12 +840,22 @@ def main() -> int:
                             continue
                 except (OSError, ValueError, TypeError, AttributeError):
                     pass
-            result = judge_one(config, relai_dir, task, ev, trajectory, secrets, trial_dir)
-            write_result(out, result)
+            work.append((trial_dir, task, ev, trajectory, out))
+
+    def run(item):
+        trial_dir, task, ev, trajectory, out = item
+        outcome = judge_one(config, relai_dir, task, ev, trajectory, secrets, trial_dir)
+        write_result(out, outcome)
+        return trial_dir, ev, outcome
+    print(f"judging {len(work)} evaluator result(s)" + (f", {args.jobs} at a time" if args.jobs > 1 else ""),
+          flush=True)
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        for trial_dir, ev, outcome in pool.map(run, work) if args.jobs == 1 else \
+                (f.result() for f in as_completed([pool.submit(run, item) for item in work])):
             written += 1
-            errors += "error" in result
-            print(f"{trial_dir.name} {ev['id']}: " + (f"error: {result['error']}" if "error" in result
-                                                       else f"{result['score']}"))
+            errors += "error" in outcome
+            print(f"{trial_dir.name} {ev['id']}: " + (f"error: {outcome['error']}" if "error" in outcome
+                                                       else f"{outcome['score']}"), flush=True)
     if stale:
         print(f"kept {len(stale)} stored result(s) that no longer match their evaluator, without judging them again:")
         for line in stale:
