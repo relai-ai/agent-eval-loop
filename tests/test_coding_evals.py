@@ -370,6 +370,71 @@ class CodingEvalsTest(unittest.TestCase):
             scores[glob] = self.verify(task, ws)["reward"]["formatted"]
         self.assertEqual(scores, {"fmt.toml": 1.0, "**/fmt.toml": 0.0})
 
+    IGNORING_FORMATTER = (
+        "import fnmatch, pathlib, sys\n"
+        "root = pathlib.Path('.').resolve()\n"
+        "def excluded(path):\n"
+        "    for folder in path.parents:\n"
+        "        exclude = folder / '.git' / 'info' / 'exclude'\n"
+        "        if exclude.is_file() and any(fnmatch.fnmatch(str(path.relative_to(folder)), p.strip())\n"
+        "                                     for p in exclude.read_text().splitlines() if p.strip()):\n"
+        "            return True\n"
+        "        if folder == root:\n"
+        "            return False\n"
+        "bad = [p for p in root.rglob('*.py') if '.git' not in p.parts and 'node_modules' not in p.parts\n"
+        "       and not excluded(p) and any(line.endswith(' ') for line in p.read_text().splitlines())]\n"
+        "sys.exit(1 if bad else 0)\n")
+
+    def hardening_task(self, harden=None):
+        bundle = self.bundle()
+        task = fill_task(self.project, self.src, bundle)
+        tool = task / "tests" / "fmt_tool.py"
+        tool.write_text(self.IGNORING_FORMATTER)
+        (task / "tests" / "verify.py").write_text(
+            'from coding_checks import Task\n\ntask = Task()\ntask.suite("no-regressions")\n'
+            'task.command("formatted", "format")\ntask.write()\n')
+        params = json.loads((task / "tests" / "params.json").read_text())
+        params["format"] = {"command": f"{sys.executable} {tool}", "timeout_sec": 60}
+        if harden is not None:
+            params["format"]["harden"] = harden
+        params["suite"] = {"command": f"{sys.executable} -c \"import pathlib, sys; "
+                                      "sys.exit(0 if pathlib.Path('pkg/.git').exists() else 1)\"", "timeout_sec": 60}
+        (task / "tests" / "params.json").write_text(json.dumps(params))
+        return task, bundle
+
+    def test_nested_git_entries_and_the_root_exclude_cannot_hide_files_from_a_command_check(self):
+        task, bundle = self.hardening_task()
+        for hide in ("nested", "root"):
+            with self.subTest(hide=hide):
+                ws = self.workspace(bundle)
+                (ws / "pkg").mkdir()
+                (ws / "pkg" / "mod.py").write_text("x = 1   \n")
+                (ws / "node_modules" / "dep" / ".git").mkdir(parents=True)
+                if hide == "nested":
+                    (ws / "pkg" / ".git" / "info").mkdir(parents=True)
+                    (ws / "pkg" / ".git" / "info" / "exclude").write_text("mod.py\n")
+                else:
+                    (ws / ".git" / "info").mkdir(exist_ok=True)
+                    (ws / ".git" / "info" / "exclude").write_text("pkg/mod.py\n")
+                result = self.verify(task, ws)
+                self.assertEqual(result["reward"]["formatted"], 0.0, result["feedback"])
+                self.assertTrue((ws / ".git" / "HEAD").is_file(), "the workspace's own repository stays")
+                self.assertTrue((ws / "node_modules" / "dep" / ".git").is_dir(), "node_modules is left alone")
+                expected = "pkg/.git" if hide == "nested" else ".git/info/exclude"
+                self.assertIn(expected, result["facts"]["hardened"])
+                if hide == "nested":
+                    self.assertEqual(result["reward"]["no-regressions"], 1.0, "the suite does not harden the workspace")
+
+    def test_hardening_can_be_turned_off_for_a_command(self):
+        task, bundle = self.hardening_task(harden=False)
+        ws = self.workspace(bundle)
+        (ws / "pkg" / ".git" / "info").mkdir(parents=True)
+        (ws / "pkg" / "mod.py").write_text("x = 1   \n")
+        (ws / "pkg" / ".git" / "info" / "exclude").write_text("mod.py\n")
+        result = self.verify(task, ws)
+        self.assertEqual(result["reward"]["formatted"], 1.0)
+        self.assertNotIn("hardened", result["facts"])
+
     def test_leaks_and_missing_safeguards_are_errors(self):
         task = fill_task(self.project, self.src, self.bundle())
         shutil.copyfile(task / "tests" / "hidden" / "test_mean.py", task / "environment" / "test_mean.py")
