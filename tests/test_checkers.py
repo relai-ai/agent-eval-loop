@@ -829,9 +829,31 @@ class CloudBuildTest(Base):
             "﻿FROM acme-evals:deps\nRUN <<EOF python3\nfrom pathlib import Path\nEOF\n"
             "COPY <<-'PY' /app/x.py\n\tfrom os import path\n\tPY\nRUN --mount=type=bind,from=acme-tools:local,target=/t true\n")
         errors = self.check(task).errors
-        self.assertEqual(len(errors), 1, errors)
-        self.assertIn("RUN --mount from=acme-tools:local: no registry serves", errors[0])
+        self.assertEqual(len(errors), 2, errors)
+        self.assertIn("uses BuildKit-only syntax (RUN heredoc (<<), COPY heredoc (<<), RUN --mount)", errors[0])
+        self.assertIn("RUN --mount from=acme-tools:local: no registry serves", errors[1])
         self.assertNotIn("pathlib", self.asked)
+
+    def test_buildkit_only_syntax_is_an_error_for_cloud_builds_and_a_warning_otherwise(self):
+        task = self.repo.task()
+        cases = {"# syntax=docker/dockerfile:1\nFROM python:3.12-slim\n": "# syntax=docker/dockerfile:1",
+                 "FROM python:3.12-slim\nRUN --mount=type=bind,source=repo.bundle,target=/tmp/b git clone /tmp/b /app\n":
+                     "RUN --mount",
+                 "FROM python:3.12-slim\nRUN <<EOF\necho hi\nEOF\n": "RUN heredoc (<<)",
+                 "FROM python:3.12-slim\nCOPY --chmod=755 run.sh /run.sh\n": "COPY --chmod",
+                 "FROM python:3.12-slim\nRUN --network=none true\n": "RUN --network"}
+        for text, found in cases.items():
+            with self.subTest(found=found):
+                (task / "environment" / "Dockerfile").write_text(text)
+                self.assertIn(f"BuildKit-only syntax ({found})", " ".join(self.check(task).errors))
+                module = self.checker()
+                report = module.Report()
+                module.check_static(task, self.repo.relai, report)
+                self.assertIn(f"BuildKit-only syntax ({found})", " ".join(report.warnings))
+                self.assertNotIn("BuildKit", " ".join(report.errors))
+        (task / "environment" / "Dockerfile").write_text(
+            "FROM python:3.12-slim\nCOPY --chown=1000:1000 repo.bundle /tmp/\nRUN echo $((1<<3)) && rm /tmp/repo.bundle\n")
+        self.assertNotIn("BuildKit", " ".join(self.check(task).errors))
 
     def test_build_arguments_pinned_platforms_and_local_registries_are_flagged(self):
         task = self.repo.task()
@@ -976,7 +998,7 @@ class TemplateContentsTest(unittest.TestCase):
         from helpers import TEMPLATE
         shipped = sorted(p.name for p in (TEMPLATE / "bin").iterdir() if p.name != "__pycache__")
         self.assertEqual(shipped, ["_common.py", "apply_setup.py", "benchmark.py", "check_task.py", "check_trajectory.py",
-                                   "check_wiki.py", "freeze.py", "run_queue.py", "summarize.py"])
+                                   "check_wiki.py", "controls.py", "freeze.py", "run_queue.py", "summarize.py"])
 
 
 class SplitTest(unittest.TestCase):

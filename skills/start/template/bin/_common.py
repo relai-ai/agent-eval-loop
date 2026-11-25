@@ -131,7 +131,8 @@ def setup_run(task_dir: Path) -> dict | None:
 def resolve_task_dir(raw: str, relai_dir: Path, job_dir: Path | None = None) -> Path | None:
     """Find the task directory a Harbor trial ran. Harbor records -p exactly as typed, so a relative
     path is tried against the directory Harbor ran in (inferred from the job's jobs_dir), the current
-    directory, the repository root and relai/. Returns None when no candidate holds a task.toml."""
+    directory, the repository root and relai/. A path that no longer exists (an absolute path from another
+    machine or checkout) falls back to relai/tests/<its name>. Returns None when no candidate holds a task.toml."""
     if not raw:
         return None
     path = Path(raw).expanduser()
@@ -151,7 +152,7 @@ def resolve_task_dir(raw: str, relai_dir: Path, job_dir: Path | None = None) -> 
                     roots.append(Path(*base.parts[:len(base.parts) - len(parts)]))
         roots += [Path.cwd(), relai_dir.parent, relai_dir]
         candidates += [root / path for root in roots]
-        candidates += [relai_dir / "tests" / path.name]
+    candidates += [relai_dir / "tests" / path.name]
     for candidate in candidates:
         if (candidate / "task.toml").is_file():
             return candidate.resolve()
@@ -378,6 +379,60 @@ def file_sha256(path: Path) -> str:
 def frozen_state(relai_dir: Path) -> dict:
     path = relai_dir / "frozen.json"
     return load_json(path) if path.exists() else {"tests": {}}
+
+
+CONTROL_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+BUILT_IN_CONTROLS = ("start", "reference", "first-command", "shadow-imports")
+HIDING_METHODS = ("git-exclude", "root-exclude", "ignore-files", "nested-repo")
+
+
+def load_controls(task: Path) -> tuple[dict, list[str]]:
+    """A coding task's controls/controls.json ({} when absent) and the problems that make it unusable."""
+    path = task / "controls" / "controls.json"
+    if not path.is_file():
+        return {}, []
+    try:
+        config = load_json(path)
+    except (OSError, ValueError) as exc:
+        return {}, [f"controls/controls.json is not JSON: {exc}"]
+    problems = []
+    if not isinstance(config, dict):
+        return {}, ["controls/controls.json must be an object"]
+    first = config.get("first_command")
+    if first is not None and not (isinstance(first, dict) and isinstance(first.get("command"), str)
+                                  and first["command"].strip()):
+        problems.append('controls.json first_command must be {"command": "...", "timeout_sec": n}')
+    toml = load_toml(task / "task.toml") if (task / "task.toml").is_file() else {}
+    code = {ev.get("id") for ev in declared_evaluators(toml) if ev.get("type") == "code"}
+    seen = set(BUILT_IN_CONTROLS)
+    for index, control in enumerate(config.get("controls") or []):
+        where = f"controls.json control #{index + 1}"
+        if not isinstance(control, dict):
+            problems.append(f"{where} must be an object")
+            continue
+        cid = control.get("id")
+        if not isinstance(cid, str) or not CONTROL_ID_RE.match(cid) or cid in seen:
+            problems.append(f"{where}: id must be a new lowercase slug, not one of {', '.join(BUILT_IN_CONTROLS)}")
+        seen.add(cid)
+        patch = control.get("patch")
+        if patch is not None and (not isinstance(patch, str) or ".." in patch
+                                  or not (task / "controls" / patch).is_file()):
+            problems.append(f"{where}: patch {patch!r} is not a file in controls/")
+        expect = control.get("expect")
+        if not isinstance(expect, dict) or not expect:
+            problems.append(f"{where}: expect must map code evaluator ids to scores")
+        else:
+            for ev_id, value in expect.items():
+                if ev_id not in code or isinstance(value, bool) or not isinstance(value, (int, float)):
+                    problems.append(f"{where}: expect {ev_id!r} must be a declared code evaluator with a number")
+        if control.get("hide") and not patch:
+            problems.append(f"{where}: hide needs a patch whose changed files the hiding methods list")
+    return config, problems
+
+
+def controls_record(relai_dir: Path, key: str) -> Path:
+    """Where controls.py writes the latest controls run of the test with this key."""
+    return relai_dir / "work" / "controls" / f"{key}.json"
 
 
 def declared_evaluators(task_toml: dict) -> list[dict]:

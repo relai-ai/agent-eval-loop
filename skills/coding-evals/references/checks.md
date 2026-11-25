@@ -109,7 +109,7 @@ allows, run the agent as a non-root user (`[agent].user`), and then set `[verifi
 Harbor does not fall back to root, and a non-root verifier records no reward (`check_task.py`
 checks it).
 
-Three more paths reach the verifier's commands from outside the listed files:
+Four more paths reach the verifier's commands from outside the listed files:
 
 - **Toolchain configuration.** In the workspace (a project `.npmrc`, `.cargo/config.toml`,
   `go.work`), list it under `restore`. In the home folder (Go's `go env -w`, a user `.npmrc` or
@@ -128,6 +128,20 @@ Three more paths reach the verifier's commands from outside the listed files:
   suppressions written in the source (`#[rustfmt::skip]`, `// eslint-disable`, `# noqa`) to
   `code-review`, which sees them in the diff. Try the shortcut during
   [validation](task-format.md#validation).
+- **Ignore files git does not show.** Formatters and linters that skip ignored files read more
+  than git does: oxfmt and oxlint treat any folder holding a `.git` entry as a repository root with
+  its own `info/exclude`, black reads every nested `.gitignore` (unless `--exclude` is given), and
+  ruff and ty read `.gitignore`, `.ignore` and similar files. Git skips nested `.git` entries, so
+  the diff, `in-scope` and `restore` never see them. The library's build and `task.command` checks
+  remove every `.git` entry below the workspace root (outside `node_modules`) and the root
+  `.git/info/exclude` before their command; run format, lint and type checks through them. Also
+  pass the tool's own switch where it has one (`ruff check --no-respect-gitignore`, `ruff format
+  --no-respect-gitignore`, `ty check --no-respect-ignore-files`), and restore the ignore files it
+  reads at any depth (`**/.gitignore`, `**/.ignore`, `**/.prettierignore`).
+- **Modules on the import path.** A hidden test that imports a module installed outside the
+  workspace (a reference parser, a helper) can import a same-named file the agent planted
+  instead: pytest puts the project root first on `sys.path`. Put the verifier's directory first
+  and assert the module's `__file__` lies under it.
 - **Running as root.** The verifier runs as root, which passes every file-permission check, so a
   test about permissions or the user's identity passes whatever the code does. Run such a test
   as a non-root user (`runuser`, `setpriv` or `su`, whichever the image has; create the user in
