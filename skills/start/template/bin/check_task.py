@@ -10,7 +10,9 @@ builder (relai/README.md, Fixed rules: Reproducible tasks): each
 FROM or COPY --from in its Dockerfiles names the harness image from [harbor.image], as the only FROM and
 the first instruction, or an image its registry serves without credentials (asked anonymously with HEAD
 requests, as a cloud builder would pull it), and no FROM reads a build argument. A FROM that pins a literal
-platform is warned about: the platform that runs a test decides its architecture. With --json, each report is one JSON document: the [harbor] table first, then each task.
+platform is warned about: the platform that runs a test decides its architecture. BuildKit-only Dockerfile syntax
+(RUN --mount, --network or --security; COPY/ADD --chmod, --link, --parents or --exclude; heredocs; a # syntax=
+directive) is a warning, and an error with --cloud: Modal's image builder rejects it. With --json, each report is one JSON document: the [harbor] table first, then each task.
 
 Static checks always run, including Harbor's own task loading (through `uv`; --no-harbor skips
 it). --verifier also builds the task's verifier and runs tests/test.sh, as Harbor would, on a
@@ -862,8 +864,37 @@ def parser_directives(text: str) -> list[str]:
     return directives
 
 
+BUILDKIT_OPTIONS = {"RUN": ("--mount", "--network", "--security"),
+                    "COPY": ("--chmod", "--link", "--parents", "--exclude"),
+                    "ADD": ("--chmod", "--link", "--parents", "--exclude", "--checksum", "--keep-git-dir")}
+
+
+def buildkit_syntax(text: str) -> list[str]:
+    """Dockerfile syntax only BuildKit accepts: options such as RUN --mount, heredocs, a # syntax= directive."""
+    found = [d for d in parser_directives(text) if d.lstrip("#").strip().lower().startswith("syntax")]
+    for op, args in dockerfile_instructions(text):
+        for option in args:
+            if not option.startswith("--"):
+                break
+            if option.split("=", 1)[0] in BUILDKIT_OPTIONS.get(op, ()):
+                found.append(f"{op} {option.split('=', 1)[0]}")
+        if op in BUILDKIT_OPTIONS and HEREDOC_RE.search(" ".join(args)):
+            found.append(f"{op} heredoc (<<)")
+    return list(dict.fromkeys(found))
+
+
 def check_dockerfile(text: str, where: str, harness: str | None, report: Report, cloud: bool = False) -> None:
-    """Check architecture hints; cloud mode also checks the bundled builder's substitution rules."""
+    """Check architecture hints and BuildKit-only syntax; cloud mode also checks the bundled builder's substitution
+    rules."""
+    syntax = buildkit_syntax(text)
+    if syntax:
+        message = (f"{where} uses BuildKit-only syntax ({', '.join(syntax)}); Modal's image builder rejects it "
+                   "(ImageBuildError). Use plain RUN, COPY and ADD, for example COPY a file in and delete it in a "
+                   "later RUN")
+        if cloud:
+            report.error(message)
+        else:
+            report.warn(message + "; check_task.py --cloud makes this an error")
     instructions = dockerfile_instructions(text)
     froms = [index for index, (op, _args) in enumerate(instructions) if op == "FROM"]
     stages: set[str] = set()
