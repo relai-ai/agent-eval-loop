@@ -27,6 +27,7 @@ provider = "anthropic"       # or "openai", "openrouter", "openai-compatible" (m
 # response_format = "json_object"         # servers without json_schema (llama-cpp-python); judge.py checks replies
 model = "claude-opus-5-5"     # required; no default
 effort = "medium"            # optional, Anthropic only
+# prices = { input = 4.0, output = 20.0, cache_write = 5.0, cache_read = 0.2 }   # optional, example values: USD per million tokens, for cost_usd when the provider reports none
 
 [triage]                     # optional table; needed only to run bin/triage.py (it never uses [judge])
 provider = "openrouter"      # same keys as [judge]: a cheap model, one call per trace
@@ -312,7 +313,8 @@ they check a real outcome and can fail.
   the task's `repo` when it has no bundle), and the verifier's baseline (the start commit with any
   trusted setup files) with the trial's `verifier/diff.patch` applied. The judge explores them (lists directories, reads files,
   searches) and sees nothing later than the start commit; it never runs code. The example judge
-  keeps a bare copy under `work/judge-repos/` and does this through git objects only.
+  keeps one bare copy per repository under `work/judge-repos/<repo>.git`, shared by every trial and task
+  of that repository, and does this through git objects only.
 - An evaluator that declares `criteria` is scored on each one, on its bounds and `levels`. Its
   result adds `"criteria": {"<name>": {"score": n, "feedback": "..."}}`, and its score is the
   lowest criterion score, so one criterion at none scores the whole at none. `summarize.py`
