@@ -112,6 +112,11 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   protected folder) is deleted before the verifier's commands, which can break them, and under
   `protected` it also scores every agent that runs the documented commands as changing tests.
   Exclude it from those globs or stop creating it; `new_files_ok` stops only the score.
+  Declare the agent's first test command, the one the repository's docs lead to, as
+  `first_command` in `controls/controls.json`: `controls.py` runs it offline as the agent's user
+  and fails when it hangs past its timeout. In two tasks it hung offline (VS Code with no
+  prebuilt `out/`, undici's `npm run test:unit` on a DNS lookup); prebuild what it needs, or set
+  the repository's own skip switch in the image (`ENV CITGM=1` for undici).
 - **Evaluator validity.** Identify an assumption the tests share with the reference fix and
   demonstrate that a requirement-consistent alternative passes, using another solution or a
   targeted executable probe. Cite why the request permits it and record the observed result;
@@ -131,7 +136,13 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   a configuration in a subfolder that turns off a format or lint check
   ([checks](checks.md#what-the-verifier-guards-against)), and follow every documented setup
   command with the task's network setting. Fix what gets through,
-  or record why a check cannot see it.
+  or record why a check cannot see it. `controls.py` runs the standard probes: a module that
+  exits 0 when imported, planted under each name the Python hidden tests import, must leave
+  the primary check failing; and for each control in `controls/controls.json` marked
+  `"hide": true` (a patch that fails a format, lint or type check), four ways of hiding its
+  files from that tool must keep the expected score. Add one control whose patch makes an
+  existing test fail and expects `no-regressions` 0: a suite command can exit 0 on failures
+  (Mocha's `dot` reporter did when a test replaced `process`).
 - **Health controls.** Run Harbor's `oracle` and `nop` agents on the final task, then
   `summarize.py`: the reference fix must score every outcome check at full marks and untouched
   code must fail the primary check. When the task records a first attempt
@@ -143,7 +154,9 @@ legitimate solution passes. Before freezing, collect evidence for all three:
   the independent review before rerunning the controls, since each round rebuilds images and
   repeats the full suite in every graded run: while a task is still changing, get its verdicts
   from local controls (*Trusted commands and offline preparation*), and run Harbor's on the
-  revision you send for final confirmation. These controls call no model.
+  revision you send for final confirmation. These controls call no model. Freeze with
+  `freeze.py --require-controls`, naming the Harbor job folders with `--controls` when they ran
+  on another runner: it refuses unless the controls passed on the current files.
 
 ## Trusted commands and offline preparation
 

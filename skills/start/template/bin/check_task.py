@@ -14,6 +14,12 @@ platform is warned about: the platform that runs a test decides its architecture
 (RUN --mount, --network or --security; COPY/ADD --chmod, --link, --parents or --exclude; heredocs; a # syntax=
 directive) is a warning, and an error with --cloud: Modal's image builder rejects it. With --json, each report is one JSON document: the [harbor] table first, then each task.
 
+--frozen KEY compares one task folder with the frozen test KEY (tests/<id>), for a repair copy kept outside
+tests/: it warns when the digests differ and lists the files that differ from relai/KEY.
+
+A coding task's controls/controls.json is checked as controls.py reads it, and a task with no-regressions but no
+control that makes it fail gets a warning.
+
 Static checks always run, including Harbor's own task loading (through `uv`; --no-harbor skips
 it). --verifier also builds the task's verifier and runs tests/test.sh, as Harbor would, on a
 synthetic normal trajectory and a synthetic empty-reply trajectory, requiring a score and feedback
@@ -63,7 +69,7 @@ from _common import (
     ENV_EXAMPLE_NAMES, HARBOR_PYTHON, JUNK_DIRS, Report, declared_evaluators, dir_digest,
     evals_config, relai_root, expand_globs, file_sha256, frozen_state, load_toml, normalized, repo_root,
     scan_secrets, secret_values, test_key, walk_files, runner_settings, pass_mark, harbor_version,
-    evaluator_criteria, judge_input_error, on_level, score_levels, scoring_marks,
+    evaluator_criteria, judge_input_error, load_controls, on_level, score_levels, scoring_marks,
 )
 
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -182,7 +188,8 @@ def check_evaluators(task: Path, config: dict, report: Report) -> list[dict]:
     return evaluators
 
 
-def check_static(task: Path, relai_dir: Path, report: Report, native: bool = False, cloud: bool = False) -> dict:
+def check_static(task: Path, relai_dir: Path, report: Report, native: bool = False, cloud: bool = False,
+                 frozen_key: str | None = None) -> dict:
     toml_path = task / "task.toml"
     if not toml_path.is_file():
         report.error("task.toml not found")
@@ -231,10 +238,34 @@ def check_static(task: Path, relai_dir: Path, report: Report, native: bool = Fal
             check_live_copies(task, relai_dir, report)
         check_task_images(task, config, relai_dir, report, cloud=cloud)
 
-    frozen = frozen_state(relai_dir).get("tests", {}).get(test_key(task, relai_dir))
-    if frozen and frozen.get("digest") != dir_digest(task):
-        report.warn("changed since it was frozen; a change needs a reason (freeze.py --reason) and a fresh review")
+    key = frozen_key or test_key(task, relai_dir)
+    frozen = frozen_state(relai_dir).get("tests", {}).get(key)
+    if frozen_key and not frozen:
+        report.error(f"--frozen {frozen_key}: relai/frozen.json has no test with that key")
+    elif frozen and frozen.get("digest") != dir_digest(task):
+        report.warn("changed since it was frozen" + (f" as {key} ({frozen['digest'][:12]} then, "
+                    f"{dir_digest(task)[:12]} now)" if frozen_key else "")
+                    + "; a change needs a reason (freeze.py --reason) and a fresh review")
+        original = relai_dir / key
+        if frozen_key and original.resolve() != task and (original / "task.toml").is_file():
+            differs = sorted(set(compare_trees(original, task)))
+            report.note(f"differs from {key} in {len(differs)} file(s): {', '.join(differs[:12])}"
+                        + (" ..." if len(differs) > 12 else ""))
+    elif frozen_key:
+        report.note(f"identical to the frozen {key} ({frozen['digest'][:12]})")
     return config
+
+
+def compare_trees(left: Path, right: Path):
+    """Relative paths that differ between two task folders, the top-level README.md aside."""
+    def files(root: Path) -> dict:
+        return {str(p.relative_to(root)): p for p in sorted(root.rglob("*"))
+                if p.is_file() and p.relative_to(root).parts[0] != "README.md"
+                and not set(p.relative_to(root).parts) & JUNK_DIRS}
+    a, b = files(left), files(right)
+    for rel in sorted(set(a) | set(b)):
+        if rel not in a or rel not in b or file_sha256(a[rel]) != file_sha256(b[rel]):
+            yield rel
 
 
 def is_agent_neutral(config: dict) -> bool:
@@ -454,6 +485,18 @@ def check_coding(task: Path, config: dict, relai_dir: Path, report: Report) -> N
         report.error("[metadata.relai.coding].fix_commit must be the commit id of the real fix, which the workspace "
                      "must not contain; only a task written from scratch (source = \"written\") has none")
     ids = {ev.get("id") for ev in declared_evaluators(config)}
+    controls, problems = load_controls(task)
+    for problem in problems:
+        report.error(problem)
+    expected_low = {ev_id for control in controls.get("controls") or [] if isinstance(control, dict)
+                    for ev_id, value in (control.get("expect") or {}).items() if value == 0}
+    if "no-regressions" in ids and "no-regressions" not in expected_low:
+        report.warn("no control makes no-regressions fail: add one to controls/controls.json whose patch makes an "
+                    "existing test fail and expects no-regressions 0, since a suite command can exit 0 on failures "
+                    "(Mocha's dot reporter did); run it with controls.py (coding-evals task-format.md *Validation*)")
+    if not (controls.get("first_command") or {}).get("command"):
+        report.note("controls/controls.json declares no first_command: controls.py then checks the suite command as "
+                    "a stand-in for the agent's first test command")
     review = next((ev for ev in declared_evaluators(config) if ev.get("id") == "code-review"), None)
     if review is None and "review-ready" in ids:
         report.warn("review-ready is now code-review, which reads the repository and scores tests-and-ci, scope "
@@ -1291,6 +1334,8 @@ def main() -> int:
                         help="with --results, require an evaluator error instead of a score (repeatable)")
     parser.add_argument("--no-harbor", action="store_true", help="skip Harbor's own task loading")
     parser.add_argument("--cloud", action="store_true", help="also check portability to the bundled hosted Harbor builder")
+    parser.add_argument("--frozen", metavar="KEY", help="compare one task folder (a repair copy outside tests/, say) "
+                                                         "with the frozen test KEY (tests/<id>) instead of its own path")
     parser.add_argument("--relai-dir", help="the relai/ directory (default: inferred)")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     args = parser.parse_args()
@@ -1312,6 +1357,8 @@ def main() -> int:
         return report.emit(f"verifier results for {task.name}", args.json)
     relai_dir = relai_root(args.relai_dir)
     tasks = [Path(raw).resolve() for raw in args.tasks]
+    if args.frozen and len(tasks) != 1:
+        parser.error("--frozen compares exactly one task folder")
     suite = Report()
     try:
         kind, isolation = runner_settings(relai_dir)
@@ -1344,7 +1391,7 @@ def main() -> int:
     status |= suite.emit("relai.toml", args.json)
     for task in tasks:
         report = Report()
-        config = check_static(task, relai_dir, report, native, cloud=args.cloud)
+        config = check_static(task, relai_dir, report, native, cloud=args.cloud, frozen_key=args.frozen)
         if loaded.get(str(task)):
             report.error(f"Harbor cannot load it: {loaded[str(task)]}")
         elif not args.no_harbor and not native and (not loaded or HARBOR_SKIPPED in loaded):

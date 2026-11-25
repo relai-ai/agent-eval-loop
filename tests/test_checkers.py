@@ -998,7 +998,7 @@ class TemplateContentsTest(unittest.TestCase):
         from helpers import TEMPLATE
         shipped = sorted(p.name for p in (TEMPLATE / "bin").iterdir() if p.name != "__pycache__")
         self.assertEqual(shipped, ["_common.py", "apply_setup.py", "benchmark.py", "check_task.py", "check_trajectory.py",
-                                   "check_wiki.py", "freeze.py", "summarize.py"])
+                                   "check_wiki.py", "controls.py", "freeze.py", "summarize.py"])
 
 
 class SplitTest(unittest.TestCase):
