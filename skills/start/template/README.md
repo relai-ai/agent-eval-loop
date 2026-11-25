@@ -1,4 +1,4 @@
-<!-- relai 0.1.1 -->
+<!-- relai 0.1.2 -->
 # relai/
 
 This directory holds RELAI's state for the agent in this repository: what the agent must do and
