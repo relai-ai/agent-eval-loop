@@ -120,28 +120,31 @@ class ControlsTest(unittest.TestCase):
         self.assertIn("unformatted/nested-repo: solution/solve.sh then git apply controls/unformatted.patch; "
                       "expect {'formatted': 0}", ran.stdout)
 
-    def test_a_hiding_probe_catches_a_tool_that_honors_a_nested_exclude(self):
+    def test_hiding_probes_report_an_unhardened_check_and_pass_a_hardened_one(self):
         self.standard()
-        params = json.loads((self.task / "tests" / "params.json").read_text())
         tool = self.task / "tests" / "fmt_tool.py"
         tool.write_text(EXCLUDE_HONORING_TOOL)
-        params["build"] = {"command": f"{sys.executable} {tool}", "timeout_sec": 60}
-        (self.task / "tests" / "params.json").write_text(json.dumps(params))
         verify_py = 'from coding_checks import Task\n\ntask = Task()\ntask.build("formatted")\ntask.write()\n'
         _, controls = self.controls.plan(self.task)
-        verdicts = {}
-        for control in [c for c in controls if c["id"].startswith("unformatted")]:
-            ws = self.workspace()
-            sh(ws, "git", "apply", str(self.task / "solution" / "fix.patch"))
-            sh(ws, "git", "apply", str(self.task / "controls" / "unformatted.patch"))
-            if control.get("script"):
-                subprocess.run(["bash", "-c", control["script"]], cwd=ws, check=True, capture_output=True)
-            scores = self.verify(ws, verify_py)
-            verdicts[control["id"]] = self.controls.verdict(control["expect"], scores)[0]
-        self.assertEqual(verdicts, {"unformatted": True, "unformatted/git-exclude": False,
-                                    "unformatted/root-exclude": False, "unformatted/ignore-files": True,
-                                    "unformatted/nested-repo": True},
-                         "a check that harden_workspace does not protect fails the exclude probes")
+        results = {}
+        for harden in (False, True):
+            params = json.loads((self.task / "tests" / "params.json").read_text())
+            params["build"] = {"command": f"{sys.executable} {tool}", "timeout_sec": 60, "harden": harden}
+            (self.task / "tests" / "params.json").write_text(json.dumps(params))
+            verdicts = {}
+            for control in [c for c in controls if c["id"].startswith("unformatted")]:
+                ws = self.workspace()
+                sh(ws, "git", "apply", str(self.task / "solution" / "fix.patch"))
+                sh(ws, "git", "apply", str(self.task / "controls" / "unformatted.patch"))
+                if control.get("script"):
+                    subprocess.run(["bash", "-c", control["script"]], cwd=ws, check=True, capture_output=True)
+                verdicts[control["id"]] = self.controls.verdict(control["expect"], self.verify(ws, verify_py))[0]
+            results[harden] = verdicts
+        self.assertEqual(results[False], {"unformatted": True, "unformatted/git-exclude": False,
+                                          "unformatted/root-exclude": False, "unformatted/ignore-files": True,
+                                          "unformatted/nested-repo": True},
+                         "without harden_workspace the exclude probes report the hole")
+        self.assertEqual(set(results[True].values()), {True}, "harden_workspace closes it, so every probe passes")
 
     @unittest.skipUnless(have_pytest(), "pytest is not installed on this host")
     def test_the_shadow_probe_catches_a_planted_module_that_exits_zero(self):
