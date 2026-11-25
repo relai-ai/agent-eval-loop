@@ -28,7 +28,9 @@ From the repository root:
    once: `-o relai/work/runs/<run-id>` (`--jobs-dir`; otherwise the job lands outside `relai/work/`,
    which is not ignored by git), `-k <attempts>` (`--n-attempts`) and `-n <concurrency>`
    (`--n-concurrent`). An interrupted job resumes with `harbor job resume` on its job directory;
-   stopping Harbor (Ctrl-C) cancels the rest. These flags were checked against Harbor 0.25.0;
+   stopping Harbor (Ctrl-C) cancels the rest. For many tasks and coding agents, `bin/run_queue.py`
+   runs one job per (task, agent) pair with these flags, keeps its state in the run directory, and
+   after a restart reruns only the attempts with no finished trial. These flags were checked against Harbor 0.25.0;
    check `harbor run --help` on the release in `[harbor].version`.
 3. Score the judges the way `[judge]` says, writing `<trial dir>/judges/<id>.json` (`files.md`,
    Scores). `bin/judge.py`, the plugin's example, implements this.

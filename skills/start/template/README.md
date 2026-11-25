@@ -204,7 +204,7 @@ generic infrastructure without a concrete need.
 Shared tools implement the fixed rules above. Use a suitable one directly; adaptation follows
 [Adapting supplied implementations](#adapting-supplied-implementations). They are read-only
 except `freeze.py`, `benchmark.py` (which writes only `work/benchmarks/`), `apply_setup.py` (which
-writes only `work/setups/`) and explicitly requested summary exports. Python 3.11+, standard library; Harbor-based checks use `[harbor].version` through `uv`.
+writes only `work/setups/`), `run_queue.py` (which writes only the run directory it is given and starts Harbor) and explicitly requested summary exports. Python 3.11+, standard library; Harbor-based checks use `[harbor].version` through `uv`.
 Exit status: 0 nothing wrong, 1 findings (including a changed frozen test), 2 a usage or
 environment error; errors go to stderr. `--json` prints machine-readable output on stdout, except
 `summarize.py --json <path>`, which also writes the full evidence to that file.
@@ -218,6 +218,7 @@ environment error; errors go to stderr. `--json` prints machine-readable output 
 | `python3 relai/bin/summarize.py <run dir> [--baseline <dir>] [--details] [--json <path>]` | During or after a run; concise by default (a run in progress also shows trials finished of the total and not finished), `--details` for full tables, `--json` for complete per-attempt evidence and candidate/baseline/comparison warnings. Notices do not change the exit status. Comparison JSON reports `observed_change` (`higher`, `lower`, `equal`, `not-comparable`) and descriptive `noise`/`se` |
 | `python3 relai/bin/freeze.py relai/tests/<id>` | Before a test's first real run; `--reason` to re-freeze a change, `--begin-repair --reason` to open an agreed repair, `--check` to report |
 | `python3 relai/bin/apply_setup.py <setup id> relai/tests/<id> [...] [--setup-root DIR]` | Before running frozen coding tasks with a team's setup; builds run copies with the setup installed and records its digest, leaving the frozen tasks unchanged (the `coding-evals` skill) |
+| `python3 relai/bin/run_queue.py relai/work/runs/<run-id> init\|run\|status` | For a coding-agent run of many tasks and agents: `init --tasks ... --agents <ids>` queues every (task, agent) pair, `run` starts one Harbor job per pair still missing trials and resumes after a restart, retrying only missing attempts, `status` shows each pair (the `coding-evals` skill) |
 | `python3 relai/bin/benchmark.py init\|sample\|batch\|record\|fidelity\|exclude\|coverage <id>` | For a benchmark: `init` its splits and sample, choose a `batch`, `record` after every run, check `fidelity` against its own scorer, `exclude` cases that cannot be scored fairly |
 
 Example scripts (a Harbor agent and launcher, a native runner, an API judge, a trace triager and
