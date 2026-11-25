@@ -16,6 +16,9 @@ the protected manifest, tests/protected/, tests/hidden/). The agent may have cha
   - files under "protected" and "restore" are checked against the manifest and put back from tests/protected/
     by walking the filesystem, through symlinked folders too, and __pycache__ folders are cleared, before any
     command runs; hidden tests are taken out again before the suite runs;
+  - before the build and other command checks (format, lint, type check; not the hidden tests or the suite),
+    every .git entry below the workspace root outside node_modules and the root .git/info/exclude are
+    removed, since tools that honor them can skip files git never shows as changed;
   - a command that hangs or cannot run (exit 126 or 127) scores 0, since health showed it runs with the fix.
 tests/test.sh first stops every process the agent left running, removes planted score files, and runs
 verify.py with `python3 -I -S`. It is not a sandbox against an agent that attacks the toolchain as root.
@@ -397,6 +400,40 @@ class Task:
             folder.mkdir(exist_ok=True)
         return folder
 
+    def harden_workspace(self) -> list:
+        """Remove what can hide files from a format, lint or type check while git, the diff and restore never
+        see it: every .git entry below the workspace root (outside node_modules), which tools such as oxfmt,
+        oxlint and black treat as a repository root with its own ignore files, and the root repository's
+        info/exclude. Changes were captured when the Task started, so this alters no other check."""
+        removed = []
+        for current, dirs, files in os.walk(str(self.workspace), followlinks=False):
+            here = Path(current)
+            if here != self.workspace:
+                for name in [n for n in dirs + files if n == ".git"]:
+                    target = here / name
+                    if target.is_symlink() or not target.is_dir():
+                        target.unlink()
+                    else:
+                        shutil.rmtree(str(target), ignore_errors=True)
+                    removed.append(str(target.relative_to(self.workspace)))
+            dirs[:] = [d for d in dirs if d not in (".git", "node_modules")]
+        git_dir = self.workspace / ".git"
+        if git_dir.is_dir() and not git_dir.is_symlink():
+            info = git_dir / "info"
+            exclude = info / "exclude"
+            if info.is_symlink() or info.is_file():
+                info.unlink()
+                removed.append(".git/info")
+            elif exclude.is_symlink() or exclude.exists():
+                if exclude.is_dir() and not exclude.is_symlink():
+                    shutil.rmtree(str(exclude), ignore_errors=True)
+                else:
+                    exclude.unlink()
+                removed.append(".git/info/exclude")
+        if removed:
+            self.facts["hardened"] = sorted(set(self.facts.get("hardened", []) + removed))
+        return removed
+
     def _clear_bytecode(self) -> None:
         """Stale bytecode can stand in for a changed source file."""
         for current, dirs, _files in os.walk(str(self.workspace), followlinks=False):
@@ -460,6 +497,8 @@ class Task:
         if install:
             self.install_hidden()
         self._clear_bytecode()
+        if spec.get("harden", key not in ("hidden_tests", "suite")):
+            self.harden_workspace()
         timeout = int(spec.get("timeout_sec", 1800))
         try:
             code, output = self.run(command, timeout)
@@ -491,6 +530,13 @@ class Task:
     def build(self, evaluator_id: str) -> None:
         """The project still builds (or type-checks, or lints, as params.json's build.command says)."""
         self.guard(evaluator_id, self._command_check, "build", "Build")
+
+    def command(self, evaluator_id: str, key: str | None = None, label: str | None = None) -> None:
+        """Another exact command check, such as a format, lint or type check: params.json's <key>.command (key
+        defaults to the evaluator id) passes. Like build, it hardens the workspace first unless <key>.harden
+        is false."""
+        key = key or evaluator_id
+        self.guard(evaluator_id, self._command_check, key, label or key.replace("-", " ").capitalize())
 
     def in_scope(self, evaluator_id: str) -> None:
         """Every changed file matches scope.allowed, and no more files changed than scope.max_files."""
